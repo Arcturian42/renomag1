@@ -1,15 +1,23 @@
-'use server'
+'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 import { calculateLeadScore } from '@/src/lib/scoring';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-export async function submitLead(formData: any) {
+export async function submitLead(formData: {
+  workTypes: string[];
+  budget: string;
+  zipCode: string;
+  propertyType: string;
+  propertyYear: string;
+  surface: string;
+  income: 'modeste' | 'intermediaire' | 'superieur';
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  message?: string;
+}) {
   try {
-    // 1. Calculate Score
     const score = calculateLeadScore({
       workTypes: formData.workTypes,
       budget: formData.budget,
@@ -20,35 +28,34 @@ export async function submitLead(formData: any) {
       income: formData.income,
     });
 
-    // 2. Map to Database Schema
-    // In our Prisma schema, the Lead model has:
-    // firstName, lastName, email, phone, zipCode, department, projectType, description, budget, status, score
-    
+    const supabase = await createClient();
+
     const leadData = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
+      first_name: formData.firstName,
+      last_name: formData.lastName,
       email: formData.email,
       phone: formData.phone,
-      zipCode: formData.zipCode,
+      zip_code: formData.zipCode,
       department: formData.zipCode.substring(0, 2),
-      projectType: formData.workTypes.join(', '),
-      description: formData.message,
+      project_type: formData.workTypes.join(', '),
+      description: formData.message ?? null,
       budget: formData.budget,
-      score: score,
+      score,
       status: 'NEW',
     };
 
-    // 3. Save to Supabase
     const { data, error } = await supabase
-      .from('Lead') // Prisma maps models to table names (usually PascalCase or camelCase depending on config)
+      .from('leads')
       .insert([leadData])
-      .select();
+      .select()
+      .single();
 
     if (error) throw error;
 
     return { success: true, data };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Erreur inconnue';
     console.error('Error submitting lead:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: message };
   }
 }

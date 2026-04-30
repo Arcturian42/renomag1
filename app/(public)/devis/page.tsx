@@ -58,7 +58,10 @@ export default function DevisPage() {
   const next = async () => {
     if (currentStep === 'contact') {
       setIsSubmitting(true)
-      const result = await submitLead(formData)
+      const result = await submitLead({
+        ...formData,
+        income: (formData.income || 'intermediaire') as 'modeste' | 'intermediaire' | 'superieur',
+      })
       setIsSubmitting(false)
       
       if (result.success) {
