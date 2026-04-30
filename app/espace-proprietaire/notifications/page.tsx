@@ -27,7 +27,7 @@ function formatTimeAgo(date: Date): string {
 }
 
 export default async function ProprietaireNotificationsPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

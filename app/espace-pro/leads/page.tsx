@@ -23,7 +23,7 @@ export default function LeadsPage() {
 
   useEffect(() => {
     async function fetchLeads() {
-      const supabase = createClient()
+      const supabase = await createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 

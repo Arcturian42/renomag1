@@ -24,6 +24,7 @@
     "@hookform/resolvers": "^3.9.0",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-slot": "^1.2.4",
+    "@sentry/nextjs": "^10.51.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.105.1",
     "@upstash/ratelimit": "^2.0.8",

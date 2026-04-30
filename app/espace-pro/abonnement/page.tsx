@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { CheckCircle, CreditCard, ArrowRight, TrendingUp } from 'lucide-react'
 
 export default async function AbonnementPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

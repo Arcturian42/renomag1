@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { Star, CheckCircle, Phone, MessageSquare, ArrowRight } from 'lucide-react'
 
 export default async function ArtisansMatchesPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
