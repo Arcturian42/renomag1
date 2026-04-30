@@ -1,9 +1,8 @@
-import type { Metadata } from 'next'
-import Link from 'next/link'
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import ResetForm from './ResetForm';
 
-export const metadata: Metadata = {
-  title: 'Mot de passe oublié — RENOMAG',
-}
+export const metadata: Metadata = { title: 'Mot de passe oublié — RENOMAG' };
 
 export default function MotDePasseOubliePage() {
   return (
@@ -20,22 +19,7 @@ export default function MotDePasseOubliePage() {
             </p>
           </div>
 
-          <form className="space-y-5">
-            <div>
-              <label className="label" htmlFor="email">Adresse email</label>
-              <input
-                id="email"
-                type="email"
-                className="input-field"
-                placeholder="vous@exemple.fr"
-                autoComplete="email"
-              />
-            </div>
-
-            <button type="submit" className="btn-primary w-full py-3">
-              Envoyer le lien de réinitialisation
-            </button>
-          </form>
+          <ResetForm />
 
           <div className="mt-6 text-center">
             <Link href="/connexion" className="text-sm text-primary-600 hover:text-primary-800 font-medium">
@@ -45,5 +29,5 @@ export default function MotDePasseOubliePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

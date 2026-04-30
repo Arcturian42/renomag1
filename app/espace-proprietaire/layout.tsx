@@ -1,13 +1,13 @@
-'use client'
-
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 import DashboardSidebar from '@/components/layout/DashboardSidebar'
+import LogoutButton from '@/components/layout/LogoutButton'
 import {
   LayoutDashboard,
   ClipboardList,
   Users,
   MessageSquare,
   Settings,
-  LogOut,
   Bell,
 } from 'lucide-react'
 
@@ -20,24 +20,35 @@ const NAV_ITEMS = [
   { label: 'Mon compte', href: '/espace-proprietaire/compte', icon: Settings },
 ]
 
-const FOOTER_ITEMS = [
-  { label: 'Déconnexion', href: '/connexion', icon: LogOut },
-]
-
-export default function EspaceProprietaireLayout({
+export default async function EspaceProprietaireLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/connexion')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('first_name, last_name')
+    .eq('id', user.id)
+    .single()
+
+  const fullName = `${profile?.first_name ?? ''} ${profile?.last_name ?? ''}`.trim()
+  const displayName = fullName || (user.email ?? 'Mon espace')
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <DashboardSidebar
         navItems={NAV_ITEMS}
-        footerItems={FOOTER_ITEMS}
+        footerItems={[]}
         title="Espace Particulier"
-        userInitials="JD"
-        userName="Jean Dupont"
+        userInitials={initials}
+        userName={displayName}
         userRole="Particulier"
+        logoutButton={<LogoutButton />}
       />
       <main className="flex-1 overflow-auto">{children}</main>
     </div>

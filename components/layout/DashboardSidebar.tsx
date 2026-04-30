@@ -21,6 +21,7 @@ type DashboardSidebarProps = {
   userName?: string
   userRole?: string
   footerItems?: NavItem[]
+  logoutButton?: React.ReactNode
 }
 
 export default function DashboardSidebar({
@@ -30,6 +31,7 @@ export default function DashboardSidebar({
   userName = 'Utilisateur',
   userRole = 'Membre',
   footerItems = [],
+  logoutButton,
 }: DashboardSidebarProps) {
   const pathname = usePathname()
 
@@ -104,6 +106,13 @@ export default function DashboardSidebar({
               </Link>
             )
           })}
+        </div>
+      )}
+
+      {/* Logout */}
+      {logoutButton && (
+        <div className="px-3 pb-2 border-t border-slate-800 pt-3">
+          {logoutButton}
         </div>
       )}
 
