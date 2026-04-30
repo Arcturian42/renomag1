@@ -1,0 +1,42 @@
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { createHash } from 'crypto'
+
+const DASHBOARD_PASSWORD = 'pershing'
+const COOKIE_NAME = 'dashboard_session'
+const HASHED_PASSWORD = createHash('sha256').update(DASHBOARD_PASSWORD).digest('hex')
+
+export function verifyDashboardPassword(password: string): boolean {
+  const hash = createHash('sha256').update(password).digest('hex')
+  return hash === HASHED_PASSWORD
+}
+
+export function setDashboardSession() {
+  const cookieStore = cookies()
+  cookieStore.set(COOKIE_NAME, HASHED_PASSWORD, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 * 7, // 7 jours
+    path: '/dashboard-prive',
+  })
+}
+
+export function clearDashboardSession() {
+  const cookieStore = cookies()
+  cookieStore.delete(COOKIE_NAME)
+}
+
+export function requireDashboardAuth() {
+  const cookieStore = cookies()
+  const session = cookieStore.get(COOKIE_NAME)
+  if (!session || session.value !== HASHED_PASSWORD) {
+    redirect('/dashboard-prive')
+  }
+}
+
+export function isDashboardAuthenticated(): boolean {
+  const cookieStore = cookies()
+  const session = cookieStore.get(COOKIE_NAME)
+  return session?.value === HASHED_PASSWORD
+}

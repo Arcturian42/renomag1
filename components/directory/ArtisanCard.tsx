@@ -16,7 +16,7 @@ export default function ArtisanCard({ artisan, variant = 'default' }: Props) {
         className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-200 hover:shadow-md hover:border-primary-200 transition-all duration-200"
       >
         <div className="relative flex-shrink-0 w-12 h-12 rounded-xl overflow-hidden">
-          <Image src={artisan.avatar} alt={artisan.name} fill className="object-cover" unoptimized />
+          <Image src={artisan.avatar} alt={artisan.name} fill className="object-cover" sizes="48px" />
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
@@ -39,7 +39,7 @@ export default function ArtisanCard({ artisan, variant = 'default' }: Props) {
       <div className="p-5">
         <div className="flex items-start gap-4">
           <div className="relative flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden bg-slate-100">
-            <Image src={artisan.avatar} alt={artisan.name} fill className="object-cover" unoptimized />
+            <Image src={artisan.avatar} alt={artisan.name} fill className="object-cover" sizes="56px" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">

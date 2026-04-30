@@ -25,15 +25,17 @@ export function calculateLeadScore(data: LeadData): number {
   }
 
   // 2. Budget (Max 30 points)
-  const budget = parseInt(data.budget);
-  if (budget >= 50000) {
-    score += 30;
-  } else if (budget >= 20000) {
-    score += 20;
-  } else if (budget >= 10000) {
-    score += 10;
-  } else {
-    score += 5;
+  const budget = parseInt(data.budget, 10);
+  if (!isNaN(budget)) {
+    if (budget >= 50000) {
+      score += 30;
+    } else if (budget >= 20000) {
+      score += 20;
+    } else if (budget >= 10000) {
+      score += 10;
+    } else {
+      score += 5;
+    }
   }
 
   // 3. Subsidy Eligibility / Income (Max 20 points)
