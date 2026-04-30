@@ -44,7 +44,7 @@ export default function FeaturedArticles() {
                   alt={article.title}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  unoptimized
+                  sizes="(max-width: 768px) 100vw, 400px"
                 />
                 <div className="absolute top-3 left-3">
                   <span className="badge-primary text-xs">{article.category}</span>

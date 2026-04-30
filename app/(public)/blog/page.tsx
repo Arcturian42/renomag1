@@ -73,7 +73,8 @@ export default function BlogPage() {
                 alt={featured.title}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
-                unoptimized
+                priority
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
               <div className="absolute top-4 left-4">
                 <span className="badge-accent text-sm px-3 py-1">À la une</span>
@@ -120,7 +121,7 @@ export default function BlogPage() {
                   alt={article.title}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  unoptimized
+                  sizes="(max-width: 768px) 100vw, 33vw"
                 />
                 <div className="absolute top-3 left-3">
                   <span className="badge-primary text-xs">{article.category}</span>
