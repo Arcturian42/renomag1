@@ -11,7 +11,7 @@ const FOOTER_LINKS = {
   ],
   Professionnels: [
     { label: 'Rejoindre RENOMAG', href: '/inscription?type=pro' },
-    { label: 'Nos offres', href: '/tarifs' },
+    { label: 'Tarifs & offres pro', href: '/tarifs' },
     { label: 'Espace pro', href: '/espace-pro' },
     { label: 'Certifications RGE', href: '/blog?tag=RGE' },
     { label: 'Partenaires', href: '/partenaires' },

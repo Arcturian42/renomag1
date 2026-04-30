@@ -29,7 +29,6 @@ const NAV_LINKS = [
   },
   { label: 'Blog', href: '/blog' },
   { label: 'Comment ça marche', href: '/comment-ca-marche' },
-  { label: 'Tarifs Pro', href: '/tarifs' },
 ]
 
 export default function Navbar() {
