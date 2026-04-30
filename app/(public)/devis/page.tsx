@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle, ArrowRight, ArrowLeft, Calculator, MapPin } from 'lucide-react'
+import { CheckCircle, ArrowRight, ArrowLeft, Calculator, MapPin, Loader2 } from 'lucide-react'
 import { WORK_TYPES } from '@/lib/data/subsidies'
 import { calculateSubsidy, formatPrice } from '@/lib/utils'
+import { submitLead } from '@/app/actions/leads'
 
 type Step = 'travaux' | 'logement' | 'revenus' | 'contact' | 'confirmation'
 
@@ -18,6 +19,7 @@ const STEPS: { id: Step; label: string }[] = [
 
 export default function DevisPage() {
   const [currentStep, setCurrentStep] = useState<Step>('travaux')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     workTypes: [] as string[],
     budget: '',
@@ -53,7 +55,20 @@ export default function DevisPage() {
     }))
   }
 
-  const next = () => {
+  const next = async () => {
+    if (currentStep === 'contact') {
+      setIsSubmitting(true)
+      const result = await submitLead(formData)
+      setIsSubmitting(false)
+      
+      if (result.success) {
+        setCurrentStep('confirmation')
+      } else {
+        alert('Une erreur est survenue lors de l\'envoi de votre demande : ' + result.error)
+      }
+      return
+    }
+
     const nextIdx = stepIndex + 1
     if (nextIdx < STEPS.length) {
       setCurrentStep(STEPS[nextIdx].id)
@@ -468,12 +483,21 @@ export default function DevisPage() {
                 <button
                   onClick={next}
                   disabled={
-                    currentStep === 'travaux' && formData.workTypes.length === 0
+                    isSubmitting || (currentStep === 'travaux' && formData.workTypes.length === 0)
                   }
                   className="btn-primary disabled:opacity-30"
                 >
-                  {currentStep === 'contact' ? 'Envoyer ma demande' : 'Continuer'}
-                  <ArrowRight className="w-4 h-4" />
+                  {isSubmitting ? (
+                    <>
+                      Envoi en cours...
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      {currentStep === 'contact' ? 'Envoyer ma demande' : 'Continuer'}
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </div>
             )}

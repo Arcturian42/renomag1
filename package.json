@@ -9,9 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "15.0.0",
-    "react": "19.0.0-rc-696b328921-20241003",
-    "react-dom": "19.0.0-rc-696b328921-20241003",
+    "next": "14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.4.0",
     "lucide-react": "^0.400.0",
@@ -20,20 +20,17 @@
     "zod": "^3.23.8",
     "@hookform/resolvers": "^3.9.0",
     "framer-motion": "^11.3.2",
-    "next-themes": "^0.3.0",
-    "@supabase/supabase-js": "^2.43.4",
-    "@prisma/client": "^5.15.0"
+    "next-themes": "^0.3.0"
   },
   "devDependencies": {
     "typescript": "^5.5.3",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "tailwindcss": "4.0.0-alpha.19",
+    "tailwindcss": "^3.4.6",
     "postcss": "^8.4.39",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
-    "eslint-config-next": "15.0.0",
-    "prisma": "^5.15.0"
+    "eslint-config-next": "14.2.5"
   }
 }
