@@ -75,7 +75,7 @@ export default function ArtisanProfilePage({ params }: Props) {
                     alt={artisan.name}
                     fill
                     className="object-cover"
-                    unoptimized
+                    sizes="80px"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -195,7 +195,7 @@ export default function ArtisanProfilePage({ params }: Props) {
                         alt={`Réalisation ${i + 1}`}
                         fill
                         className="object-cover hover:scale-105 transition-transform duration-300"
-                        unoptimized
+                        sizes="(max-width: 768px) 33vw, 200px"
                       />
                     </div>
                   ))}
@@ -236,7 +236,6 @@ export default function ArtisanProfilePage({ params }: Props) {
                           width={36}
                           height={36}
                           className="rounded-full flex-shrink-0"
-                          unoptimized
                         />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">

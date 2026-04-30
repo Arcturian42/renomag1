@@ -38,7 +38,8 @@ export default function ArticlePage({ params }: Props) {
           alt={article.title}
           fill
           className="object-cover"
-          unoptimized
+          priority
+          sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 pb-8 mx-auto max-w-4xl">

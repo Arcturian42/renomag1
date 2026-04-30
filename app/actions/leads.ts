@@ -1,54 +1,85 @@
 'use server'
 
-import { createClient } from '@supabase/supabase-js';
-import { calculateLeadScore } from '@/src/lib/scoring';
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { createClient } from '@/lib/supabase/server'
+import { calculateLeadScore } from '@/src/lib/scoring'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const leadSchema = z.object({
+  firstName: z.string().min(1, 'Le prénom est requis').max(100),
+  lastName: z.string().min(1, 'Le nom est requis').max(100),
+  email: z.string().email('Email invalide').max(255),
+  phone: z.string().min(1, 'Le téléphone est requis').max(50),
+  zipCode: z.string().regex(/^\d{5}$/, 'Code postal invalide (5 chiffres requis)'),
+  city: z.string().optional(),
+  workTypes: z.array(z.string()).min(1, 'Sélectionnez au moins un type de travaux'),
+  budget: z.string().min(1, 'Le budget est requis'),
+  propertyType: z.string().optional(),
+  propertyYear: z.string().optional(),
+  surface: z.string().optional(),
+  income: z.enum(['modeste', 'intermediaire', 'superieur']),
+  message: z.string().max(2000).optional(),
+})
 
-export async function submitLead(formData: any) {
+export type LeadFormData = z.infer<typeof leadSchema>
+
+export async function submitLead(formData: unknown) {
   try {
-    // 1. Calculate Score
+    const parsed = leadSchema.safeParse(formData)
+
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: 'Données invalides',
+        fieldErrors: parsed.error.flatten().fieldErrors,
+      }
+    }
+
+    const data = parsed.data
+
+    // Calculate score
     const score = calculateLeadScore({
-      workTypes: formData.workTypes,
-      budget: formData.budget,
-      zipCode: formData.zipCode,
-      propertyType: formData.propertyType,
-      propertyYear: formData.propertyYear,
-      surface: formData.surface,
-      income: formData.income,
-    });
+      workTypes: data.workTypes,
+      budget: data.budget,
+      zipCode: data.zipCode,
+      propertyType: data.propertyType ?? '',
+      propertyYear: data.propertyYear ?? '',
+      surface: data.surface ?? '',
+      income: data.income,
+    })
 
-    // 2. Map to Database Schema
-    // In our Prisma schema, the Lead model has:
-    // firstName, lastName, email, phone, zipCode, department, projectType, description, budget, status, score
-    
+    const supabase = await createClient()
+
     const leadData = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      email: formData.email,
-      phone: formData.phone,
-      zipCode: formData.zipCode,
-      department: formData.zipCode.substring(0, 2),
-      projectType: formData.workTypes.join(', '),
-      description: formData.message,
-      budget: formData.budget,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      zipCode: data.zipCode,
+      department: data.zipCode.slice(0, 2),
+      projectType: data.workTypes.join(', '),
+      description: data.message ?? null,
+      budget: data.budget,
       score: score,
-      status: 'NEW',
-    };
+      status: 'NEW' as const,
+    }
 
-    // 3. Save to Supabase
-    const { data, error } = await supabase
-      .from('Lead') // Prisma maps models to table names (usually PascalCase or camelCase depending on config)
+    const { data: inserted, error } = await supabase
+      .from('Lead')
       .insert([leadData])
-      .select();
+      .select()
+      .single()
 
-    if (error) throw error;
+    if (error) {
+      throw error
+    }
 
-    return { success: true, data };
-  } catch (error: any) {
-    console.error('Error submitting lead:', error);
-    return { success: false, error: error.message };
+    revalidatePath('/devis')
+    revalidatePath('/admin/leads')
+
+    return { success: true, data: inserted }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Erreur inconnue'
+    return { success: false, error: message }
   }
 }
