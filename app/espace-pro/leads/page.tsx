@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Filter, Phone, Mail, MapPin, Euro, Clock } from 'lucide-react'
+import { getArtisanLeads } from '@/app/actions/data'
+import { createClient } from '@/lib/supabase/client'
 
 type LeadStatus = 'new' | 'contacted' | 'devis_sent' | 'won' | 'lost'
 
@@ -13,109 +15,59 @@ const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: str
   lost: { label: 'Perdu', color: 'bg-red-100 text-red-700', dot: 'bg-red-400' },
 }
 
-const LEADS = [
-  {
-    id: 'L001',
-    firstName: 'Jean',
-    lastName: 'Dupont',
-    email: 'jean.dupont@email.fr',
-    phone: '06 12 34 56 78',
-    city: 'Paris 16e',
-    zipCode: '75016',
-    project: 'Isolation combles + PAC air/eau',
-    budget: '15 000€',
-    income: 'intermédiaire',
-    estimatedSubsidy: '4 200€',
-    status: 'new' as LeadStatus,
-    date: '2024-04-17T10:30:00',
-    notes: '',
-    property: 'Maison 150m²',
-  },
-  {
-    id: 'L002',
-    firstName: 'Marie',
-    lastName: 'Martin',
-    email: 'marie.martin@email.fr',
-    phone: '06 98 76 54 32',
-    city: 'Versailles',
-    zipCode: '78000',
-    project: 'Panneaux solaires 6kWc',
-    budget: '12 000€',
-    income: 'modeste',
-    estimatedSubsidy: '6 500€',
-    status: 'contacted' as LeadStatus,
-    date: '2024-04-17T08:15:00',
-    notes: 'Intéressée, demande rdv pour visite',
-    property: 'Maison 200m²',
-  },
-  {
-    id: 'L003',
-    firstName: 'Pierre',
-    lastName: 'Bernard',
-    email: 'p.bernard@email.fr',
-    phone: '06 55 44 33 22',
-    city: 'Boulogne-Billancourt',
-    zipCode: '92100',
-    project: 'VMC double flux',
-    budget: '5 500€',
-    income: 'supérieur',
-    estimatedSubsidy: '1 200€',
-    status: 'devis_sent' as LeadStatus,
-    date: '2024-04-16T14:00:00',
-    notes: 'Devis envoyé — attend retour',
-    property: 'Appartement 90m²',
-  },
-  {
-    id: 'L004',
-    firstName: 'Sophie',
-    lastName: 'Laurent',
-    email: 'sophie.laurent@email.fr',
-    phone: '07 11 22 33 44',
-    city: 'Saint-Denis',
-    zipCode: '93200',
-    project: 'Isolation murs extérieur (ITE)',
-    budget: '18 000€',
-    income: 'modeste',
-    estimatedSubsidy: '9 000€',
-    status: 'won' as LeadStatus,
-    date: '2024-04-14T09:00:00',
-    notes: 'Chantier signé ! Démarrage 15 mai',
-    property: 'Maison 130m²',
-  },
-  {
-    id: 'L005',
-    firstName: 'François',
-    lastName: 'Moreau',
-    email: 'f.moreau@email.fr',
-    phone: '06 33 44 55 66',
-    city: 'Neuilly-sur-Seine',
-    zipCode: '92200',
-    project: 'Chauffe-eau solaire',
-    budget: '7 000€',
-    income: 'supérieur',
-    estimatedSubsidy: '1 800€',
-    status: 'lost' as LeadStatus,
-    date: '2024-04-12T11:30:00',
-    notes: 'A choisi un autre artisan — prix trop élevé',
-    property: 'Maison 180m²',
-  },
-]
-
 export default function LeadsPage() {
   const [activeFilter, setActiveFilter] = useState<'all' | LeadStatus>('all')
-  const [selectedLead, setSelectedLead] = useState(LEADS[0])
+  const [leads, setLeads] = useState<any[]>([])
+  const [selectedLead, setSelectedLead] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchLeads() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: dbUser } = await supabase
+        .from('ArtisanCompany')
+        .select('id')
+        .eq('userId', user.id)
+        .single()
+
+      if (!dbUser?.id) {
+        setLoading(false)
+        return
+      }
+
+      const artisanLeads = await getArtisanLeads(dbUser.id)
+      setLeads(artisanLeads)
+      if (artisanLeads.length > 0) {
+        setSelectedLead(artisanLeads[0])
+      }
+      setLoading(false)
+    }
+
+    fetchLeads()
+  }, [])
 
   const filtered = activeFilter === 'all'
-    ? LEADS
-    : LEADS.filter((l) => l.status === activeFilter)
+    ? leads
+    : leads.filter((l) => l.status === activeFilter)
 
   const counts = {
-    all: LEADS.length,
-    new: LEADS.filter((l) => l.status === 'new').length,
-    contacted: LEADS.filter((l) => l.status === 'contacted').length,
-    devis_sent: LEADS.filter((l) => l.status === 'devis_sent').length,
-    won: LEADS.filter((l) => l.status === 'won').length,
-    lost: LEADS.filter((l) => l.status === 'lost').length,
+    all: leads.length,
+    new: leads.filter((l) => l.status === 'new').length,
+    contacted: leads.filter((l) => l.status === 'contacted').length,
+    devis_sent: leads.filter((l) => l.status === 'devis_sent').length,
+    won: leads.filter((l) => l.status === 'won').length,
+    lost: leads.filter((l) => l.status === 'lost').length,
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 lg:p-8 h-full flex items-center justify-center">
+        <p className="text-slate-500">Chargement des leads...</p>
+      </div>
+    )
   }
 
   return (
@@ -123,7 +75,7 @@ export default function LeadsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Leads</h1>
-          <p className="text-slate-500 mt-0.5">{LEADS.length} leads ce mois</p>
+          <p className="text-slate-500 mt-0.5">{leads.length} leads ce mois</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -176,8 +128,11 @@ export default function LeadsPage() {
       <div className="flex gap-5 flex-1 overflow-hidden">
         {/* List */}
         <div className="w-80 flex-shrink-0 space-y-2 overflow-y-auto">
+          {filtered.length === 0 && (
+            <p className="text-sm text-slate-500 p-4">Aucun lead dans cette catégorie.</p>
+          )}
           {filtered.map((lead) => {
-            const statusConf = STATUS_CONFIG[lead.status]
+            const statusConf = STATUS_CONFIG[lead.status as LeadStatus]
             return (
               <div
                 key={lead.id}
@@ -230,10 +185,10 @@ export default function LeadsPage() {
               </div>
               <span
                 className={`text-sm rounded-full px-3 py-1 font-medium ${
-                  STATUS_CONFIG[selectedLead.status].color
+                  STATUS_CONFIG[selectedLead.status as LeadStatus].color
                 }`}
               >
-                {STATUS_CONFIG[selectedLead.status].label}
+                {STATUS_CONFIG[selectedLead.status as LeadStatus].label}
               </span>
             </div>
 

@@ -1,27 +1,80 @@
 import { TrendingUp, Users, Euro, BarChart3 } from 'lucide-react'
+import { getAllLeads, getKPIs, getDepartments } from '@/app/actions/data'
 
-const LEADS_DATA = [
-  { region: 'Île-de-France', count: 2847, conversion: '42%', revenue: '68 400€' },
-  { region: 'Auvergne-Rhône-Alpes', count: 1234, conversion: '38%', revenue: '29 600€' },
-  { region: 'Provence-Alpes-Côte d\'Azur', count: 987, conversion: '35%', revenue: '23 700€' },
-  { region: 'Hauts-de-France', count: 876, conversion: '44%', revenue: '21 000€' },
-  { region: 'Nouvelle-Aquitaine', count: 654, conversion: '36%', revenue: '15 700€' },
-  { region: 'Occitanie', count: 543, conversion: '33%', revenue: '13 000€' },
-]
+export default async function AdminLeadsPage() {
+  const [leads, kpis, departments] = await Promise.all([
+    getAllLeads(),
+    getKPIs(),
+    getDepartments(),
+  ])
 
-const MONTHLY_LEADS = [
-  { month: 'Oct', value: 320 },
-  { month: 'Nov', value: 410 },
-  { month: 'Déc', value: 380 },
-  { month: 'Jan', value: 520 },
-  { month: 'Fév', value: 610 },
-  { month: 'Mar', value: 720 },
-  { month: 'Avr', value: 890 },
-]
+  const regionMap = new Map<string, string>()
+  departments.forEach((d) => regionMap.set(d.code, d.region))
 
-const maxValue = Math.max(...MONTHLY_LEADS.map((d) => d.value))
+  // Monthly chart for last 7 months
+  const monthlyData = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - (6 - i))
+    const monthLabel = d.toLocaleDateString('fr-FR', { month: 'short' })
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const count = leads.filter((l) => {
+      const c = new Date(l.createdAt)
+      return `${c.getFullYear()}-${String(c.getMonth() + 1).padStart(2, '0')}` === yearMonth
+    }).length
+    return { month: monthLabel, value: count }
+  })
 
-export default function AdminLeadsPage() {
+  const maxValue = Math.max(...monthlyData.map((d) => d.value), 1)
+
+  // Group by region
+  const regionGroups = new Map<string, { count: number; converted: number }>()
+  leads.forEach((l) => {
+    const region = regionMap.get(l.department) || l.department || 'Inconnu'
+    const existing = regionGroups.get(region) || { count: 0, converted: 0 }
+    existing.count++
+    if (l.status === 'CONVERTED') existing.converted++
+    regionGroups.set(region, existing)
+  })
+
+  const regionData = Array.from(regionGroups.entries())
+    .map(([region, data]) => ({
+      region,
+      count: data.count,
+      conversion: data.count > 0 ? `${((data.converted / data.count) * 100).toFixed(0)}%` : '0%',
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const stats = [
+    {
+      label: 'Leads ce mois',
+      value: kpis.leadsThisMonth.toLocaleString('fr-FR'),
+      change: `+${kpis.leadsThisMonth}`,
+      icon: <TrendingUp className="w-4 h-4" />,
+      color: 'text-primary-600 bg-primary-50',
+    },
+    {
+      label: 'Total actifs',
+      value: kpis.leadCount.toLocaleString('fr-FR'),
+      change: 'All time',
+      icon: <Users className="w-4 h-4" />,
+      color: 'text-eco-600 bg-eco-50',
+    },
+    {
+      label: 'Taux conversion',
+      value: `${kpis.conversionRate}%`,
+      change: '+2.1pts',
+      icon: <BarChart3 className="w-4 h-4" />,
+      color: 'text-accent-600 bg-accent-50',
+    },
+    {
+      label: 'Revenus leads',
+      value: '178 000€',
+      change: '+31%',
+      icon: <Euro className="w-4 h-4" />,
+      color: 'text-purple-600 bg-purple-50',
+    },
+  ]
+
   return (
     <div className="p-6 lg:p-8">
       <div className="mb-6">
@@ -31,12 +84,7 @@ export default function AdminLeadsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Leads ce mois', value: '890', change: '+23%', icon: <TrendingUp className="w-4 h-4" />, color: 'text-primary-600 bg-primary-50' },
-          { label: 'Total actifs', value: '8 342', change: 'All time', icon: <Users className="w-4 h-4" />, color: 'text-eco-600 bg-eco-50' },
-          { label: 'Taux conversion', value: '39.2%', change: '+2.1pts', icon: <BarChart3 className="w-4 h-4" />, color: 'text-accent-600 bg-accent-50' },
-          { label: 'Revenus leads', value: '178 000€', change: '+31%', icon: <Euro className="w-4 h-4" />, color: 'text-purple-600 bg-purple-50' },
-        ].map((stat) => (
+        {stats.map((stat) => (
           <div key={stat.label} className="bg-white rounded-xl border border-slate-200 p-5">
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${stat.color} mb-3`}>
               {stat.icon}
@@ -52,7 +100,7 @@ export default function AdminLeadsPage() {
       <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
         <h2 className="font-semibold text-slate-900 mb-5">Évolution mensuelle des leads</h2>
         <div className="flex items-end gap-3 h-40">
-          {MONTHLY_LEADS.map((d) => (
+          {monthlyData.map((d) => (
             <div key={d.month} className="flex-1 flex flex-col items-center gap-2">
               <span className="text-xs font-medium text-slate-600">{d.value}</span>
               <div
@@ -81,14 +129,14 @@ export default function AdminLeadsPage() {
             </tr>
           </thead>
           <tbody>
-            {LEADS_DATA.map((row) => (
+            {regionData.map((row) => (
               <tr key={row.region} className="border-b border-slate-100 hover:bg-slate-50">
                 <td className="px-6 py-4 font-medium text-slate-900">{row.region}</td>
                 <td className="px-4 py-4 text-slate-600">{row.count.toLocaleString('fr-FR')}</td>
                 <td className="px-4 py-4">
                   <span className="text-eco-600 font-semibold">{row.conversion}</span>
                 </td>
-                <td className="px-4 py-4 font-semibold text-slate-900">{row.revenue}</td>
+                <td className="px-4 py-4 font-semibold text-slate-900">—</td>
                 <td className="px-4 py-4 text-right">
                   <span className="text-eco-600 text-xs flex items-center justify-end gap-0.5">
                     <TrendingUp className="w-3 h-3" />

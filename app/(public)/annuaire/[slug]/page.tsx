@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ARTISANS } from '@/lib/data/artisans'
+import { getArtisanBySlug } from '@/app/actions/data'
 import {
   Star,
   MapPin,
@@ -22,12 +22,8 @@ import { formatDate } from '@/lib/utils'
 
 type Props = { params: { slug: string } }
 
-export async function generateStaticParams() {
-  return ARTISANS.map((a) => ({ slug: a.slug }))
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const artisan = ARTISANS.find((a) => a.slug === params.slug)
+  const artisan = await getArtisanBySlug(params.slug)
   if (!artisan) return { title: 'Artisan non trouvé' }
   return {
     title: `${artisan.company} — Artisan RGE à ${artisan.city}`,
@@ -35,8 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function ArtisanProfilePage({ params }: Props) {
-  const artisan = ARTISANS.find((a) => a.slug === params.slug)
+export default async function ArtisanProfilePage({ params }: Props) {
+  const artisan = await getArtisanBySlug(params.slug)
   if (!artisan) notFound()
 
   return (
@@ -60,7 +56,7 @@ export default function ArtisanProfilePage({ params }: Props) {
           className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour à l'annuaire
+          Retour à l&apos;annuaire
         </Link>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -169,7 +165,7 @@ export default function ArtisanProfilePage({ params }: Props) {
                   <div className="text-2xl font-bold text-primary-800">
                     {artisan.yearsExperience} ans
                   </div>
-                  <div className="text-xs text-slate-500 mt-0.5">D'expérience</div>
+                  <div className="text-xs text-slate-500 mt-0.5">D&apos;expérience</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary-800">

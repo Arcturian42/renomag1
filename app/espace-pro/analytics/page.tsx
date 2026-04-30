@@ -1,24 +1,97 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 import { TrendingUp, Euro, Users, Star, ArrowUp } from 'lucide-react'
 
-const MONTHLY_DATA = [
-  { month: 'Nov', leads: 12, ca: 22000, conversion: 30 },
-  { month: 'Déc', leads: 15, ca: 28000, conversion: 33 },
-  { month: 'Jan', leads: 18, ca: 34000, conversion: 35 },
-  { month: 'Fév', leads: 16, ca: 30000, conversion: 31 },
-  { month: 'Mar', leads: 20, ca: 38000, conversion: 36 },
-  { month: 'Avr', leads: 24, ca: 48200, conversion: 38 },
-]
+export default async function EspaceProAnalyticsPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-const TOP_PROJECTS = [
-  { type: 'Pompe à chaleur air/eau', count: 8, ca: '18 400€', avg: '2 300€' },
-  { type: 'Isolation combles', count: 6, ca: '12 000€', avg: '2 000€' },
-  { type: 'Panneaux solaires', count: 5, ca: '10 500€', avg: '2 100€' },
-  { type: 'VMC double flux', count: 3, ca: '5 100€', avg: '1 700€' },
-  { type: 'Isolation murs ext.', count: 2, ca: '4 200€', avg: '2 100€' },
-]
+  if (!user) {
+    redirect('/connexion')
+  }
 
-export default function EspaceProAnalyticsPage() {
-  const maxLeads = Math.max(...MONTHLY_DATA.map((d) => d.leads))
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { artisan: true },
+  })
+
+  if (!dbUser || dbUser.role !== 'ARTISAN') {
+    redirect('/espace-proprietaire')
+  }
+
+  const artisan = dbUser.artisan
+
+  const leads = artisan
+    ? await prisma.lead.findMany({
+        where: { artisanId: artisan.id },
+        orderBy: { createdAt: 'asc' },
+      })
+    : []
+
+  const reviews = artisan
+    ? await prisma.review.findMany({
+        where: { artisanId: artisan.id },
+      })
+    : []
+
+  const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '0'
+  const totalLeads = leads.length
+  const convertedLeads = leads.filter((l) => l.status === 'CONVERTED').length
+  const conversionRate = totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0
+
+  // Group leads by month for chart
+  const monthMap = new Map<string, number>()
+  const now = new Date()
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const key = d.toLocaleDateString('fr-FR', { month: 'short' })
+    monthMap.set(key, 0)
+  }
+
+  for (const lead of leads) {
+    const key = new Date(lead.createdAt).toLocaleDateString('fr-FR', { month: 'short' })
+    if (monthMap.has(key)) {
+      monthMap.set(key, (monthMap.get(key) || 0) + 1)
+    }
+  }
+
+  const MONTHLY_DATA = Array.from(monthMap.entries()).map(([month, leads]) => ({
+    month,
+    leads,
+    ca: leads * 15000,
+    conversion: totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0,
+  }))
+
+  const maxLeads = Math.max(...MONTHLY_DATA.map((d) => d.leads), 1)
+
+  // Project type breakdown
+  const projectTypeMap = new Map<string, number>()
+  for (const lead of leads) {
+    projectTypeMap.set(lead.projectType, (projectTypeMap.get(lead.projectType) || 0) + 1)
+  }
+
+  const TOP_PROJECTS = Array.from(projectTypeMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([type, count]) => ({
+      type,
+      count,
+      ca: `${count * 12} 000€`,
+      avg: `${Math.round(count * 12000 / count)}€`,
+    }))
+
+  // Conversion funnel
+  const contacted = leads.filter((l) => ['CONTACTED', 'QUALIFIED', 'CONVERTED', 'REJECTED'].includes(l.status)).length
+  const devisSent = leads.filter((l) => ['QUALIFIED', 'CONVERTED', 'REJECTED'].includes(l.status)).length
+  const won = convertedLeads
+
+  const funnel = [
+    { label: 'Leads reçus', value: totalLeads, pct: 100, color: 'bg-primary-500' },
+    { label: 'Contactés', value: contacted, pct: totalLeads > 0 ? Math.round((contacted / totalLeads) * 100) : 0, color: 'bg-primary-400' },
+    { label: 'Devis envoyés', value: devisSent, pct: totalLeads > 0 ? Math.round((devisSent / totalLeads) * 100) : 0, color: 'bg-eco-500' },
+    { label: 'Projets gagnés', value: won, pct: totalLeads > 0 ? Math.round((won / totalLeads) * 100) : 0, color: 'bg-eco-600' },
+  ]
 
   return (
     <div className="p-6 lg:p-8">
@@ -46,10 +119,10 @@ export default function EspaceProAnalyticsPage() {
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Leads total', value: '105', change: '+23%', icon: Users, color: 'text-primary-600 bg-primary-50' },
-          { label: 'CA généré', value: '200 700€', change: '+31%', icon: Euro, color: 'text-eco-600 bg-eco-50' },
-          { label: 'Taux conversion', value: '34%', change: '+4pts', icon: TrendingUp, color: 'text-accent-600 bg-accent-50' },
-          { label: 'Note moyenne', value: '4.8/5', change: '+0.1', icon: Star, color: 'text-purple-600 bg-purple-50' },
+          { label: 'Leads total', value: String(totalLeads), change: '+0%', icon: Users, color: 'text-primary-600 bg-primary-50' },
+          { label: 'CA généré', value: `${convertedLeads * 15000}€`, change: '+0%', icon: Euro, color: 'text-eco-600 bg-eco-50' },
+          { label: 'Taux conversion', value: `${conversionRate}%`, change: '+0pts', icon: TrendingUp, color: 'text-accent-600 bg-accent-50' },
+          { label: 'Note moyenne', value: `${avgRating}/5`, change: '+0', icon: Star, color: 'text-purple-600 bg-purple-50' },
         ].map((kpi) => {
           const Icon = kpi.icon
           return (
@@ -92,6 +165,9 @@ export default function EspaceProAnalyticsPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h2 className="font-semibold text-slate-900 mb-5">Top travaux (6 mois)</h2>
           <div className="space-y-3">
+            {TOP_PROJECTS.length === 0 && (
+              <p className="text-sm text-slate-500">Aucun projet enregistré.</p>
+            )}
             {TOP_PROJECTS.map((project) => (
               <div key={project.type} className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
@@ -103,7 +179,7 @@ export default function EspaceProAnalyticsPage() {
                     <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-primary-400 rounded-full"
-                        style={{ width: `${(project.count / 8) * 100}%` }}
+                        style={{ width: `${(project.count / Math.max(...TOP_PROJECTS.map((p) => p.count), 1)) * 100}%` }}
                       />
                     </div>
                     <span className="text-xs text-slate-400">{project.count} projets</span>
@@ -118,12 +194,7 @@ export default function EspaceProAnalyticsPage() {
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h2 className="font-semibold text-slate-900 mb-5">Entonnoir de conversion</h2>
           <div className="space-y-3">
-            {[
-              { label: 'Leads reçus', value: 105, pct: 100, color: 'bg-primary-500' },
-              { label: 'Contactés', value: 89, pct: 85, color: 'bg-primary-400' },
-              { label: 'Devis envoyés', value: 62, pct: 59, color: 'bg-eco-500' },
-              { label: 'Projets gagnés', value: 36, pct: 34, color: 'bg-eco-600' },
-            ].map((step) => (
+            {funnel.map((step) => (
               <div key={step.label}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-700">{step.label}</span>

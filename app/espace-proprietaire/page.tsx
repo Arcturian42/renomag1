@@ -1,4 +1,7 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 import {
   ClipboardList,
   Users,
@@ -10,60 +13,106 @@ import {
   AlertCircle,
 } from 'lucide-react'
 
-const PROJECT_STATUS = [
-  { label: 'Devis reçus', value: 3, icon: <FileCheck className="w-4 h-4" />, color: 'text-primary-600 bg-primary-50' },
-  { label: 'Artisans matchés', value: 3, icon: <Users className="w-4 h-4" />, color: 'text-eco-600 bg-eco-50' },
-  { label: 'Économies estimées', value: '3 200€', icon: <TrendingDown className="w-4 h-4" />, color: 'text-accent-600 bg-accent-50' },
-  { label: 'Aides calculées', value: '2 800€', icon: <CheckCircle className="w-4 h-4" />, color: 'text-purple-600 bg-purple-50' },
-]
+export default async function EspaceProprietaireDashboard() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-const TIMELINE = [
-  {
-    status: 'done',
-    title: 'Demande de devis envoyée',
-    date: '15 avril 2024',
-    detail: 'Isolation combles + pompe à chaleur',
-  },
-  {
-    status: 'done',
-    title: '3 artisans sélectionnés',
-    date: '15 avril 2024',
-    detail: 'ThermoConfort Paris, Éco-Rénov Lyon, Nord Isolation',
-  },
-  {
-    status: 'current',
-    title: 'Devis en cours de réception',
-    date: 'En cours',
-    detail: '2/3 devis reçus — en attente de ThermoConfort Paris',
-  },
-  {
-    status: 'pending',
-    title: 'Choix de l\'artisan',
-    date: 'À faire',
-    detail: 'Comparer et choisir votre artisan',
-  },
-  {
-    status: 'pending',
-    title: 'Dépôt du dossier MaPrimeRénov\'',
-    date: 'À venir',
-    detail: 'Avant le début des travaux',
-  },
-  {
-    status: 'pending',
-    title: 'Réalisation des travaux',
-    date: 'À venir',
-    detail: 'Durée estimée : 3-5 jours',
-  },
-]
+  if (!user) {
+    redirect('/connexion')
+  }
 
-export default function EspaceProprietaireDashboard() {
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { profile: true },
+  })
+
+  if (!dbUser || dbUser.role === 'ARTISAN') {
+    redirect('/espace-pro')
+  }
+
+  const profile = dbUser.profile
+  const displayName = profile?.firstName || user.email?.split('@')[0] || 'Propriétaire'
+
+  const notifications = await prisma.notification.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+  })
+
+  const unreadNotifications = notifications.filter((n) => !n.read).length
+
+  const messages = await prisma.message.findMany({
+    where: { OR: [{ senderId: user.id }, { receiverId: user.id }] },
+  })
+
+  const unreadMessages = messages.filter((m) => m.receiverId === user.id && !m.read).length
+
+  // Try to find leads by email as a proxy for projects
+  const leads = dbUser.email
+    ? await prisma.lead.findMany({
+        where: { email: dbUser.email },
+        include: { artisan: true },
+        orderBy: { createdAt: 'desc' },
+      })
+    : []
+
+  const matchedArtisans = leads.filter((l) => l.artisanId).map((l) => l.artisan)
+  const uniqueArtisans = matchedArtisans.filter((a, i, arr) => arr.findIndex((t) => t?.id === a?.id) === i)
+
+  const PROJECT_STATUS = [
+    { label: 'Devis reçus', value: leads.filter((l) => l.status === 'QUALIFIED').length, icon: <FileCheck className="w-4 h-4" />, color: 'text-primary-600 bg-primary-50' },
+    { label: 'Artisans matchés', value: uniqueArtisans.length, icon: <Users className="w-4 h-4" />, color: 'text-eco-600 bg-eco-50' },
+    { label: 'Économies estimées', value: '0€', icon: <TrendingDown className="w-4 h-4" />, color: 'text-accent-600 bg-accent-50' },
+    { label: 'Aides calculées', value: '0€', icon: <CheckCircle className="w-4 h-4" />, color: 'text-purple-600 bg-purple-50' },
+  ]
+
+  const TIMELINE = [
+    {
+      status: leads.length > 0 ? 'done' : 'pending',
+      title: 'Demande de devis envoyée',
+      date: leads.length > 0 ? new Date(leads[0].createdAt).toLocaleDateString('fr-FR') : 'À faire',
+      detail: leads.length > 0 ? leads[0].projectType : 'Remplissez votre projet',
+    },
+    {
+      status: uniqueArtisans.length > 0 ? 'done' : 'pending',
+      title: `${uniqueArtisans.length} artisan${uniqueArtisans.length > 1 ? 's' : ''} sélectionné${uniqueArtisans.length > 1 ? 's' : ''}`,
+      date: uniqueArtisans.length > 0 ? 'Terminé' : 'En attente',
+      detail: uniqueArtisans.map((a) => a?.name).filter(Boolean).join(', ') || 'En attente de sélection',
+    },
+    {
+      status: leads.some((l) => l.status === 'QUALIFIED') ? 'current' : 'pending',
+      title: 'Devis en cours de réception',
+      date: leads.some((l) => l.status === 'QUALIFIED') ? 'En cours' : 'À venir',
+      detail: `${leads.filter((l) => l.status === 'QUALIFIED').length}/${uniqueArtisans.length} devis reçus`,
+    },
+    {
+      status: 'pending',
+      title: 'Choix de l\'artisan',
+      date: 'À faire',
+      detail: 'Comparer et choisir votre artisan',
+    },
+    {
+      status: 'pending',
+      title: 'Dépôt du dossier MaPrimeRénov\'',
+      date: 'À venir',
+      detail: 'Avant le début des travaux',
+    },
+    {
+      status: 'pending',
+      title: 'Réalisation des travaux',
+      date: 'À venir',
+      detail: 'Durée estimée : 3-5 jours',
+    },
+  ]
+
   return (
     <div className="p-6 lg:p-8 max-w-5xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Bonjour, Jean 👋</h1>
+        <h1 className="text-2xl font-bold text-slate-900">Bonjour, {displayName} 👋</h1>
         <p className="text-slate-500 mt-1">
-          Votre projet de rénovation est en cours — 2 devis reçus sur 3
+          {leads.length > 0
+            ? `Votre projet de rénovation est en cours — ${leads.filter((l) => l.status === 'QUALIFIED').length} devis reçus sur ${uniqueArtisans.length}`
+            : 'Commencez votre projet de rénovation énergétique'}
         </p>
       </div>
 
@@ -138,8 +187,9 @@ export default function EspaceProprietaireDashboard() {
           </div>
         </div>
 
-        {/* Devis received */}
+        {/* Right column */}
         <div className="space-y-4">
+          {/* Devis received */}
           <div className="bg-white rounded-xl border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-slate-900">Devis reçus</h2>
@@ -151,41 +201,23 @@ export default function EspaceProprietaireDashboard() {
               </Link>
             </div>
             <div className="space-y-3">
-              {[
-                {
-                  company: 'Éco-Rénov Lyon',
-                  amount: '12 400€',
-                  subsidy: '4 800€',
-                  status: 'received',
-                  date: '16 avr.',
-                },
-                {
-                  company: 'Nord Isolation',
-                  amount: '11 800€',
-                  subsidy: '4 600€',
-                  status: 'received',
-                  date: '16 avr.',
-                },
-                {
-                  company: 'ThermoConfort Paris',
-                  amount: '—',
-                  subsidy: '—',
-                  status: 'pending',
-                  date: 'Attendu ce soir',
-                },
-              ].map((devis) => (
+              {leads.filter((l) => l.artisan).length === 0 && (
+                <p className="text-sm text-slate-500">Aucun devis pour le moment.</p>
+              )}
+              {leads.filter((l) => l.artisan).map((lead) => (
                 <div
-                  key={devis.company}
+                  key={lead.id}
                   className="flex items-center justify-between p-3 rounded-lg border border-slate-100 hover:border-slate-200 transition-colors"
                 >
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{devis.company}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{devis.date}</p>
+                    <p className="text-sm font-medium text-slate-900">{lead.artisan?.name || 'Artisan'}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {lead.status === 'QUALIFIED' ? 'Devis reçu' : 'En attente'}
+                    </p>
                   </div>
-                  {devis.status === 'received' ? (
+                  {lead.status === 'QUALIFIED' ? (
                     <div className="text-right">
-                      <p className="text-sm font-bold text-slate-900">{devis.amount}</p>
-                      <p className="text-xs text-eco-600">-{devis.subsidy} aides</p>
+                      <p className="text-sm font-bold text-slate-900">{lead.budget || '—'}</p>
                     </div>
                   ) : (
                     <span className="flex items-center gap-1 text-xs text-amber-600">
@@ -199,22 +231,24 @@ export default function EspaceProprietaireDashboard() {
           </div>
 
           {/* Alert */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-amber-800">Action requise</p>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Déposez votre dossier MaPrimeRénov' avant de commencer les travaux. Votre
-                artisan peut vous aider.
-              </p>
-              <Link
-                href="/aides"
-                className="text-xs font-medium text-amber-700 hover:text-amber-900 mt-1.5 inline-flex items-center gap-1"
-              >
-                En savoir plus <ArrowRight className="w-3 h-3" />
-              </Link>
+          {leads.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Action requise</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Déposez votre dossier MaPrimeRénov&apos; avant de commencer les travaux. Votre
+                  artisan peut vous aider.
+                </p>
+                <Link
+                  href="/aides"
+                  className="text-xs font-medium text-amber-700 hover:text-amber-900 mt-1.5 inline-flex items-center gap-1"
+                >
+                  En savoir plus <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Quick actions */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">

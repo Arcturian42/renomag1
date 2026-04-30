@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
-import { ARTISANS, SPECIALTIES, REGIONS } from '@/lib/data/artisans'
+import { getArtisans } from '@/app/actions/data'
+import { SPECIALTIES, REGIONS } from '@/lib/data/artisans'
 import ArtisanCard from '@/components/directory/ArtisanCard'
 import { Search, SlidersHorizontal, MapPin, Filter } from 'lucide-react'
 
@@ -9,14 +10,16 @@ export const metadata: Metadata = {
     'Consultez notre annuaire de 2 400+ artisans RGE certifiés en France. Filtrez par spécialité, région et certifications. Devis gratuit sous 24h.',
 }
 
-export default function AnnuairePage() {
+export default async function AnnuairePage() {
+  const artisans = await getArtisans()
+
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Header */}
       <div className="bg-white border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
           <div className="max-w-2xl">
-            <div className="badge-primary mb-3">2 400+ artisans</div>
+            <div className="badge-primary mb-3">{artisans.length} artisans</div>
             <h1 className="text-3xl font-bold text-slate-900">
               Annuaire des artisans RGE
             </h1>
@@ -133,7 +136,7 @@ export default function AnnuairePage() {
             {/* Sort bar */}
             <div className="flex items-center justify-between mb-5">
               <p className="text-sm text-slate-500">
-                <strong className="text-slate-900">{ARTISANS.length} artisans</strong> trouvés
+                <strong className="text-slate-900">{artisans.length} artisans</strong> trouvés
               </p>
               <div className="flex items-center gap-3">
                 <button className="lg:hidden flex items-center gap-1.5 text-sm font-medium text-slate-600 hover:text-slate-900">
@@ -142,7 +145,7 @@ export default function AnnuairePage() {
                 </button>
                 <select className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20">
                   <option>Mieux notés</option>
-                  <option>Plus d'avis</option>
+                  <option>Plus d&apos;avis</option>
                   <option>Plus récents</option>
                   <option>Disponibles</option>
                 </select>
@@ -151,7 +154,7 @@ export default function AnnuairePage() {
 
             {/* Cards */}
             <div className="space-y-4">
-              {ARTISANS.map((artisan) => (
+              {artisans.map((artisan) => (
                 <ArtisanCard key={artisan.id} artisan={artisan} />
               ))}
             </div>

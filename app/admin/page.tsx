@@ -1,98 +1,96 @@
 import { ArrowUp, ArrowDown, Users, TrendingUp, Euro, Zap, Bot } from 'lucide-react'
+import { getKPIs, getAllUsers, getAllArtisans, getAllLeads, getAllArticles } from '@/app/actions/data'
+import { formatDateShort } from '@/lib/utils'
 
-const METRICS = [
-  {
-    label: 'Artisans actifs',
-    value: '2 418',
-    change: '+47 ce mois',
-    trend: 'up',
-    icon: <Users className="w-4 h-4" />,
-    color: 'text-primary-600 bg-primary-50',
-  },
-  {
-    label: 'Leads totaux',
-    value: '8 342',
-    change: '+312 cette semaine',
-    trend: 'up',
-    icon: <TrendingUp className="w-4 h-4" />,
-    color: 'text-eco-600 bg-eco-50',
-  },
-  {
-    label: 'ARR estimé',
-    value: '184 000€',
-    change: '+22% vs dernier mois',
-    trend: 'up',
-    icon: <Euro className="w-4 h-4" />,
-    color: 'text-accent-600 bg-accent-50',
-  },
-  {
-    label: 'Trafic organique',
-    value: '48 200',
-    change: '+34% vs dernier mois',
-    trend: 'up',
-    icon: <Zap className="w-4 h-4" />,
-    color: 'text-purple-600 bg-purple-50',
-  },
-]
+export default async function AdminDashboard() {
+  const kpis = await getKPIs()
+  const [recentUsers, recentArtisans, recentLeads, recentArticles] = await Promise.all([
+    getAllUsers().then((u) => u.slice(0, 3)),
+    getAllArtisans().then((a) => a.slice(0, 3)),
+    getAllLeads().then((l) => l.slice(0, 3)),
+    getAllArticles().then((a) => a.slice(0, 3)),
+  ])
 
-const AGENT_STATUS = [
-  { name: 'Hermes-Scraper', status: 'active', lastRun: 'Il y a 2 min', tasks: 342 },
-  { name: 'Hermes-Enrichment', status: 'active', lastRun: 'Il y a 5 min', tasks: 127 },
-  { name: 'Hermes-Content', status: 'active', lastRun: 'Il y a 12 min', tasks: 89 },
-  { name: 'Hermes-Outreach', status: 'paused', lastRun: 'Il y a 1h', tasks: 45 },
-  { name: 'Hermes-Matching', status: 'active', lastRun: 'Il y a 1 min', tasks: 234 },
-  { name: 'Hermes-Analytics', status: 'active', lastRun: 'Il y a 8 min', tasks: 67 },
-]
+  const currentMonth = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
 
-const RECENT_ACTIVITY = [
-  {
-    type: 'artisan',
-    message: 'Nouvel artisan inscrit : Chaleur Plus Nantes',
-    time: 'Il y a 5 min',
-    icon: '👤',
-  },
-  {
-    type: 'lead',
-    message: '47 nouveaux leads générés par les agents',
-    time: 'Il y a 12 min',
-    icon: '📊',
-  },
-  {
-    type: 'content',
-    message: 'Article publié : "VMC double flux : guide 2024"',
-    time: 'Il y a 23 min',
-    icon: '📝',
-  },
-  {
-    type: 'alert',
-    message: 'Certification RGE expirée : Artisan #1247',
-    time: 'Il y a 35 min',
-    icon: '⚠️',
-  },
-  {
-    type: 'payment',
-    message: 'Paiement reçu : ThermoConfort Paris (149€)',
-    time: 'Il y a 1h',
-    icon: '💳',
-  },
-]
+  const METRICS = [
+    {
+      label: 'Artisans actifs',
+      value: kpis.artisanCount.toLocaleString('fr-FR'),
+      change: `+${kpis.usersThisMonth} ce mois`,
+      trend: 'up',
+      icon: <Users className="w-4 h-4" />,
+      color: 'text-primary-600 bg-primary-50',
+    },
+    {
+      label: 'Leads totaux',
+      value: kpis.leadCount.toLocaleString('fr-FR'),
+      change: `+${kpis.leadsThisMonth} ce mois`,
+      trend: 'up',
+      icon: <TrendingUp className="w-4 h-4" />,
+      color: 'text-eco-600 bg-eco-50',
+    },
+    {
+      label: 'ARR estimé',
+      value: '184 000€',
+      change: '+22% vs dernier mois',
+      trend: 'up',
+      icon: <Euro className="w-4 h-4" />,
+      color: 'text-accent-600 bg-accent-50',
+    },
+    {
+      label: 'Trafic organique',
+      value: '48 200',
+      change: '+34% vs dernier mois',
+      trend: 'up',
+      icon: <Zap className="w-4 h-4" />,
+      color: 'text-purple-600 bg-purple-50',
+    },
+  ]
 
-export default function AdminDashboard() {
-  const currentMonth = 'Avril 2024'
+  const AGENT_STATUS = [
+    { name: 'Hermes-Scraper', status: 'active', lastRun: 'Il y a 2 min', tasks: 342 },
+    { name: 'Hermes-Enrichment', status: 'active', lastRun: 'Il y a 5 min', tasks: 127 },
+    { name: 'Hermes-Content', status: 'active', lastRun: 'Il y a 12 min', tasks: 89 },
+    { name: 'Hermes-Outreach', status: 'paused', lastRun: 'Il y a 1h', tasks: 45 },
+    { name: 'Hermes-Matching', status: 'active', lastRun: 'Il y a 1 min', tasks: 234 },
+    { name: 'Hermes-Analytics', status: 'active', lastRun: 'Il y a 8 min', tasks: 67 },
+  ]
+
+  const recentActivity = [
+    ...recentArtisans.slice(0, 2).map((a) => ({
+      type: 'artisan' as const,
+      message: `Nouvel artisan inscrit : ${a.name}`,
+      time: formatDateShort(a.createdAt),
+      icon: '👤',
+    })),
+    ...recentLeads.slice(0, 2).map((l) => ({
+      type: 'lead' as const,
+      message: `Nouveau lead : ${l.firstName} ${l.lastName}`,
+      time: formatDateShort(l.createdAt),
+      icon: '📊',
+    })),
+    ...recentArticles.slice(0, 1).map((a) => ({
+      type: 'content' as const,
+      message: `Article publié : "${a.title}"`,
+      time: formatDateShort(a.createdAt),
+      icon: '📝',
+    })),
+  ]
 
   return (
     <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Vue d'ensemble</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Vue d&apos;ensemble</h1>
           <p className="text-slate-500 mt-1">{currentMonth} — Système Hermes actif</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-eco-50 border border-eco-200 rounded-full px-3 py-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-eco-500 animate-pulse" />
             <span className="text-xs font-medium text-eco-700">
-              23 agents actifs
+              {AGENT_STATUS.filter((a) => a.status === 'active').length} agents actifs
             </span>
           </div>
           <div className="flex items-center gap-1.5 bg-primary-50 border border-primary-200 rounded-full px-3 py-1.5">
@@ -140,7 +138,7 @@ export default function AdminDashboard() {
           </div>
           <div className="text-right">
             <p className="text-xl font-bold text-slate-900">184 000€</p>
-            <p className="text-xs text-slate-500">36,8% de l'objectif</p>
+            <p className="text-xs text-slate-500">36,8% de l&apos;objectif</p>
           </div>
         </div>
         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -207,7 +205,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h2 className="font-semibold text-slate-900 mb-5">Activité récente</h2>
           <div className="space-y-4">
-            {RECENT_ACTIVITY.map((activity, idx) => (
+            {recentActivity.map((activity, idx) => (
               <div key={idx} className="flex items-start gap-3">
                 <span className="text-xl flex-shrink-0 mt-0.5">{activity.icon}</span>
                 <div className="flex-1 min-w-0">

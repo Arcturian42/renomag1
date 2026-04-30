@@ -1,62 +1,77 @@
-const CONVERSATIONS = [
-  {
-    id: 1,
-    company: 'Éco-Rénov Lyon',
-    avatar: 'ÉR',
-    lastMessage: 'Bonjour, je vous envoie le devis détaillé ce soir. Pouvez-vous confirmer votre disponibilité pour une visite mercredi ?',
-    time: 'Il y a 2h',
-    unread: 2,
-    status: 'online',
-  },
-  {
-    id: 2,
-    company: 'Nord Isolation',
-    avatar: 'NI',
-    lastMessage: 'Votre devis a été envoyé. N\'hésitez pas si vous avez des questions sur les matériaux utilisés.',
-    time: 'Hier',
-    unread: 0,
-    status: 'offline',
-  },
-  {
-    id: 3,
-    company: 'ThermoConfort Paris',
-    avatar: 'TC',
-    lastMessage: 'Je prépare votre devis pour l\'installation de la pompe à chaleur air/eau.',
-    time: '2 jours',
-    unread: 0,
-    status: 'offline',
-  },
-]
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 
-const MESSAGES = [
-  {
-    id: 1,
-    from: 'artisan',
-    text: 'Bonjour Jean, merci pour votre demande de devis. J\'ai bien pris note de votre projet : isolation des combles et installation d\'une PAC air/eau.',
-    time: '14 avril, 10:23',
-  },
-  {
-    id: 2,
-    from: 'user',
-    text: 'Bonjour, merci. Pouvez-vous me donner une estimation du délai de réalisation ?',
-    time: '14 avril, 11:05',
-  },
-  {
-    id: 3,
-    from: 'artisan',
-    text: 'Pour ce type de travaux, il faut compter 3 à 5 jours de chantier. Nous pourrions intervenir courant mai. Je vous envoie le devis complet demain matin.',
-    time: '14 avril, 11:32',
-  },
-  {
-    id: 4,
-    from: 'artisan',
-    text: 'Bonjour, je vous envoie le devis détaillé ce soir. Pouvez-vous confirmer votre disponibilité pour une visite mercredi ?',
-    time: 'Aujourd\'hui, 09:15',
-  },
-]
+export default async function ProprietaireMessagesPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-export default function ProprietaireMessagesPage() {
-  const active = CONVERSATIONS[0]
+  if (!user) {
+    redirect('/connexion')
+  }
+
+  const messages = await prisma.message.findMany({
+    where: {
+      OR: [{ senderId: user.id }, { receiverId: user.id }],
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  if (messages.length === 0) {
+    return (
+      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-slate-900">Messages</h2>
+          <p className="text-slate-500 mt-1">Aucune conversation pour le moment.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const conversationsMap = new Map<string, typeof messages>()
+  for (const msg of messages) {
+    const partnerId = msg.senderId === user.id ? msg.receiverId : msg.senderId
+    if (!conversationsMap.has(partnerId)) {
+      conversationsMap.set(partnerId, [])
+    }
+    conversationsMap.get(partnerId)!.push(msg)
+  }
+
+  const partnerIds = Array.from(conversationsMap.keys())
+  const partners = await prisma.user.findMany({
+    where: { id: { in: partnerIds } },
+    include: { profile: true, artisan: true },
+  })
+  const partnerMap = new Map(partners.map((p) => [p.id, p]))
+
+  const conversations = Array.from(conversationsMap.entries()).map(([partnerId, msgs]) => {
+    const partner = partnerMap.get(partnerId)
+    const company = partner?.artisan?.name || partner?.email || 'Artisan'
+    const initials = company
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase()
+    const lastMsg = msgs[msgs.length - 1]
+    const unread = msgs.filter((m) => m.receiverId === user.id && !m.read).length
+
+    return {
+      id: partnerId,
+      company,
+      avatar: initials,
+      lastMessage: lastMsg.content,
+      time: formatTimeAgo(lastMsg.createdAt),
+      unread,
+      status: 'offline' as const,
+    }
+  })
+
+  const active = conversations[0]
+
+  const activeMessages = messages.filter(
+    (m) => m.senderId === active.id || m.receiverId === active.id
+  )
 
   return (
     <div className="h-[calc(100vh-64px)] flex">
@@ -71,7 +86,7 @@ export default function ProprietaireMessagesPage() {
           />
         </div>
         <div className="flex-1 overflow-y-auto">
-          {CONVERSATIONS.map((conv) => (
+          {conversations.map((conv) => (
             <div
               key={conv.id}
               className={`p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${conv.id === active.id ? 'bg-primary-50 border-l-2 border-l-primary-600' : ''}`}
@@ -81,9 +96,6 @@ export default function ProprietaireMessagesPage() {
                   <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-xs font-bold text-primary-700">
                     {conv.avatar}
                   </div>
-                  {conv.status === 'online' && (
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-eco-500 border-2 border-white" />
-                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -112,25 +124,27 @@ export default function ProprietaireMessagesPage() {
           </div>
           <div>
             <p className="font-semibold text-slate-900">{active.company}</p>
-            <p className="text-xs text-eco-600">En ligne</p>
+            <p className="text-xs text-slate-500">Artisan RGE</p>
           </div>
         </div>
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {MESSAGES.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-sm ${msg.from === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+          {activeMessages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.senderId === user.id ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-sm ${msg.senderId === user.id ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                 <div
                   className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    msg.from === 'user'
+                    msg.senderId === user.id
                       ? 'bg-primary-600 text-white rounded-br-sm'
                       : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'
                   }`}
                 >
-                  {msg.text}
+                  {msg.content}
                 </div>
-                <span className="text-xs text-slate-400">{msg.time}</span>
+                <span className="text-xs text-slate-400">
+                  {msg.createdAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
             </div>
           ))}
@@ -152,4 +166,19 @@ export default function ProprietaireMessagesPage() {
       </div>
     </div>
   )
+}
+
+function formatTimeAgo(date: Date): string {
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return "À l'instant"
+  if (diffMins < 60) return `Il y a ${diffMins}min`
+  if (diffHours < 24) return `Il y a ${diffHours}h`
+  if (diffDays === 1) return 'Hier'
+  if (diffDays < 7) return `Il y a ${diffDays} jours`
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }

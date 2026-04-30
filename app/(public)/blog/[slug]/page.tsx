@@ -2,18 +2,14 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ARTICLES } from '@/lib/data/blog'
+import { getArticleBySlug, getArticles } from '@/app/actions/data'
 import { formatDate } from '@/lib/utils'
 import { Clock, Calendar, ArrowLeft, Tag, Share2 } from 'lucide-react'
 
 type Props = { params: { slug: string } }
 
-export async function generateStaticParams() {
-  return ARTICLES.map((a) => ({ slug: a.slug }))
-}
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const article = ARTICLES.find((a) => a.slug === params.slug)
+  const article = await getArticleBySlug(params.slug)
   if (!article) return { title: 'Article non trouvé' }
   return {
     title: article.title,
@@ -21,13 +17,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function ArticlePage({ params }: Props) {
-  const article = ARTICLES.find((a) => a.slug === params.slug)
+export default async function ArticlePage({ params }: Props) {
+  const article = await getArticleBySlug(params.slug)
   if (!article) notFound()
 
-  const related = ARTICLES.filter(
-    (a) => a.id !== article.id && a.category === article.category
-  ).slice(0, 3)
+  const allArticles = await getArticles()
+  const related = allArticles
+    .filter((a) => a.id !== article.id && a.category === article.category)
+    .slice(0, 3)
 
   return (
     <div className="bg-white min-h-screen">
@@ -162,7 +159,7 @@ export default function ArticlePage({ params }: Props) {
               {/* CTA */}
               <div className="bg-primary-800 rounded-xl p-5 text-white">
                 <p className="text-sm font-semibold mb-2">
-                  Prêt à passer à l'action ?
+                  Prêt à passer à l&apos;action ?
                 </p>
                 <p className="text-xs text-primary-200 mb-4">
                   Obtenez votre devis gratuit et vos aides calculées.

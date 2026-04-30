@@ -1,7 +1,36 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 import { MapPin, Home, Calendar, Wrench, Euro } from 'lucide-react'
-import Link from 'next/link'
 
-export default function MonProjetPage() {
+export default async function MonProjetPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/connexion')
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { profile: true },
+  })
+
+  if (!dbUser || dbUser.role === 'ARTISAN') {
+    redirect('/espace-pro')
+  }
+
+  const profile = dbUser.profile
+
+  const leads = dbUser.email
+    ? await prisma.lead.findMany({
+        where: { email: dbUser.email },
+        orderBy: { createdAt: 'desc' },
+      })
+    : []
+
+  const latestLead = leads[0]
+
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
       <div className="mb-6">
@@ -25,8 +54,9 @@ export default function MonProjetPage() {
             </div>
             <div>
               <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Travaux</p>
-              <p className="text-sm font-medium text-slate-900 mt-0.5">Isolation des combles</p>
-              <p className="text-sm font-medium text-slate-900">Pompe à chaleur air/eau</p>
+              <p className="text-sm font-medium text-slate-900 mt-0.5">
+                {latestLead?.projectType || 'Non renseigné'}
+              </p>
             </div>
           </div>
 
@@ -37,8 +67,9 @@ export default function MonProjetPage() {
             <div>
               <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Logement</p>
               <p className="text-sm font-medium text-slate-900 mt-0.5">Maison individuelle</p>
-              <p className="text-sm text-slate-500">Construite entre 1975-1990</p>
-              <p className="text-sm text-slate-500">120m²</p>
+              <p className="text-sm text-slate-500">
+                {profile?.city || 'Non renseigné'}
+              </p>
             </div>
           </div>
 
@@ -48,8 +79,10 @@ export default function MonProjetPage() {
             </div>
             <div>
               <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Localisation</p>
-              <p className="text-sm font-medium text-slate-900 mt-0.5">75002 Paris</p>
-              <p className="text-sm text-slate-500">Île-de-France</p>
+              <p className="text-sm font-medium text-slate-900 mt-0.5">
+                {profile?.zipCode || '75002'} {profile?.city || 'Paris'}
+              </p>
+              <p className="text-sm text-slate-500">{profile?.address || ''}</p>
             </div>
           </div>
 
@@ -59,8 +92,9 @@ export default function MonProjetPage() {
             </div>
             <div>
               <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Budget estimé</p>
-              <p className="text-sm font-medium text-slate-900 mt-0.5">10 000€ – 20 000€</p>
-              <p className="text-sm text-slate-500">Ménage intermédiaire</p>
+              <p className="text-sm font-medium text-slate-900 mt-0.5">
+                {latestLead?.budget || 'Non renseigné'}
+              </p>
             </div>
           </div>
         </div>

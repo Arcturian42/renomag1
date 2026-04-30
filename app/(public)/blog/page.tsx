@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ARTICLES, CATEGORIES } from '@/lib/data/blog'
+import { getArticles } from '@/app/actions/data'
 import { formatDateShort } from '@/lib/utils'
 import { Clock, Search } from 'lucide-react'
 
@@ -11,8 +11,10 @@ export const metadata: Metadata = {
     'Découvrez nos guides pratiques sur la rénovation énergétique : MaPrimeRénov\', CEE, pompe à chaleur, isolation, panneaux solaires...',
 }
 
-export default function BlogPage() {
-  const [featured, ...rest] = ARTICLES
+export default async function BlogPage() {
+  const articles = await getArticles()
+  const featured = articles[0]
+  const rest = articles.slice(1)
 
   return (
     <div className="bg-white min-h-screen">
@@ -26,7 +28,7 @@ export default function BlogPage() {
               <span className="text-accent-400">rénovation énergétique</span>
             </h1>
             <p className="mt-4 text-slate-400">
-              Guides pratiques, actualités des aides et conseils d'experts pour bien rénover.
+              Guides pratiques, actualités des aides et conseils d&apos;experts pour bien rénover.
             </p>
           </div>
           <div className="mt-8 flex max-w-md">
@@ -51,7 +53,7 @@ export default function BlogPage() {
           <button className="px-4 py-1.5 rounded-full text-sm font-medium bg-primary-800 text-white">
             Tous
           </button>
-          {CATEGORIES.map((cat) => (
+          {Array.from(new Set(articles.map((a) => a.category))).map((cat) => (
             <button
               key={cat}
               className="px-4 py-1.5 rounded-full text-sm font-medium border border-slate-200 text-slate-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
@@ -62,49 +64,51 @@ export default function BlogPage() {
         </div>
 
         {/* Featured article */}
-        <div className="mb-10">
-          <Link
-            href={`/blog/${featured.slug}`}
-            className="group grid md:grid-cols-2 gap-0 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-lg transition-shadow"
-          >
-            <div className="relative h-64 md:h-auto bg-slate-100">
-              <Image
-                src={featured.image}
-                alt={featured.title}
-                fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                unoptimized
-              />
-              <div className="absolute top-4 left-4">
-                <span className="badge-accent text-sm px-3 py-1">À la une</span>
-              </div>
-            </div>
-            <div className="bg-white p-8 flex flex-col justify-between">
-              <div>
-                <span className="badge-primary mb-3">{featured.category}</span>
-                <h2 className="text-2xl font-bold text-slate-900 group-hover:text-primary-700 transition-colors leading-snug mt-2">
-                  {featured.title}
-                </h2>
-                <p className="mt-3 text-slate-500 leading-relaxed">{featured.excerpt}</p>
-              </div>
-              <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white">
-                    {featured.author[0]}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{featured.author}</p>
-                    <p className="text-xs text-slate-400">{formatDateShort(featured.publishedAt)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-slate-400">
-                  <Clock className="w-3.5 h-3.5" />
-                  {featured.readTime} min
+        {featured && (
+          <div className="mb-10">
+            <Link
+              href={`/blog/${featured.slug}`}
+              className="group grid md:grid-cols-2 gap-0 rounded-2xl overflow-hidden border border-slate-200 hover:shadow-lg transition-shadow"
+            >
+              <div className="relative h-64 md:h-auto bg-slate-100">
+                <Image
+                  src={featured.image}
+                  alt={featured.title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  unoptimized
+                />
+                <div className="absolute top-4 left-4">
+                  <span className="badge-accent text-sm px-3 py-1">À la une</span>
                 </div>
               </div>
-            </div>
-          </Link>
-        </div>
+              <div className="bg-white p-8 flex flex-col justify-between">
+                <div>
+                  <span className="badge-primary mb-3">{featured.category}</span>
+                  <h2 className="text-2xl font-bold text-slate-900 group-hover:text-primary-700 transition-colors leading-snug mt-2">
+                    {featured.title}
+                  </h2>
+                  <p className="mt-3 text-slate-500 leading-relaxed">{featured.excerpt}</p>
+                </div>
+                <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-xs font-bold text-white">
+                      {featured.author[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">{featured.author}</p>
+                      <p className="text-xs text-slate-400">{formatDateShort(featured.publishedAt)}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-slate-400">
+                    <Clock className="w-3.5 h-3.5" />
+                    {featured.readTime} min
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* Article grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

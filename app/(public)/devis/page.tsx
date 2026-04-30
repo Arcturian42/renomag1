@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { CheckCircle, ArrowRight, ArrowLeft, Calculator, MapPin, Loader2 } from 'lucide-react'
 import { WORK_TYPES } from '@/lib/data/subsidies'
 import { calculateSubsidy, formatPrice } from '@/lib/utils'
-import { submitLead } from '@/app/actions/leads'
+import { submitLead } from '@/app/actions/data'
 
 type Step = 'travaux' | 'logement' | 'revenus' | 'contact' | 'confirmation'
 
@@ -58,9 +58,25 @@ export default function DevisPage() {
   const next = async () => {
     if (currentStep === 'contact') {
       setIsSubmitting(true)
-      const result = await submitLead(formData)
+      const fd = new FormData()
+      fd.append('firstName', formData.firstName)
+      fd.append('lastName', formData.lastName)
+      fd.append('email', formData.email)
+      fd.append('phone', formData.phone)
+      fd.append('zipCode', formData.zipCode)
+      fd.append('department', formData.zipCode.substring(0, 2))
+      fd.append('projectType', formData.workTypes.join(', '))
+      fd.append('description', formData.message)
+      fd.append('budget', formData.budget)
+      fd.append('workTypes', formData.workTypes.join(', '))
+      fd.append('propertyType', formData.propertyType)
+      fd.append('propertyYear', formData.propertyYear)
+      fd.append('surface', formData.surface)
+      fd.append('income', formData.income)
+
+      const result = await submitLead(fd)
       setIsSubmitting(false)
-      
+
       if (result.success) {
         setCurrentStep('confirmation')
       } else {
@@ -170,6 +186,7 @@ export default function DevisPage() {
                 <div>
                   <label className="label">Budget estimé pour vos travaux</label>
                   <select
+                    name="budget"
                     className="input-field"
                     value={formData.budget}
                     onChange={(e) => setFormData((p) => ({ ...p, budget: e.target.value }))}
@@ -188,6 +205,7 @@ export default function DevisPage() {
             {/* Step: Logement */}
             {currentStep === 'logement' && (
               <div>
+                <input type="hidden" name="propertyType" value={formData.propertyType} />
                 <h2 className="text-lg font-semibold text-slate-900 mb-1">
                   Votre logement
                 </h2>
@@ -201,6 +219,7 @@ export default function DevisPage() {
                       <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
                         type="text"
+                        name="zipCode"
                         placeholder="75001 Paris"
                         className="input-field pl-10"
                         value={formData.zipCode}
@@ -239,6 +258,7 @@ export default function DevisPage() {
                     <div>
                       <label className="label">Année de construction</label>
                       <select
+                        name="propertyYear"
                         className="input-field"
                         value={formData.propertyYear}
                         onChange={(e) =>
@@ -256,6 +276,7 @@ export default function DevisPage() {
                     <div>
                       <label className="label">Surface habitable</label>
                       <select
+                        name="surface"
                         className="input-field"
                         value={formData.surface}
                         onChange={(e) =>
@@ -278,6 +299,7 @@ export default function DevisPage() {
             {/* Step: Revenus */}
             {currentStep === 'revenus' && (
               <div>
+                <input type="hidden" name="income" value={formData.income} />
                 <h2 className="text-lg font-semibold text-slate-900 mb-1">
                   Votre situation financière
                 </h2>
@@ -361,6 +383,7 @@ export default function DevisPage() {
                       <label className="label">Prénom</label>
                       <input
                         type="text"
+                        name="firstName"
                         placeholder="Jean"
                         className="input-field"
                         value={formData.firstName}
@@ -373,6 +396,7 @@ export default function DevisPage() {
                       <label className="label">Nom</label>
                       <input
                         type="text"
+                        name="lastName"
                         placeholder="Dupont"
                         className="input-field"
                         value={formData.lastName}
@@ -386,6 +410,7 @@ export default function DevisPage() {
                     <label className="label">Email</label>
                     <input
                       type="email"
+                      name="email"
                       placeholder="jean.dupont@email.fr"
                       className="input-field"
                       value={formData.email}
@@ -398,6 +423,7 @@ export default function DevisPage() {
                     <label className="label">Téléphone</label>
                     <input
                       type="tel"
+                      name="phone"
                       placeholder="06 12 34 56 78"
                       className="input-field"
                       value={formData.phone}
@@ -409,6 +435,7 @@ export default function DevisPage() {
                   <div>
                     <label className="label">Informations complémentaires (optionnel)</label>
                     <textarea
+                      name="description"
                       rows={3}
                       placeholder="Précisez votre projet, vos contraintes..."
                       className="input-field resize-none"

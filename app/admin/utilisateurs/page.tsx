@@ -1,34 +1,28 @@
 import { Search, Filter, UserCheck, UserX } from 'lucide-react'
+import { getAllUsers, deleteUser } from '@/app/actions/data'
+import { formatDateShort } from '@/lib/utils'
 
-const USERS = [
-  { id: 'U001', name: 'Jean Dupont', email: 'jean.dupont@email.fr', type: 'particulier', status: 'active', joined: '10 avr. 2024', projects: 1 },
-  { id: 'U002', name: 'Marie Martin', email: 'marie.martin@gmail.com', type: 'particulier', status: 'active', joined: '8 avr. 2024', projects: 2 },
-  { id: 'U003', name: 'ThermoConfort Paris', email: 'contact@thermoconfort.fr', type: 'artisan', status: 'active', joined: '1 mars 2024', projects: 24 },
-  { id: 'U004', name: 'Éco-Rénov Lyon', email: 'info@eco-renov-lyon.fr', type: 'artisan', status: 'active', joined: '15 jan. 2024', projects: 31 },
-  { id: 'U005', name: 'Pierre Bernard', email: 'pierre.b@outlook.com', type: 'particulier', status: 'inactive', joined: '5 avr. 2024', projects: 0 },
-  { id: 'U006', name: 'Nord Isolation', email: 'contact@nord-isolation.fr', type: 'artisan', status: 'suspended', joined: '20 fév. 2024', projects: 8 },
-  { id: 'U007', name: 'Sophie Laurent', email: 'slaurent@free.fr', type: 'particulier', status: 'active', joined: '12 avr. 2024', projects: 1 },
-  { id: 'U008', name: 'Chaleur Plus Nantes', email: 'contact@chaleurplus.fr', type: 'artisan', status: 'active', joined: '3 avr. 2024', projects: 6 },
-]
+export default async function AdminUtilisateursPage() {
+  const users = await getAllUsers()
 
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  active: { label: 'Actif', color: 'bg-eco-100 text-eco-700' },
-  inactive: { label: 'Inactif', color: 'bg-slate-100 text-slate-600' },
-  suspended: { label: 'Suspendu', color: 'bg-red-100 text-red-700' },
-}
-
-const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  particulier: { label: 'Particulier', color: 'bg-primary-100 text-primary-700' },
-  artisan: { label: 'Artisan', color: 'bg-accent-100 text-accent-700' },
-}
-
-export default function AdminUtilisateursPage() {
   const stats = [
-    { label: 'Total utilisateurs', value: USERS.length },
-    { label: 'Particuliers actifs', value: USERS.filter((u) => u.type === 'particulier' && u.status === 'active').length },
-    { label: 'Artisans actifs', value: USERS.filter((u) => u.type === 'artisan' && u.status === 'active').length },
-    { label: 'Comptes suspendus', value: USERS.filter((u) => u.status === 'suspended').length },
+    { label: 'Total utilisateurs', value: users.length },
+    { label: 'Particuliers actifs', value: users.filter((u) => u.role === 'USER').length },
+    { label: 'Artisans actifs', value: users.filter((u) => u.role === 'ARTISAN').length },
+    { label: 'Admins', value: users.filter((u) => u.role === 'ADMIN').length },
   ]
+
+  const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+    active: { label: 'Actif', color: 'bg-eco-100 text-eco-700' },
+    inactive: { label: 'Inactif', color: 'bg-slate-100 text-slate-600' },
+    suspended: { label: 'Suspendu', color: 'bg-red-100 text-red-700' },
+  }
+
+  const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
+    USER: { label: 'Particulier', color: 'bg-primary-100 text-primary-700' },
+    ARTISAN: { label: 'Artisan', color: 'bg-accent-100 text-accent-700' },
+    ADMIN: { label: 'Admin', color: 'bg-purple-100 text-purple-700' },
+  }
 
   return (
     <div className="p-6 lg:p-8">
@@ -84,14 +78,18 @@ export default function AdminUtilisateursPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {USERS.map((user) => {
-              const status = STATUS_CONFIG[user.status]
-              const type = TYPE_CONFIG[user.type]
+            {users.map((user) => {
+              const displayName = user.profile
+                ? `${user.profile.firstName || ''} ${user.profile.lastName || ''}`.trim()
+                : user.email
+              const type = TYPE_CONFIG[user.role] || TYPE_CONFIG.USER
+              const status = STATUS_CONFIG.active
+
               return (
                 <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-5 py-4">
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{user.name}</p>
+                      <p className="text-sm font-medium text-slate-900">{displayName || user.email}</p>
                       <p className="text-xs text-slate-400">{user.email}</p>
                     </div>
                   </td>
@@ -101,16 +99,22 @@ export default function AdminUtilisateursPage() {
                   <td className="px-5 py-4">
                     <span className={`text-xs rounded-full px-2 py-1 font-medium ${status.color}`}>{status.label}</span>
                   </td>
-                  <td className="px-5 py-4 text-sm text-slate-500">{user.joined}</td>
-                  <td className="px-5 py-4 text-sm font-medium text-slate-700">{user.projects}</td>
+                  <td className="px-5 py-4 text-sm text-slate-500">{formatDateShort(user.createdAt)}</td>
+                  <td className="px-5 py-4 text-sm font-medium text-slate-700">{user.artisan ? '-' : '0'}</td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2">
                       <button className="p-1.5 rounded-lg hover:bg-eco-50 text-eco-600 transition-colors" title="Activer">
                         <UserCheck className="w-4 h-4" />
                       </button>
-                      <button className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors" title="Suspendre">
-                        <UserX className="w-4 h-4" />
-                      </button>
+                      <form action={deleteUser.bind(null, user.id)}>
+                        <button
+                          type="submit"
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-colors"
+                          title="Supprimer"
+                        >
+                          <UserX className="w-4 h-4" />
+                        </button>
+                      </form>
                     </div>
                   </td>
                 </tr>

@@ -1,17 +1,90 @@
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ARTISANS } from '@/lib/data/artisans'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 import { Star, CheckCircle, Phone, MessageSquare, ArrowRight } from 'lucide-react'
 
-const matched = ARTISANS.slice(0, 3)
+export default async function ArtisansMatchesPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-export default function ArtisansMatchesPage() {
+  if (!user) {
+    redirect('/connexion')
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { profile: true },
+  })
+
+  if (!dbUser || dbUser.role === 'ARTISAN') {
+    redirect('/espace-pro')
+  }
+
+  // Fetch real artisans from database
+  const artisans = await prisma.artisanCompany.findMany({
+    include: {
+      certifications: true,
+      specialties: true,
+      reviews: true,
+      subscription: true,
+      leads: true,
+    },
+    take: 10,
+  })
+
+  // Map to the format expected by the UI
+  const matched = artisans.map((artisan) => {
+    const avgRating = artisan.reviews.length > 0
+      ? artisan.reviews.reduce((s, r) => s + r.rating, 0) / artisan.reviews.length
+      : 0
+
+    return {
+      id: artisan.id,
+      slug: `${artisan.name.toLowerCase().replace(/\s+/g, '-')}-${artisan.id.slice(0, 6)}`,
+      name: artisan.name,
+      company: artisan.name,
+      avatar: artisan.logoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(artisan.name)}&background=1e40af&color=fff&size=200`,
+      city: artisan.city,
+      department: `${artisan.department}`,
+      region: 'France',
+      address: artisan.address,
+      phone: artisan.phone || '01 23 45 67 89',
+      email: `contact@${artisan.name.toLowerCase().replace(/\s+/g, '-')}.fr`,
+      website: artisan.website || undefined,
+      description: artisan.description || '',
+      specialties: artisan.specialties.map((s) => s.name),
+      certifications: artisan.certifications.map((c) => c.name) as any,
+      rating: Number(avgRating.toFixed(1)) || 4.5,
+      reviewCount: artisan.reviews.length,
+      projectCount: artisan.leads.length,
+      yearsExperience: 10,
+      responseTime: '< 2h',
+      verified: true,
+      premium: artisan.subscription?.plan?.toLowerCase().includes('premium') || false,
+      available: true,
+      siret: artisan.siret,
+      since: new Date(artisan.createdAt).getFullYear(),
+      gallery: [] as string[],
+      reviews: artisan.reviews.map((r) => ({
+        id: r.id,
+        author: 'Client',
+        avatar: '',
+        rating: r.rating,
+        date: new Date(r.createdAt).toLocaleDateString('fr-FR'),
+        comment: r.comment || '',
+        project: '',
+      })),
+    }
+  })
+
   return (
     <div className="p-6 lg:p-8 max-w-5xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Artisans matchés</h1>
         <p className="text-slate-500 mt-1">
-          3 artisans RGE sélectionnés pour votre projet d'isolation + pompe à chaleur
+          {matched.length} artisan{matched.length > 1 ? 's' : ''} RGE sélectionné{matched.length > 1 ? 's' : ''} pour votre projet
         </p>
       </div>
 
@@ -25,6 +98,9 @@ export default function ArtisansMatchesPage() {
       </div>
 
       <div className="space-y-5">
+        {matched.length === 0 && (
+          <p className="text-sm text-slate-500">Aucun artisan trouvé pour le moment.</p>
+        )}
         {matched.map((artisan, idx) => (
           <div
             key={artisan.id}
@@ -84,13 +160,13 @@ export default function ArtisansMatchesPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-1.5 mt-3">
-                  {artisan.certifications.map((cert) => (
+                  {artisan.certifications.map((cert: string) => (
                     <span key={cert} className="badge-rge">
                       <CheckCircle className="w-2.5 h-2.5" />
                       {cert}
                     </span>
                   ))}
-                  {artisan.specialties.slice(0, 2).map((spec) => (
+                  {artisan.specialties.slice(0, 2).map((spec: string) => (
                     <span key={spec} className="badge-gray">
                       {spec}
                     </span>

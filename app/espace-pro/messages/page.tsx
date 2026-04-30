@@ -1,65 +1,82 @@
-const CONVERSATIONS = [
-  {
-    id: 1,
-    name: 'Jean Dupont',
-    avatar: 'JD',
-    city: 'Paris 16e',
-    project: 'Isolation combles + PAC',
-    lastMessage: 'Pouvez-vous me donner une estimation du délai de réalisation pour ce projet ?',
-    time: 'Il y a 1h',
-    unread: 1,
-  },
-  {
-    id: 2,
-    name: 'Marie Martin',
-    avatar: 'MM',
-    city: 'Versailles',
-    project: 'Panneaux solaires 6kWc',
-    lastMessage: 'Merci pour le devis, je vais l\'étudier et vous recontacte.',
-    time: 'Hier',
-    unread: 0,
-  },
-  {
-    id: 3,
-    name: 'Pierre Bernard',
-    avatar: 'PB',
-    city: 'Boulogne-Billancourt',
-    project: 'VMC double flux',
-    lastMessage: 'Le devis vous convient-il ? Nous pouvons commencer la semaine prochaine.',
-    time: '2 jours',
-    unread: 0,
-  },
-]
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
 
-const MESSAGES = [
-  {
-    id: 1,
-    from: 'user',
-    text: 'Bonjour, j\'ai bien reçu votre demande de devis pour l\'isolation des combles et une PAC air/eau. Votre logement fait bien 120 m² construit en 1985 ?',
-    time: '14 avril, 10:15',
-  },
-  {
-    id: 2,
-    from: 'client',
-    text: 'Oui c\'est exact. Et nous avons aussi un grenier non isolé d\'environ 60 m².',
-    time: '14 avril, 10:45',
-  },
-  {
-    id: 3,
-    from: 'user',
-    text: 'Parfait. Je prends en compte le grenier dans le devis. Je viendrai faire une visite technique jeudi si vous êtes disponible.',
-    time: '14 avril, 11:02',
-  },
-  {
-    id: 4,
-    from: 'client',
-    text: 'Pouvez-vous me donner une estimation du délai de réalisation pour ce projet ?',
-    time: 'Aujourd\'hui, 09:30',
-  },
-]
+export default async function EspaceProMessagesPage() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-export default function EspaceProMessagesPage() {
-  const active = CONVERSATIONS[0]
+  if (!user) {
+    redirect('/connexion')
+  }
+
+  const messages = await prisma.message.findMany({
+    where: {
+      OR: [{ senderId: user.id }, { receiverId: user.id }],
+    },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  if (messages.length === 0) {
+    return (
+      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-slate-900">Messages</h2>
+          <p className="text-slate-500 mt-1">Aucune conversation pour le moment.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const conversationsMap = new Map<string, typeof messages>()
+  for (const msg of messages) {
+    const partnerId = msg.senderId === user.id ? msg.receiverId : msg.senderId
+    if (!conversationsMap.has(partnerId)) {
+      conversationsMap.set(partnerId, [])
+    }
+    conversationsMap.get(partnerId)!.push(msg)
+  }
+
+  const partnerIds = Array.from(conversationsMap.keys())
+  const partners = await prisma.user.findMany({
+    where: { id: { in: partnerIds } },
+    include: { profile: true, artisan: true },
+  })
+  const partnerMap = new Map(partners.map((p) => [p.id, p]))
+
+  const conversations = Array.from(conversationsMap.entries()).map(([partnerId, msgs]) => {
+    const partner = partnerMap.get(partnerId)
+    const name =
+      partner?.artisan?.name ||
+      `${partner?.profile?.firstName || ''} ${partner?.profile?.lastName || ''}`.trim() ||
+      partner?.email ||
+      'Utilisateur'
+    const initials = name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .substring(0, 2)
+      .toUpperCase()
+    const lastMsg = msgs[msgs.length - 1]
+    const unread = msgs.filter((m) => m.receiverId === user.id && !m.read).length
+
+    return {
+      id: partnerId,
+      name,
+      avatar: initials,
+      city: partner?.profile?.city || partner?.artisan?.city || '',
+      project: partner?.artisan?.name ? '' : '',
+      lastMessage: lastMsg.content,
+      time: formatTimeAgo(lastMsg.createdAt),
+      unread,
+    }
+  })
+
+  const active = conversations[0]
+
+  const activeMessages = messages.filter(
+    (m) => m.senderId === active.id || m.receiverId === active.id
+  )
 
   return (
     <div className="h-[calc(100vh-64px)] flex">
@@ -74,7 +91,7 @@ export default function EspaceProMessagesPage() {
           />
         </div>
         <div className="flex-1 overflow-y-auto">
-          {CONVERSATIONS.map((conv) => (
+          {conversations.map((conv) => (
             <div
               key={conv.id}
               className={`p-4 border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors ${conv.id === active.id ? 'bg-primary-50 border-l-2 border-l-primary-600' : ''}`}
@@ -88,7 +105,7 @@ export default function EspaceProMessagesPage() {
                     <p className="text-sm font-semibold text-slate-900">{conv.name}</p>
                     <span className="text-xs text-slate-400">{conv.time}</span>
                   </div>
-                  <p className="text-xs text-primary-600 font-medium truncate">{conv.project}</p>
+                  <p className="text-xs text-primary-600 font-medium truncate">{conv.project || 'Projet'}</p>
                   <p className="text-xs text-slate-500 truncate mt-0.5">{conv.lastMessage}</p>
                 </div>
                 {conv.unread > 0 && (
@@ -110,24 +127,26 @@ export default function EspaceProMessagesPage() {
           </div>
           <div>
             <p className="font-semibold text-slate-900">{active.name}</p>
-            <p className="text-xs text-slate-500">{active.city} — {active.project}</p>
+            <p className="text-xs text-slate-500">{active.city} — {active.project || 'Projet'}</p>
           </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {MESSAGES.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.from === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-sm flex flex-col gap-1 ${msg.from === 'user' ? 'items-end' : 'items-start'}`}>
+          {activeMessages.map((msg) => (
+            <div key={msg.id} className={`flex ${msg.senderId === user.id ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-sm flex flex-col gap-1 ${msg.senderId === user.id ? 'items-end' : 'items-start'}`}>
                 <div
                   className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    msg.from === 'user'
+                    msg.senderId === user.id
                       ? 'bg-primary-600 text-white rounded-br-sm'
                       : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'
                   }`}
                 >
-                  {msg.text}
+                  {msg.content}
                 </div>
-                <span className="text-xs text-slate-400">{msg.time}</span>
+                <span className="text-xs text-slate-400">
+                  {msg.createdAt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
             </div>
           ))}
@@ -148,4 +167,19 @@ export default function EspaceProMessagesPage() {
       </div>
     </div>
   )
+}
+
+function formatTimeAgo(date: Date): string {
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 1) return "À l'instant"
+  if (diffMins < 60) return `Il y a ${diffMins}min`
+  if (diffHours < 24) return `Il y a ${diffHours}h`
+  if (diffDays === 1) return 'Hier'
+  if (diffDays < 7) return `Il y a ${diffDays} jours`
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }

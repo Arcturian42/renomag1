@@ -1,4 +1,5 @@
 import { ArrowUp, ArrowDown, Users, Euro, TrendingUp, Zap, Bot } from 'lucide-react'
+import { getKPIs } from '@/app/actions/data'
 
 const MONTHLY = [
   { month: 'Nov', leads: 680, artisans: 2180, arr: 145000 },
@@ -16,8 +17,44 @@ const CHANNEL_DATA = [
   { channel: 'Recommandations', leads: 77, pct: 9, color: 'bg-purple-500' },
 ]
 
-export default function AdminAnalyticsPage() {
+export default async function AdminAnalyticsPage() {
+  const kpis = await getKPIs()
   const maxLeads = Math.max(...MONTHLY.map((d) => d.leads))
+
+  const kpiCards = [
+    {
+      label: 'Artisans actifs',
+      value: kpis.artisanCount.toLocaleString('fr-FR'),
+      change: `+${kpis.usersThisMonth} ce mois`,
+      up: true,
+      icon: Users,
+      color: 'text-primary-600 bg-primary-50',
+    },
+    {
+      label: 'Leads générés',
+      value: kpis.leadCount.toLocaleString('fr-FR'),
+      change: `+${kpis.leadsThisMonth} ce mois`,
+      up: true,
+      icon: TrendingUp,
+      color: 'text-eco-600 bg-eco-50',
+    },
+    {
+      label: 'ARR estimé',
+      value: '184 000€',
+      change: '+22% vs M-1',
+      up: true,
+      icon: Euro,
+      color: 'text-accent-600 bg-accent-50',
+    },
+    {
+      label: 'Trafic organique',
+      value: '48 200',
+      change: '+34% vs M-1',
+      up: true,
+      icon: Zap,
+      color: 'text-purple-600 bg-purple-50',
+    },
+  ]
 
   return (
     <div className="p-6 lg:p-8">
@@ -35,12 +72,7 @@ export default function AdminAnalyticsPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {[
-          { label: 'Artisans actifs', value: '2 418', change: '+47 ce mois', up: true, icon: Users, color: 'text-primary-600 bg-primary-50' },
-          { label: 'Leads générés', value: '8 342', change: '+312 cette semaine', up: true, icon: TrendingUp, color: 'text-eco-600 bg-eco-50' },
-          { label: 'ARR estimé', value: '184 000€', change: '+22% vs M-1', up: true, icon: Euro, color: 'text-accent-600 bg-accent-50' },
-          { label: 'Trafic organique', value: '48 200', change: '+34% vs M-1', up: true, icon: Zap, color: 'text-purple-600 bg-purple-50' },
-        ].map((kpi) => {
+        {kpiCards.map((kpi) => {
           const Icon = kpi.icon
           return (
             <div key={kpi.label} className="bg-white rounded-xl border border-slate-200 p-5">
@@ -69,7 +101,7 @@ export default function AdminAnalyticsPage() {
           </div>
           <div className="text-right">
             <p className="text-xl font-bold text-primary-700">184 000€</p>
-            <p className="text-xs text-slate-500">36,8% de l'objectif</p>
+            <p className="text-xs text-slate-500">36,8% de l&apos;objectif</p>
           </div>
         </div>
         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -103,7 +135,9 @@ export default function AdminAnalyticsPage() {
               <div key={ch.channel}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-slate-700">{ch.channel}</span>
-                  <span className="font-semibold text-slate-900">{ch.leads} <span className="text-slate-400 font-normal">({ch.pct}%)</span></span>
+                  <span className="font-semibold text-slate-900">
+                    {ch.leads} <span className="text-slate-400 font-normal">({ch.pct}%)</span>
+                  </span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${ch.color}`} style={{ width: `${ch.pct}%` }} />
