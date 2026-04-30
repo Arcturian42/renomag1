@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Menu, X, ChevronDown, Zap, Phone } from 'lucide-react'
+import { Menu, X, ChevronDown, Zap, Phone, LogOut, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logout } from '@/app/actions/auth'
 
 const NAV_LINKS = [
   {
@@ -24,16 +25,34 @@ const NAV_LINKS = [
       { label: "MaPrimeRénov'", href: '/aides#maprimrenov' },
       { label: 'CEE', href: '/aides#cee' },
       { label: 'Éco-PTZ', href: '/aides#eco-ptz' },
-      { label: 'Simulateur d\'aides', href: '/devis' },
+      { label: "Simulateur d'aides", href: '/devis' },
     ],
   },
   { label: 'Blog', href: '/blog' },
   { label: 'Comment ça marche', href: '/comment-ca-marche' },
 ]
 
-export default function Navbar() {
+type NavbarUser = {
+  email: string
+  role: string
+  firstName?: string
+  lastName?: string
+} | null
+
+export default function Navbar({ user }: { user?: NavbarUser }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+
+  const displayName = user?.firstName
+    ? `${user.firstName} ${user.lastName || ''}`.trim()
+    : user?.email?.split('@')[0] || 'Utilisateur'
+
+  const dashboardHref =
+    user?.role === 'ADMIN'
+      ? '/admin'
+      : user?.role === 'ARTISAN'
+        ? '/espace-pro'
+        : '/espace-proprietaire'
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
@@ -103,12 +122,35 @@ export default function Navbar() {
               <Phone className="w-3.5 h-3.5" />
               01 23 45 67 89
             </a>
-            <Link href="/connexion" className="btn-ghost text-xs py-2 px-3">
-              Connexion
-            </Link>
-            <Link href="/devis" className="btn-accent text-xs py-2 px-4">
-              Devis gratuit
-            </Link>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href={dashboardHref}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-primary-800 transition-colors px-3 py-2"
+                >
+                  <User className="w-4 h-4" />
+                  {displayName}
+                </Link>
+                <form action={logout}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-red-600 transition-colors px-2 py-2"
+                    title="Déconnexion"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <>
+                <Link href="/connexion" className="btn-ghost text-xs py-2 px-3">
+                  Connexion
+                </Link>
+                <Link href="/devis" className="btn-accent text-xs py-2 px-4">
+                  Devis gratuit
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -150,12 +192,35 @@ export default function Navbar() {
               </div>
             ))}
             <div className="pt-3 flex flex-col gap-2 px-4">
-              <Link href="/connexion" className="btn-secondary text-center text-sm py-2.5">
-                Connexion
-              </Link>
-              <Link href="/devis" className="btn-accent text-center text-sm py-2.5">
-                Devis gratuit
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href={dashboardHref}
+                    className="btn-secondary text-center text-sm py-2.5"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Mon espace
+                  </Link>
+                  <form action={logout} className="w-full">
+                    <button
+                      type="submit"
+                      className="w-full btn-ghost text-center text-sm py-2.5 flex items-center justify-center gap-2"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Déconnexion
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <Link href="/connexion" className="btn-secondary text-center text-sm py-2.5">
+                    Connexion
+                  </Link>
+                  <Link href="/devis" className="btn-accent text-center text-sm py-2.5">
+                    Devis gratuit
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}

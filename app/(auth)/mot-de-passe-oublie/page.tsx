@@ -1,11 +1,19 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { resetPassword } from '@/app/actions/auth'
 
 export const metadata: Metadata = {
   title: 'Mot de passe oublié — RENOMAG',
 }
 
-export default function MotDePasseOubliePage() {
+export default function MotDePasseOubliePage({
+  searchParams,
+}: {
+  searchParams: { error?: string; message?: string }
+}) {
+  const error = searchParams.error
+  const message = searchParams.message
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
@@ -20,15 +28,28 @@ export default function MotDePasseOubliePage() {
             </p>
           </div>
 
-          <form className="space-y-5">
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+          {message && (
+            <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">
+              {message}
+            </div>
+          )}
+
+          <form action={resetPassword} className="space-y-5">
             <div>
               <label className="label" htmlFor="email">Adresse email</label>
               <input
                 id="email"
+                name="email"
                 type="email"
                 className="input-field"
                 placeholder="vous@exemple.fr"
                 autoComplete="email"
+                required
               />
             </div>
 

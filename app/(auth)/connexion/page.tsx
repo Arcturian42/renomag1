@@ -1,12 +1,20 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Zap, ArrowRight } from 'lucide-react'
+import { login } from '@/app/actions/auth'
 
 export const metadata: Metadata = {
   title: 'Connexion — RENOMAG',
 }
 
-export default function ConnexionPage() {
+export default function ConnexionPage({
+  searchParams,
+}: {
+  searchParams: { error?: string; message?: string }
+}) {
+  const error = searchParams.error
+  const message = searchParams.message
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Nav */}
@@ -33,6 +41,17 @@ export default function ConnexionPage() {
               Connectez-vous à votre espace RENOMAG
             </p>
 
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+            {message && (
+              <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">
+                {message}
+              </div>
+            )}
+
             {/* Social */}
             <div className="space-y-3 mb-6">
               <button className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
@@ -54,19 +73,22 @@ export default function ConnexionPage() {
             </div>
 
             {/* Form */}
-            <form className="space-y-4">
+            <form action={login} className="space-y-4">
               <div>
-                <label className="label">Email</label>
+                <label className="label" htmlFor="email">Email</label>
                 <input
+                  id="email"
+                  name="email"
                   type="email"
                   placeholder="jean.dupont@email.fr"
                   className="input-field"
                   autoComplete="email"
+                  required
                 />
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="label mb-0">Mot de passe</label>
+                  <label className="label mb-0" htmlFor="password">Mot de passe</label>
                   <Link
                     href="/mot-de-passe-oublie"
                     className="text-xs text-primary-600 hover:text-primary-800"
@@ -75,10 +97,14 @@ export default function ConnexionPage() {
                   </Link>
                 </div>
                 <input
+                  id="password"
+                  name="password"
                   type="password"
                   placeholder="••••••••"
                   className="input-field"
                   autoComplete="current-password"
+                  required
+                  minLength={6}
                 />
               </div>
 
@@ -86,6 +112,7 @@ export default function ConnexionPage() {
                 <input
                   type="checkbox"
                   id="remember"
+                  name="remember"
                   className="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                 />
                 <label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">
