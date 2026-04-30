@@ -1,11 +1,11 @@
 import { requireDashboardAuth } from '@/lib/dashboard-auth'
 import DashboardMobileWrapper from '@/components/dashboard/DashboardMobileWrapper'
+import LogoutLink from '@/components/dashboard/LogoutLink'
 import {
   LayoutDashboard,
   Users,
   TrendingUp,
   BarChart3,
-  LogOut,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -13,10 +13,6 @@ const NAV_ITEMS = [
   { label: 'Utilisateurs', href: '/dashboard-prive/utilisateurs', icon: Users },
   { label: 'Leads', href: '/dashboard-prive/leads', icon: TrendingUp },
   { label: 'Répartition', href: '/dashboard-prive/repartition', icon: BarChart3 },
-]
-
-const FOOTER_ITEMS = [
-  { label: 'Déconnexion', href: '/dashboard-prive?logout=1', icon: LogOut },
 ]
 
 export default function PrivateDashboardLayout({
@@ -29,7 +25,7 @@ export default function PrivateDashboardLayout({
   return (
     <DashboardMobileWrapper
       navItems={NAV_ITEMS}
-      footerItems={FOOTER_ITEMS}
+      footerExtra={<LogoutLink />}
       title="Dashboard Privé"
       userInitials="PR"
       userName="Administrateur"

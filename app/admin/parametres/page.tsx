@@ -17,16 +17,16 @@ export default function AdminParametresPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">Nom de la plateforme</label>
-              <input type="text" className="input-field" defaultValue="RENOMAG" />
+              <label className="label" htmlFor="nom-de-la-plateforme">Nom de la plateforme</label>
+              <input id="nom-de-la-plateforme" type="text" className="input-field" defaultValue="RENOMAG" />
             </div>
             <div>
-              <label className="label">Email support</label>
-              <input type="email" className="input-field" defaultValue="contact@renomag.fr" />
+              <label className="label" htmlFor="email-support">Email support</label>
+              <input id="email-support" type="email" className="input-field" defaultValue="contact@renomag.fr" />
             </div>
             <div>
-              <label className="label">Nombre max de devis par lead</label>
-              <select className="input-field">
+              <label className="label" htmlFor="nombre-max-de-devis-par-lead">Nombre max de devis par lead</label>
+              <select id="nombre-max-de-devis-par-lead" className="input-field">
                 <option>2</option>
                 <option selected>3</option>
                 <option>4</option>
@@ -34,8 +34,8 @@ export default function AdminParametresPage() {
               </select>
             </div>
             <div>
-              <label className="label">Délai de réponse artisan (heures)</label>
-              <input type="number" className="input-field" defaultValue="48" />
+              <label className="label" htmlFor="dlai-de-rponse-artisan-heures">Délai de réponse artisan (heures)</label>
+              <input id="dlai-de-rponse-artisan-heures" type="number" className="input-field" defaultValue="48" />
             </div>
           </div>
           <div className="mt-4">
@@ -123,20 +123,20 @@ export default function AdminParametresPage() {
           <div className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="label">Email administrateur</label>
-                <input type="email" className="input-field" defaultValue="admin@renomag.fr" />
+                <label className="label" htmlFor="email-administrateur">Email administrateur</label>
+              <input id="email-administrateur" type="email" className="input-field" defaultValue="admin@renomag.fr" />
               </div>
               <div>
-                <label className="label">Authentification 2FA</label>
-                <select className="input-field">
+                <label className="label" htmlFor="authentification-2fa">Authentification 2FA</label>
+              <select id="authentification-2fa" className="input-field">
                   <option>Activé (recommandé)</option>
                   <option>Désactivé</option>
                 </select>
               </div>
             </div>
             <div>
-              <label className="label">IPs autorisées pour l'admin (une par ligne)</label>
-              <textarea className="input-field h-20 resize-none" defaultValue="0.0.0.0/0" />
+              <label className="label" htmlFor="ips-autorises-pour-ladmin-une-">IPs autorisées pour l'admin (une par ligne)</label>
+              <textarea id="ips-autorises-pour-ladmin-une-" className="input-field h-20 resize-none" defaultValue="0.0.0.0/0" />
             </div>
           </div>
           <div className="mt-5 flex justify-end">

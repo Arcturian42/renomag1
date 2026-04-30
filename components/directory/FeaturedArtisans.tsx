@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { ARTISANS } from '@/lib/data/artisans'
+import { getFeaturedArtisans } from '@/lib/data/db'
 import ArtisanCard from './ArtisanCard'
 import { ArrowRight } from 'lucide-react'
 
-export default function FeaturedArtisans() {
-  const featured = ARTISANS.filter((a) => a.premium).slice(0, 3)
+export default async function FeaturedArtisans() {
+  const featured = await getFeaturedArtisans()
 
   return (
     <section className="py-20 bg-slate-50">

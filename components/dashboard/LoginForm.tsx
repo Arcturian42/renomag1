@@ -96,8 +96,6 @@ export default function LoginForm() {
           <div className="mt-6 text-center">
             <p className="text-xs text-slate-500">
               Cette zone est privée et sécurisée.
-              <br />
-              Toute tentative d&apos;accès non autorisé est enregistrée.
             </p>
           </div>
         </div>

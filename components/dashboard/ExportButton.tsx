@@ -23,7 +23,8 @@ function generateCsv<T extends Record<string, any>>(
       })
       .join(',')
   )
-  return [header, ...rows].join('\n')
+  // BOM UTF-8 pour Excel
+  return '\uFEFF' + [header, ...rows].join('\n')
 }
 
 type ExportButtonProps<T> = {

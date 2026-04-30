@@ -46,8 +46,8 @@ export default function EspaceProParametresPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">Rayon d'intervention (km)</label>
-              <select className="input-field">
+              <label className="label" htmlFor="rayon-dintervention-km">Rayon d'intervention (km)</label>
+              <select id="rayon-dintervention-km" className="input-field">
                 <option>25 km</option>
                 <option>50 km</option>
                 <option selected>75 km</option>
@@ -55,8 +55,8 @@ export default function EspaceProParametresPage() {
               </select>
             </div>
             <div>
-              <label className="label">Budget minimum (€)</label>
-              <input type="number" className="input-field" defaultValue="3000" />
+              <label className="label" htmlFor="budget-minimum-">Budget minimum (€)</label>
+              <input id="budget-minimum-" type="number" className="input-field" defaultValue="3000" />
             </div>
           </div>
           <div className="mt-4">
@@ -90,12 +90,12 @@ export default function EspaceProParametresPage() {
           </div>
           <div className="space-y-4">
             <div>
-              <label className="label">Mot de passe actuel</label>
-              <input type="password" className="input-field" placeholder="••••••••" />
+              <label className="label" htmlFor="mot-de-passe-actuel">Mot de passe actuel</label>
+              <input id="mot-de-passe-actuel" type="password" className="input-field" placeholder="••••••••" />
             </div>
             <div>
-              <label className="label">Nouveau mot de passe</label>
-              <input type="password" className="input-field" placeholder="••••••••" />
+              <label className="label" htmlFor="nouveau-mot-de-passe">Nouveau mot de passe</label>
+              <input id="nouveau-mot-de-passe" type="password" className="input-field" placeholder="••••••••" />
             </div>
           </div>
           <div className="mt-5 flex justify-end">
@@ -111,20 +111,20 @@ export default function EspaceProParametresPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="label">Raison sociale</label>
-              <input type="text" className="input-field" defaultValue="ThermoConfort Paris" />
+              <label className="label" htmlFor="raison-sociale">Raison sociale</label>
+              <input id="raison-sociale" type="text" className="input-field" defaultValue="ThermoConfort Paris" />
             </div>
             <div>
-              <label className="label">SIRET</label>
-              <input type="text" className="input-field" defaultValue="123 456 789 00012" />
+              <label className="label" htmlFor="siret">SIRET</label>
+              <input id="siret" type="text" className="input-field" defaultValue="123 456 789 00012" />
             </div>
             <div>
-              <label className="label">Adresse de facturation</label>
-              <input type="text" className="input-field" defaultValue="12 rue de la République, 75011 Paris" />
+              <label className="label" htmlFor="adresse-de-facturation">Adresse de facturation</label>
+              <input id="adresse-de-facturation" type="text" className="input-field" defaultValue="12 rue de la République, 75011 Paris" />
             </div>
             <div>
-              <label className="label">Numéro de TVA intra.</label>
-              <input type="text" className="input-field" defaultValue="FR12 123456789" />
+              <label className="label" htmlFor="numro-de-tva-intra">Numéro de TVA intra.</label>
+              <input id="numro-de-tva-intra" type="text" className="input-field" defaultValue="FR12 123456789" />
             </div>
           </div>
           <div className="mt-5 flex justify-end">

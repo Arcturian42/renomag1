@@ -2,11 +2,17 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getArticleBySlug, getArticles } from '@/app/actions/data'
+import { getArticles, getArticleBySlug } from '@/lib/data/db'
 import { formatDate } from '@/lib/utils'
+import ArticleJsonLd from '@/components/seo/ArticleJsonLd'
 import { Clock, Calendar, ArrowLeft, Tag, Share2 } from 'lucide-react'
 
 type Props = { params: { slug: string } }
+
+export async function generateStaticParams() {
+  const articles = await getArticles()
+  return articles.map((a) => ({ slug: a.slug }))
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const article = await getArticleBySlug(params.slug)
@@ -22,12 +28,13 @@ export default async function ArticlePage({ params }: Props) {
   if (!article) notFound()
 
   const allArticles = await getArticles()
-  const related = allArticles
-    .filter((a) => a.id !== article.id && a.category === article.category)
-    .slice(0, 3)
+  const related = allArticles.filter(
+    (a) => a.id !== article.id && a.category === article.category
+  ).slice(0, 3)
 
   return (
     <div className="bg-white min-h-screen">
+      <ArticleJsonLd article={article} />
       {/* Hero image */}
       <div className="relative h-72 md:h-96 bg-slate-200">
         <Image
@@ -160,7 +167,7 @@ export default async function ArticlePage({ params }: Props) {
               {/* CTA */}
               <div className="bg-primary-800 rounded-xl p-5 text-white">
                 <p className="text-sm font-semibold mb-2">
-                  Prêt à passer à l&apos;action ?
+                  Prêt à passer à l'action ?
                 </p>
                 <p className="text-xs text-primary-200 mb-4">
                   Obtenez votre devis gratuit et vos aides calculées.

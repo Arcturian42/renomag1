@@ -8,6 +8,7 @@ import Testimonials from '@/components/home/Testimonials'
 import CTASection from '@/components/home/CTASection'
 import FeaturedArtisans from '@/components/directory/FeaturedArtisans'
 import FeaturedArticles from '@/components/blog/FeaturedArticles'
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd'
 
 export const metadata: Metadata = {
   title: "RENOMAG — Rénovation énergétique : trouvez votre artisan RGE et vos aides",
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <OrganizationJsonLd />
       <Hero />
       <Stats />
       <HowItWorks />

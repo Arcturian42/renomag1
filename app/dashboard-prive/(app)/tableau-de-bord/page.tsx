@@ -12,11 +12,11 @@ export default async function TableauDeBordPage() {
   const [users, leads] = await Promise.all([getUsers(), getLeads()])
   const kpis = getKpis(users, leads)
 
-  const recentLeads = leads
+  const recentLeads = [...leads]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 8)
 
-  const recentUsers = users
+  const recentUsers = [...users]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)
 

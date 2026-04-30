@@ -115,7 +115,7 @@ export default async function ArtisansMatchesPage() {
             )}
             <div className="flex items-start gap-4">
               <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-100 flex-shrink-0">
-                <Image src={artisan.avatar} alt={artisan.name} fill className="object-cover" unoptimized />
+                <Image src={artisan.avatar} alt={artisan.name} fill className="object-cover" sizes="48px" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-3">

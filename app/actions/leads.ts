@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { calculateLeadScore } from '@/src/lib/scoring'
+import { ratelimit, getClientIdentifier, RateLimitError } from '@/lib/rate-limit'
 
 const leadSchema = z.object({
   firstName: z.string().min(1, 'Le prénom est requis').max(100),
@@ -25,6 +26,17 @@ export type LeadFormData = z.infer<typeof leadSchema>
 
 export async function submitLead(formData: unknown) {
   try {
+    // Rate limiting: 5 leads per minute per IP
+    const identifier = await getClientIdentifier()
+    const { success: allowed, reset } = await ratelimit.publicForm.limit(identifier)
+
+    if (!allowed) {
+      throw new RateLimitError(
+        'Vous avez envoyé trop de demandes. Veuillez réessayer dans une minute.',
+        reset
+      )
+    }
+
     const parsed = leadSchema.safeParse(formData)
 
     if (!parsed.success) {
@@ -79,6 +91,9 @@ export async function submitLead(formData: unknown) {
 
     return { success: true, data: inserted }
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      return { success: false, error: error.message, rateLimited: true, resetAt: error.resetAt }
+    }
     const message = error instanceof Error ? error.message : 'Erreur inconnue'
     return { success: false, error: message }
   }
