@@ -1,7 +1,9 @@
+export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { Bell, FileText, MessageSquare, AlertCircle, CheckCircle, Star } from 'lucide-react'
+
 
 const ICON_MAP: Record<string, { icon: typeof FileText; color: string }> = {
   devis: { icon: FileText, color: 'text-primary-600 bg-primary-50' },

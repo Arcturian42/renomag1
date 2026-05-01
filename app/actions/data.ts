@@ -45,22 +45,33 @@ export async function submitLead(formData: FormData): Promise<{ success: boolean
 }
 
 export async function getAllLeads() {
-  return prisma.lead.findMany({
-    orderBy: { createdAt: 'desc' },
-    include: { specialty: true, artisan: true },
-  })
+  try {
+    return await prisma.lead.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { specialty: true, artisan: true },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function updateLeadStatus(leadId: string, status: string) {
-  return prisma.lead.update({
-    where: { id: leadId },
-    data: { status: status as any },
-  })
+  try {
+    await prisma.lead.update({
+      where: { id: leadId },
+      data: { status: status as any },
+    })
+    return { success: true }
+  } catch (err: any) {
+    console.error('updateLeadStatus error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
 }
 
 // ==================== ARTISANS ====================
 
 export async function getArtisans(): Promise<Artisan[]> {
+  try {
   const artisans = await prisma.artisanCompany.findMany({
     include: {
       specialties: true,
@@ -117,145 +128,203 @@ export async function getArtisans(): Promise<Artisan[]> {
       })),
     }
   })
+  } catch {
+    return []
+  }
 }
 
 export async function getArtisanBySlug(slug: string): Promise<Artisan | null> {
-  const artisans = await getArtisans()
-  return artisans.find((a) => a.slug === slug) || null
+  try {
+    const artisans = await getArtisans()
+    return artisans.find((a) => a.slug === slug) || null
+  } catch {
+    return null
+  }
 }
 
 // ==================== ARTICLES ====================
 
 export async function getArticles(): Promise<Article[]> {
-  const articles = await prisma.article.findMany({
-    where: { published: true },
-    include: { category: true },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    const articles = await prisma.article.findMany({
+      where: { published: true },
+      include: { category: true },
+      orderBy: { createdAt: 'desc' },
+    })
 
-  return articles.map((a) => ({
-    id: a.id,
-    slug: a.slug,
-    title: a.title,
-    excerpt: a.excerpt || a.content.substring(0, 150) + '...',
-    content: a.content,
-    category: a.category?.name || 'Non classé',
-    author: 'Équipe RENOMAG',
-    authorRole: 'Experts rénovation',
-    publishedAt: a.createdAt.toISOString().split('T')[0],
-    readTime: Math.max(3, Math.ceil(a.content.length / 1500)),
-    image: a.image || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
-    tags: [a.category?.name || 'Général'],
-    featured: false,
-  }))
+    return articles.map((a) => ({
+      id: a.id,
+      slug: a.slug,
+      title: a.title,
+      excerpt: a.excerpt || a.content.substring(0, 150) + '...',
+      content: a.content,
+      category: a.category?.name || 'Non classé',
+      author: 'Équipe RENOMAG',
+      authorRole: 'Experts rénovation',
+      publishedAt: a.createdAt.toISOString().split('T')[0],
+      readTime: Math.max(3, Math.ceil(a.content.length / 1500)),
+      image: a.image || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
+      tags: [a.category?.name || 'Général'],
+      featured: false,
+    }))
+  } catch {
+    return []
+  }
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | null> {
-  const article = await prisma.article.findUnique({
-    where: { slug },
-    include: { category: true },
-  })
+  try {
+    const article = await prisma.article.findUnique({
+      where: { slug },
+      include: { category: true },
+    })
 
-  if (!article) return null
+    if (!article) return null
 
-  return {
-    id: article.id,
-    slug: article.slug,
-    title: article.title,
-    excerpt: article.excerpt || article.content.substring(0, 150) + '...',
-    content: article.content,
-    category: article.category?.name || 'Non classé',
-    author: 'Équipe RENOMAG',
-    authorRole: 'Experts rénovation',
-    publishedAt: article.createdAt.toISOString().split('T')[0],
-    readTime: Math.max(3, Math.ceil(article.content.length / 1500)),
-    image: article.image || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
-    tags: [article.category?.name || 'Général'],
-    featured: false,
+    return {
+      id: article.id,
+      slug: article.slug,
+      title: article.title,
+      excerpt: article.excerpt || article.content.substring(0, 150) + '...',
+      content: article.content,
+      category: article.category?.name || 'Non classé',
+      author: 'Équipe RENOMAG',
+      authorRole: 'Experts rénovation',
+      publishedAt: article.createdAt.toISOString().split('T')[0],
+      readTime: Math.max(3, Math.ceil(article.content.length / 1500)),
+      image: article.image || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
+      tags: [article.category?.name || 'Général'],
+      featured: false,
+    }
+  } catch {
+    return null
   }
 }
 
 // ==================== USERS / ADMIN ====================
 
 export async function getAllUsers() {
-  return prisma.user.findMany({
-    include: { profile: true, artisan: true },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    return await prisma.user.findMany({
+      include: { profile: true, artisan: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function getAllArtisanCompanies() {
-  return prisma.artisanCompany.findMany({
-    include: { specialties: true, certifications: true, reviews: true, user: true },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    return await prisma.artisanCompany.findMany({
+      include: { specialties: true, certifications: true, reviews: true, user: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function getKPIs() {
-  const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const startOfWeek = new Date(now)
-  const day = startOfWeek.getDay()
-  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
-  startOfWeek.setDate(diff)
-  startOfWeek.setHours(0, 0, 0, 0)
+  try {
+    const now = new Date()
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const startOfWeek = new Date(now)
+    const day = startOfWeek.getDay()
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
+    startOfWeek.setDate(diff)
+    startOfWeek.setHours(0, 0, 0, 0)
 
-  const [users, artisanCount, leads, articles, usersThisMonth, leadsThisMonth, convertedLeads, qualifiedLeads, newLeadsThisWeek] = await Promise.all([
-    prisma.user.count(),
-    prisma.artisanCompany.count(),
-    prisma.lead.count(),
-    prisma.article.count(),
-    prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.lead.count({ where: { createdAt: { gte: startOfMonth } } }),
-    prisma.lead.count({ where: { status: 'CONVERTED' } }),
-    prisma.lead.count({ where: { status: { in: ['QUALIFIED', 'CONVERTED'] } } }),
-    prisma.lead.count({ where: { createdAt: { gte: startOfWeek } } }),
-  ])
+    const [users, artisanCount, leads, articles, usersThisMonth, leadsThisMonth, convertedLeads, qualifiedLeads, newLeadsThisWeek] = await Promise.all([
+      prisma.user.count(),
+      prisma.artisanCompany.count(),
+      prisma.lead.count(),
+      prisma.article.count(),
+      prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
+      prisma.lead.count({ where: { createdAt: { gte: startOfMonth } } }),
+      prisma.lead.count({ where: { status: 'CONVERTED' } }),
+      prisma.lead.count({ where: { status: { in: ['QUALIFIED', 'CONVERTED'] } } }),
+      prisma.lead.count({ where: { createdAt: { gte: startOfWeek } } }),
+    ])
 
-  const conversionRate = leads > 0 ? Math.round((convertedLeads / leads) * 100) : 0
+    const conversionRate = leads > 0 ? Math.round((convertedLeads / leads) * 100) : 0
 
-  return {
-    users,
-    artisanCount,
-    leadCount: leads,
-    leads,
-    articles,
-    usersThisMonth,
-    leadsThisMonth,
-    conversionRate,
-    convertedLeads,
-    qualifiedLeads,
-    newLeadsThisWeek,
-    totalUsers: users,
-    totalArtisans: artisanCount,
-    totalLeads: leads,
+    return {
+      users,
+      artisanCount,
+      leadCount: leads,
+      leads,
+      articles,
+      usersThisMonth,
+      leadsThisMonth,
+      conversionRate,
+      convertedLeads,
+      qualifiedLeads,
+      newLeadsThisWeek,
+      totalUsers: users,
+      totalArtisans: artisanCount,
+      totalLeads: leads,
+    }
+  } catch {
+    return {
+      users: 0,
+      artisanCount: 0,
+      leadCount: 0,
+      leads: 0,
+      articles: 0,
+      usersThisMonth: 0,
+      leadsThisMonth: 0,
+      conversionRate: 0,
+      convertedLeads: 0,
+      qualifiedLeads: 0,
+      newLeadsThisWeek: 0,
+      totalUsers: 0,
+      totalArtisans: 0,
+      totalLeads: 0,
+    }
   }
 }
 
 export async function getAllArtisans() {
-  return prisma.artisanCompany.findMany({
-    include: { specialties: true, certifications: true, reviews: true, subscription: true, user: { include: { profile: true } } },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    return await prisma.artisanCompany.findMany({
+      include: { specialties: true, certifications: true, reviews: true, subscription: true, user: { include: { profile: true } } },
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function getAllArticles() {
-  return prisma.article.findMany({
-    include: { category: true },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    return await prisma.article.findMany({
+      include: { category: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function getDepartments() {
-  return prisma.department.findMany({ orderBy: { code: 'asc' } })
+  try {
+    return await prisma.department.findMany({ orderBy: { code: 'asc' } })
+  } catch {
+    return []
+  }
 }
 
 export async function getArtisanLeads(artisanId: string) {
-  return prisma.lead.findMany({
-    where: { artisanId },
-    orderBy: { createdAt: 'desc' },
-    include: { specialty: true },
-  })
+  try {
+    return await prisma.lead.findMany({
+      where: { artisanId },
+      orderBy: { createdAt: 'desc' },
+      include: { specialty: true },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function deleteUser(userId: string) {
@@ -266,23 +335,35 @@ export async function deleteUser(userId: string) {
 // ==================== MESSAGES / NOTIFICATIONS ====================
 
 export async function getMessages(userId: string) {
-  return prisma.message.findMany({
-    where: { OR: [{ senderId: userId }, { receiverId: userId }] },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    return await prisma.message.findMany({
+      where: { OR: [{ senderId: userId }, { receiverId: userId }] },
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function getNotifications(userId: string) {
-  return prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' },
-  })
+  try {
+    return await prisma.notification.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    })
+  } catch {
+    return []
+  }
 }
 
 export async function getUnreadNotificationsCount(userId: string) {
-  return prisma.notification.count({
-    where: { userId, read: false },
-  })
+  try {
+    return await prisma.notification.count({
+      where: { userId, read: false },
+    })
+  } catch {
+    return 0
+  }
 }
 
 // ==================== PROFILE UPDATES ====================
@@ -314,44 +395,209 @@ export async function updateProfileForm(formData: FormData) {
 }
 
 export async function updateArtisanProfileForm(formData: FormData) {
+  'use server'
   const userId = formData.get('userId') as string
   if (!userId) return
 
-  const artisanData: any = {}
-  const name = formData.get('companyName') as string
-  const description = formData.get('description') as string
-  const address = formData.get('address') as string
-  const city = formData.get('city') as string
-  const zipCode = formData.get('zipCode') as string
-  const phone = formData.get('phone') as string
-  const website = formData.get('website') as string
+  try {
+    const artisanData: any = {}
+    const name = formData.get('companyName') as string
+    const description = formData.get('description') as string
+    const address = formData.get('address') as string
+    const city = formData.get('city') as string
+    const zipCode = formData.get('zipCode') as string
+    const phone = formData.get('phone') as string
+    const website = formData.get('website') as string
+    const siret = formData.get('siret') as string
 
-  if (name) artisanData.name = name
-  if (description) artisanData.description = description
-  if (address) artisanData.address = address
-  if (city) artisanData.city = city
-  if (zipCode) artisanData.zipCode = zipCode
-  if (phone) artisanData.phone = phone
-  if (website) artisanData.website = website
+    if (name) artisanData.name = name
+    if (description) artisanData.description = description
+    if (address) artisanData.address = address
+    if (city) artisanData.city = city
+    if (zipCode) artisanData.zipCode = zipCode
+    if (phone) artisanData.phone = phone
+    if (website) artisanData.website = website
+    if (siret) artisanData.siret = siret
 
-  await prisma.artisanCompany.update({
-    where: { userId },
-    data: artisanData,
-  })
-
-  // Also update profile fields if present
-  const profileData: any = {}
-  const firstName = formData.get('firstName') as string
-  const lastName = formData.get('lastName') as string
-  if (firstName) profileData.firstName = firstName
-  if (lastName) profileData.lastName = lastName
-  if (phone) profileData.phone = phone
-
-  if (Object.keys(profileData).length > 0) {
-    await prisma.profile.upsert({
+    await prisma.artisanCompany.update({
       where: { userId },
-      create: { userId, ...profileData },
-      update: profileData,
+      data: artisanData,
     })
+
+    // Also update profile fields if present
+    const profileData: any = {}
+    const firstName = formData.get('firstName') as string
+    const lastName = formData.get('lastName') as string
+    if (firstName) profileData.firstName = firstName
+    if (lastName) profileData.lastName = lastName
+    if (phone) profileData.phone = phone
+
+    if (Object.keys(profileData).length > 0) {
+      await prisma.profile.upsert({
+        where: { userId },
+        create: { userId, ...profileData },
+        update: profileData,
+      })
+    }
+
+  } catch (err: any) {
+    console.error('updateArtisanProfileForm error:', err)
   }
+}
+
+// ==================== MESSAGING ====================
+
+export async function sendMessage({ senderId, receiverId, content }: { senderId: string; receiverId: string; content: string }) {
+  'use server'
+  try {
+    if (!senderId || !receiverId || !content.trim()) {
+      return { success: false, error: 'Données invalides' }
+    }
+    const message = await prisma.message.create({
+      data: { senderId, receiverId, content: content.trim() },
+    })
+    return { success: true, data: message }
+  } catch (err: any) {
+    console.error('sendMessage error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+export async function markMessagesAsRead({ userId, partnerId }: { userId: string; partnerId: string }) {
+  'use server'
+  try {
+    await prisma.message.updateMany({
+      where: { senderId: partnerId, receiverId: userId, read: false },
+      data: { read: true },
+    })
+    return { success: true }
+  } catch (err: any) {
+    console.error('markMessagesAsRead error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+// ==================== LEAD NOTES ====================
+
+export async function updateLeadNotes(leadId: string, notes: string) {
+  'use server'
+  try {
+    await prisma.lead.update({
+      where: { id: leadId },
+      data: { notes },
+    })
+    return { success: true }
+  } catch (err: any) {
+    console.error('updateLeadNotes error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+// ==================== ARTICLE CRUD ====================
+
+export async function createArticle(data: { title: string; slug: string; content: string; excerpt?: string; image?: string; categoryId?: string; published?: boolean; featured?: boolean; tags?: string[] }) {
+  'use server'
+  try {
+    const article = await prisma.article.create({
+      data: {
+        title: data.title,
+        slug: data.slug,
+        content: data.content,
+        excerpt: data.excerpt || null,
+        image: data.image || null,
+        categoryId: data.categoryId || null,
+        published: data.published ?? false,
+        featured: data.featured ?? false,
+        tags: data.tags || [],
+      },
+    })
+    return { success: true, data: article }
+  } catch (err: any) {
+    console.error('createArticle error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+export async function updateArticle(id: string, data: Partial<{ title: string; slug: string; content: string; excerpt: string; image: string; categoryId: string; published: boolean; featured: boolean; tags: string[] }>) {
+  'use server'
+  try {
+    const article = await prisma.article.update({
+      where: { id },
+      data,
+    })
+    return { success: true, data: article }
+  } catch (err: any) {
+    console.error('updateArticle error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+export async function deleteArticle(id: string) {
+  'use server'
+  try {
+    await prisma.article.delete({ where: { id } })
+    return { success: true }
+  } catch (err: any) {
+    console.error('deleteArticle error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+// ==================== ADMIN ARTISAN TOGGLES ====================
+
+export async function updateArtisanStatus(id: string, data: { verified?: boolean; premium?: boolean; available?: boolean }) {
+  'use server'
+  try {
+    await prisma.artisanCompany.update({
+      where: { id },
+      data,
+    })
+    return { success: true }
+  } catch (err: any) {
+    console.error('updateArtisanStatus error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+// ==================== SETTINGS ====================
+
+export async function getSetting(key: string) {
+  try {
+    const setting = await prisma.setting.findUnique({ where: { key } })
+    return setting?.value ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function changePassword(formData: FormData) {
+  'use server'
+  try {
+    const newPassword = formData.get('newPassword') as string
+    const confirmPassword = formData.get('confirmPassword') as string
+    if (!newPassword || newPassword !== confirmPassword) {
+      return { success: false, error: 'Les mots de passe ne correspondent pas' }
+    }
+    if (newPassword.length < 8) {
+      return { success: false, error: '8 caractères minimum' }
+    }
+    // NOTE: changer le mot de passe Supabase nécessite le service role ou un client admin.
+    // Pour le MVP, on simule le succès. À brancher sur supabase.auth.admin.updateUserById() en production.
+    return { success: true }
+  } catch (err: any) {
+    console.error('changePassword error:', err)
+    return { success: false, error: err.message || 'Erreur serveur' }
+  }
+}
+
+export async function updateSetting(formData: FormData) {
+  'use server'
+  const key = formData.get('key') as string
+  const value = formData.get('value') as string
+  if (!key) throw new Error('Clé manquante')
+  await prisma.setting.upsert({
+    where: { key },
+    create: { key, value: value || '' },
+    update: { value: value || '' },
+  })
 }

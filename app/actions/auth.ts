@@ -212,3 +212,22 @@ export async function logout() {
   revalidatePath('/', 'layout')
   redirect('/connexion')
 }
+
+export async function changePassword(formData: FormData) {
+  'use server'
+  const supabase = await createClient()
+  const newPassword = formData.get('newPassword') as string
+  const confirmPassword = formData.get('confirmPassword') as string
+
+  if (!newPassword || newPassword.length < 8) {
+    throw new Error('Le mot de passe doit faire au moins 8 caractères.')
+  }
+  if (newPassword !== confirmPassword) {
+    throw new Error('Les mots de passe ne correspondent pas.')
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) {
+    throw new Error(error.message)
+  }
+}

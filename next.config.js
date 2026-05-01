@@ -39,7 +39,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self'",
               "img-src 'self' https: data: blob:",
-              "connect-src 'self' https://*.supabase.co https://app.posthog.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.google.com https://app.posthog.com",
               "frame-src 'none'",
               "form-action 'self'",
               "base-uri 'self'",

@@ -15,11 +15,10 @@ import {
 
 const NAV_ITEMS = [
   { label: 'Vue d\'ensemble', href: '/admin', icon: LayoutDashboard },
-  { label: 'Artisans', href: '/admin/artisans', icon: ShieldCheck, badge: 12 },
+  { label: 'Artisans', href: '/admin/artisans', icon: ShieldCheck },
   { label: 'Leads', href: '/admin/leads', icon: TrendingUp },
   { label: 'Utilisateurs', href: '/admin/utilisateurs', icon: Users },
   { label: 'Contenu', href: '/admin/contenu', icon: FileText },
-  { label: 'Agents Hermes', href: '/admin/agents', icon: Bot, badge: 23 },
   { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { label: 'Paramètres', href: '/admin/parametres', icon: Settings },
 ]

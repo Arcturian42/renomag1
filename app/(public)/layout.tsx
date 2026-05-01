@@ -9,17 +9,21 @@ export default async function PublicLayout({ children }: { children: React.React
 
   let navUser = null
   if (user) {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: { profile: true },
-    })
-    if (dbUser) {
-      navUser = {
-        email: user.email!,
-        role: dbUser.role,
-        firstName: dbUser.profile?.firstName || undefined,
-        lastName: dbUser.profile?.lastName || undefined,
+    try {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        include: { profile: true },
+      })
+      if (dbUser) {
+        navUser = {
+          email: user.email!,
+          role: dbUser.role,
+          firstName: dbUser.profile?.firstName || undefined,
+          lastName: dbUser.profile?.lastName || undefined,
+        }
       }
+    } catch {
+      // Silently ignore DB errors during build or when DB is unavailable
     }
   }
 

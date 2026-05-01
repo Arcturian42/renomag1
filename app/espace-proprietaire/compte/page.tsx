@@ -1,6 +1,32 @@
+export const dynamic = 'force-dynamic'
+
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
+import { updateProfileForm } from '@/app/actions/data'
+import { changePassword } from '@/app/actions/auth'
 import { User, Home, Bell, Shield, LogOut } from 'lucide-react'
 
-export default function ProprietaireComptePage() {
+async function handleChangePassword(formData: FormData) {
+  'use server'
+  await changePassword(formData)
+}
+
+export default async function ProprietaireComptePage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/connexion')
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { profile: true },
+  })
+
+  const profile = dbUser?.profile
+
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
       <div className="mb-8">
@@ -10,132 +36,81 @@ export default function ProprietaireComptePage() {
 
       <div className="space-y-6">
         {/* Personal info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <form action={updateProfileForm} className="bg-white rounded-xl border border-slate-200 p-6">
+          <input type="hidden" name="userId" value={user.id} />
           <div className="flex items-center gap-3 mb-5">
             <User className="w-5 h-5 text-primary-600" />
             <h2 className="font-semibold text-slate-900">Informations personnelles</h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="label" htmlFor="prnom">Prénom</label>
-              <input id="prnom" type="text" className="input-field" defaultValue="Jean" />
+              <label className="label" htmlFor="firstName">Prénom</label>
+              <input id="firstName" name="firstName" type="text" className="input-field" defaultValue={profile?.firstName || ''} />
             </div>
             <div>
-              <label className="label" htmlFor="nom">Nom</label>
-              <input id="nom" type="text" className="input-field" defaultValue="Dupont" />
+              <label className="label" htmlFor="lastName">Nom</label>
+              <input id="lastName" name="lastName" type="text" className="input-field" defaultValue={profile?.lastName || ''} />
             </div>
             <div>
               <label className="label" htmlFor="email">Email</label>
-              <input id="email" type="email" className="input-field" defaultValue="jean.dupont@email.fr" />
+              <input id="email" type="email" className="input-field" defaultValue={dbUser?.email || ''} readOnly />
             </div>
             <div>
-              <label className="label" htmlFor="tlphone">Téléphone</label>
-              <input id="tlphone" type="tel" className="input-field" defaultValue="06 12 34 56 78" />
+              <label className="label" htmlFor="phone">Téléphone</label>
+              <input id="phone" name="phone" type="tel" className="input-field" defaultValue={profile?.phone || ''} />
             </div>
           </div>
           <div className="mt-5 flex justify-end">
-            <button className="btn-primary px-5 py-2.5">Enregistrer</button>
+            <button type="submit" className="btn-primary px-5 py-2.5">Enregistrer</button>
           </div>
-        </div>
+        </form>
 
         {/* Housing info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <form action={updateProfileForm} className="bg-white rounded-xl border border-slate-200 p-6">
+          <input type="hidden" name="userId" value={user.id} />
           <div className="flex items-center gap-3 mb-5">
             <Home className="w-5 h-5 text-primary-600" />
             <h2 className="font-semibold text-slate-900">Mon logement</h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="label" htmlFor="type-de-logement">Type de logement</label>
-              <select id="type-de-logement" className="input-field">
-                <option>Maison individuelle</option>
-                <option>Appartement</option>
-              </select>
+              <label className="label" htmlFor="address">Adresse</label>
+              <input id="address" name="address" type="text" className="input-field" defaultValue={profile?.address || ''} />
             </div>
             <div>
-              <label className="label" htmlFor="surface-m">Surface (m²)</label>
-              <input id="surface-m" type="number" className="input-field" defaultValue="120" />
+              <label className="label" htmlFor="city">Ville</label>
+              <input id="city" name="city" type="text" className="input-field" defaultValue={profile?.city || ''} />
             </div>
             <div>
-              <label className="label" htmlFor="anne-de-construction">Année de construction</label>
-              <input id="anne-de-construction" type="number" className="input-field" defaultValue="1985" />
-            </div>
-            <div>
-              <label className="label" htmlFor="code-postal">Code postal</label>
-              <input id="code-postal" type="text" className="input-field" defaultValue="75016" />
+              <label className="label" htmlFor="zipCode">Code postal</label>
+              <input id="zipCode" name="zipCode" type="text" className="input-field" defaultValue={profile?.zipCode || ''} />
             </div>
           </div>
           <div className="mt-5 flex justify-end">
-            <button className="btn-primary px-5 py-2.5">Enregistrer</button>
+            <button type="submit" className="btn-primary px-5 py-2.5">Enregistrer</button>
           </div>
-        </div>
-
-        {/* Notifications */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <Bell className="w-5 h-5 text-primary-600" />
-            <h2 className="font-semibold text-slate-900">Notifications</h2>
-          </div>
-          <div className="space-y-4">
-            {[
-              { label: 'Nouveau devis reçu', desc: 'Email + SMS', enabled: true },
-              { label: 'Nouveau message artisan', desc: 'Email', enabled: true },
-              { label: 'Rappels administratifs', desc: 'Email', enabled: true },
-              { label: 'Newsletter RENOMAG', desc: 'Email', enabled: false },
-            ].map((notif) => (
-              <div key={notif.label} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-                <div>
-                  <p className="text-sm font-medium text-slate-900">{notif.label}</p>
-                  <p className="text-xs text-slate-400">{notif.desc}</p>
-                </div>
-                <button
-                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${notif.enabled ? 'bg-primary-600' : 'bg-slate-200'}`}
-                >
-                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${notif.enabled ? 'translate-x-5' : 'translate-x-1'}`} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+        </form>
 
         {/* Security */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <form action={handleChangePassword} className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex items-center gap-3 mb-5">
             <Shield className="w-5 h-5 text-primary-600" />
             <h2 className="font-semibold text-slate-900">Sécurité</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <label className="label" htmlFor="mot-de-passe-actuel">Mot de passe actuel</label>
-              <input id="mot-de-passe-actuel" type="password" className="input-field" placeholder="••••••••" />
+              <label className="label" htmlFor="newPassword">Nouveau mot de passe</label>
+              <input id="newPassword" name="newPassword" type="password" className="input-field" placeholder="••••••••" minLength={8} required />
             </div>
             <div>
-              <label className="label" htmlFor="nouveau-mot-de-passe">Nouveau mot de passe</label>
-              <input id="nouveau-mot-de-passe" type="password" className="input-field" placeholder="••••••••" />
-            </div>
-            <div>
-              <label className="label" htmlFor="confirmer-le-nouveau-mot-de-pa">Confirmer le nouveau mot de passe</label>
-              <input id="confirmer-le-nouveau-mot-de-pa" type="password" className="input-field" placeholder="••••••••" />
+              <label className="label" htmlFor="confirmPassword">Confirmer le nouveau mot de passe</label>
+              <input id="confirmPassword" name="confirmPassword" type="password" className="input-field" placeholder="••••••••" minLength={8} required />
             </div>
           </div>
           <div className="mt-5 flex justify-end">
-            <button className="btn-primary px-5 py-2.5">Modifier le mot de passe</button>
+            <button type="submit" className="btn-primary px-5 py-2.5">Modifier le mot de passe</button>
           </div>
-        </div>
-
-        {/* Danger zone */}
-        <div className="bg-red-50 rounded-xl border border-red-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <LogOut className="w-5 h-5 text-red-600" />
-            <h2 className="font-semibold text-red-900">Zone de danger</h2>
-          </div>
-          <p className="text-sm text-red-700 mb-4">
-            La suppression de votre compte est irréversible. Toutes vos données seront effacées.
-          </p>
-          <button className="text-sm font-medium text-red-600 hover:text-red-800 border border-red-300 rounded-lg px-4 py-2 hover:bg-red-100 transition-colors">
-            Supprimer mon compte
-          </button>
-        </div>
+        </form>
       </div>
     </div>
   )

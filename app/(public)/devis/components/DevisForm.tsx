@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowRight, ArrowLeft, Loader2, Calculator, CheckCircle } from 'lucide-react'
-import { calculateSubsidy, formatPrice } from '@/lib/utils'
+import { calculateSubsidy, formatPrice, parseBudget } from '@/lib/utils'
 import { submitLead } from '@/app/actions/leads'
 import { devisSchema, type DevisFormData } from '../schema'
 import TravauxStep from './steps/TravauxStep'
@@ -64,9 +64,9 @@ export default function DevisForm() {
   const estimatedSubsidy =
     workTypes.length > 0 && income && budget
       ? calculateSubsidy(
-          workTypes[0],
+          workTypes,
           income as 'modeste' | 'intermediaire' | 'superieur',
-          Number(budget)
+          parseBudget(budget)
         )
       : null
 
@@ -154,11 +154,11 @@ export default function DevisForm() {
           {currentStep === 'revenus' && <RevenusStep />}
           {currentStep === 'contact' && <ContactStep />}
           {currentStep === 'confirmation' && (
-            <ConfirmationStep estimatedSubsidy={estimatedSubsidy} />
+            <ConfirmationStep estimatedSubsidy={estimatedSubsidy?.total ?? null} />
           )}
 
           {submitError && (
-            <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+            <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700" role="alert" aria-live="polite">
               {submitError}
             </div>
           )}
@@ -211,7 +211,7 @@ export default function DevisForm() {
             {estimatedSubsidy ? (
               <div>
                 <div className="text-3xl font-bold text-eco-600 mb-1">
-                  {formatPrice(estimatedSubsidy)}
+                  {formatPrice(estimatedSubsidy.total)}
                 </div>
                 <p className="text-xs text-slate-400">Estimation indicative</p>
               </div>

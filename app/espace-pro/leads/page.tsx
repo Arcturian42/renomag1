@@ -1,25 +1,46 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Search, Filter, Phone, Mail, MapPin, Euro, Clock } from 'lucide-react'
-import { getArtisanLeads } from '@/app/actions/data'
+import { useState, useEffect, useTransition } from 'react'
+import { Search, Filter, Phone, Mail, MapPin, Euro, Clock, Send } from 'lucide-react'
+import { getArtisanLeads, updateLeadStatus, updateLeadNotes } from '@/app/actions/data'
 import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
 
-type LeadStatus = 'new' | 'contacted' | 'devis_sent' | 'won' | 'lost'
+// Frontend status types (UI labels)
+type UIStatus = 'new' | 'contacted' | 'devis_sent' | 'won' | 'lost'
 
-const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: string }> = {
-  new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700', dot: 'bg-primary-500' },
-  contacted: { label: 'Contacté', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
-  devis_sent: { label: 'Devis envoyé', color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500' },
-  won: { label: 'Gagné', color: 'bg-eco-100 text-eco-700', dot: 'bg-eco-500' },
-  lost: { label: 'Perdu', color: 'bg-red-100 text-red-700', dot: 'bg-red-400' },
+const STATUS_CONFIG: Record<UIStatus, { label: string; color: string; dot: string; dbValue: string }> = {
+  new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700', dot: 'bg-primary-500', dbValue: 'NEW' },
+  contacted: { label: 'Contacté', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500', dbValue: 'CONTACTED' },
+  devis_sent: { label: 'Devis envoyé', color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500', dbValue: 'QUALIFIED' },
+  won: { label: 'Gagné', color: 'bg-eco-100 text-eco-700', dot: 'bg-eco-500', dbValue: 'CONVERTED' },
+  lost: { label: 'Perdu', color: 'bg-red-100 text-red-700', dot: 'bg-red-400', dbValue: 'REJECTED' },
+}
+
+const DB_TO_UI: Record<string, UIStatus> = {
+  NEW: 'new',
+  CONTACTED: 'contacted',
+  QUALIFIED: 'devis_sent',
+  CONVERTED: 'won',
+  REJECTED: 'lost',
+}
+
+function toUIStatus(dbStatus: string): UIStatus {
+  return (DB_TO_UI[dbStatus] as UIStatus) || 'new'
+}
+
+function toDBStatus(uiStatus: UIStatus): string {
+  return STATUS_CONFIG[uiStatus].dbValue
 }
 
 export default function LeadsPage() {
-  const [activeFilter, setActiveFilter] = useState<'all' | LeadStatus>('all')
+  const [activeFilter, setActiveFilter] = useState<'all' | UIStatus>('all')
   const [leads, setLeads] = useState<any[]>([])
   const [selectedLead, setSelectedLead] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [notes, setNotes] = useState('')
+  const [isPending, startTransition] = useTransition()
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
     async function fetchLeads() {
@@ -42,6 +63,7 @@ export default function LeadsPage() {
       setLeads(artisanLeads)
       if (artisanLeads.length > 0) {
         setSelectedLead(artisanLeads[0])
+        setNotes(artisanLeads[0].notes || '')
       }
       setLoading(false)
     }
@@ -51,15 +73,45 @@ export default function LeadsPage() {
 
   const filtered = activeFilter === 'all'
     ? leads
-    : leads.filter((l) => l.status === activeFilter)
+    : leads.filter((l) => toUIStatus(l.status) === activeFilter)
 
   const counts = {
     all: leads.length,
-    new: leads.filter((l) => l.status === 'new').length,
-    contacted: leads.filter((l) => l.status === 'contacted').length,
-    devis_sent: leads.filter((l) => l.status === 'devis_sent').length,
-    won: leads.filter((l) => l.status === 'won').length,
-    lost: leads.filter((l) => l.status === 'lost').length,
+    new: leads.filter((l) => toUIStatus(l.status) === 'new').length,
+    contacted: leads.filter((l) => toUIStatus(l.status) === 'contacted').length,
+    devis_sent: leads.filter((l) => toUIStatus(l.status) === 'devis_sent').length,
+    won: leads.filter((l) => toUIStatus(l.status) === 'won').length,
+    lost: leads.filter((l) => toUIStatus(l.status) === 'lost').length,
+  }
+
+  function handleSelectLead(lead: any) {
+    setSelectedLead(lead)
+    setNotes(lead.notes || '')
+    setMessage('')
+  }
+
+  function handleStatusChange(uiStatus: UIStatus) {
+    if (!selectedLead) return
+    const dbStatus = toDBStatus(uiStatus)
+    startTransition(async () => {
+      const res = await updateLeadStatus(selectedLead.id, dbStatus)
+      if (res) {
+        setLeads((prev) => prev.map((l) => l.id === selectedLead.id ? { ...l, status: dbStatus } : l))
+        setSelectedLead({ ...selectedLead, status: dbStatus })
+        setMessage('Statut mis à jour')
+        setTimeout(() => setMessage(''), 2000)
+      }
+    })
+  }
+
+  function handleSaveNotes() {
+    if (!selectedLead) return
+    startTransition(async () => {
+      await updateLeadNotes(selectedLead.id, notes)
+      setLeads((prev) => prev.map((l) => l.id === selectedLead.id ? { ...l, notes } : l))
+      setMessage('Notes sauvegardées')
+      setTimeout(() => setMessage(''), 2000)
+    })
   }
 
   if (loading) {
@@ -102,7 +154,7 @@ export default function LeadsPage() {
           { key: 'devis_sent', label: 'Devis envoyés' },
           { key: 'won', label: 'Gagnés' },
           { key: 'lost', label: 'Perdus' },
-        ] as { key: 'all' | LeadStatus; label: string }[]).map((tab) => (
+        ] as { key: 'all' | UIStatus; label: string }[]).map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveFilter(tab.key)}
@@ -132,12 +184,13 @@ export default function LeadsPage() {
             <p className="text-sm text-slate-500 p-4">Aucun lead dans cette catégorie.</p>
           )}
           {filtered.map((lead) => {
-            const statusConf = STATUS_CONFIG[lead.status as LeadStatus]
+            const uiStatus = toUIStatus(lead.status)
+            const statusConf = STATUS_CONFIG[uiStatus]
             return (
               <button
                 key={lead.id}
                 type="button"
-                onClick={() => setSelectedLead(lead)}
+                onClick={() => handleSelectLead(lead)}
                 className={`w-full text-left bg-white rounded-xl border p-4 transition-all ${
                   selectedLead?.id === lead.id
                     ? 'border-primary-400 shadow-sm'
@@ -151,19 +204,19 @@ export default function LeadsPage() {
                     </p>
                     <div className="flex items-center gap-1 text-xs text-slate-400 mt-0.5">
                       <MapPin className="w-2.5 h-2.5" />
-                      {lead.city}
+                      {lead.city || lead.department}
                     </div>
                   </div>
                   <span className={`text-xs rounded-full px-2 py-0.5 font-medium ${statusConf.color}`}>
                     {statusConf.label}
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 mb-2 line-clamp-1">{lead.project}</p>
+                <p className="text-xs text-slate-600 mb-2 line-clamp-1">{lead.projectType}</p>
                 <div className="flex items-center justify-between text-xs text-slate-400">
-                  <span className="font-medium text-slate-700">{lead.budget}</span>
+                  <span className="font-medium text-slate-700">{lead.budget || '—'}</span>
                   <div className="flex items-center gap-1">
                     <Clock className="w-2.5 h-2.5" />
-                    {new Date(lead.date).toLocaleDateString('fr-FR', {
+                    {new Date(lead.createdAt).toLocaleDateString('fr-FR', {
                       day: 'numeric',
                       month: 'short',
                     })}
@@ -182,16 +235,20 @@ export default function LeadsPage() {
                 <h2 className="text-xl font-bold text-slate-900">
                   {selectedLead.firstName} {selectedLead.lastName}
                 </h2>
-                <p className="text-sm text-slate-500 mt-0.5">{selectedLead.property}</p>
+                <p className="text-sm text-slate-500 mt-0.5">{selectedLead.projectType}</p>
               </div>
               <span
                 className={`text-sm rounded-full px-3 py-1 font-medium ${
-                  STATUS_CONFIG[selectedLead.status as LeadStatus].color
+                  STATUS_CONFIG[toUIStatus(selectedLead.status)].color
                 }`}
               >
-                {STATUS_CONFIG[selectedLead.status as LeadStatus].label}
+                {STATUS_CONFIG[toUIStatus(selectedLead.status)].label}
               </span>
             </div>
+
+            {message && (
+              <div className="mb-4 text-sm text-eco-700 bg-eco-50 rounded-lg px-3 py-2">{message}</div>
+            )}
 
             {/* Contact info */}
             <div className="grid sm:grid-cols-2 gap-3 mb-6">
@@ -219,27 +276,27 @@ export default function LeadsPage() {
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">
                   Projet
                 </p>
-                <p className="text-sm text-slate-900">{selectedLead.project}</p>
+                <p className="text-sm text-slate-900">{selectedLead.projectType}</p>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">
                     Localisation
                   </p>
-                  <p className="text-sm text-slate-900">{selectedLead.city}</p>
+                  <p className="text-sm text-slate-900">{selectedLead.city || '—'}</p>
                   <p className="text-xs text-slate-500">{selectedLead.zipCode}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">
                     Budget
                   </p>
-                  <p className="text-sm font-bold text-slate-900">{selectedLead.budget}</p>
+                  <p className="text-sm font-bold text-slate-900">{selectedLead.budget || '—'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-400 uppercase font-semibold tracking-wider mb-1">
-                    Aides estimées
+                    Score
                   </p>
-                  <p className="text-sm font-bold text-eco-600">{selectedLead.estimatedSubsidy}</p>
+                  <p className="text-sm font-bold text-eco-600">{selectedLead.score ?? '—'}/100</p>
                 </div>
               </div>
             </div>
@@ -250,18 +307,30 @@ export default function LeadsPage() {
                 Notes
               </p>
               <textarea
-                defaultValue={selectedLead.notes}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 placeholder="Ajoutez une note..."
-                className="input-field resize-none text-sm"
+                className="input-field resize-none text-sm w-full"
               />
+              <div className="flex justify-end mt-2">
+                <button
+                  onClick={handleSaveNotes}
+                  disabled={isPending}
+                  className="text-xs font-medium text-primary-700 hover:text-primary-900 disabled:opacity-50"
+                >
+                  {isPending ? 'Sauvegarde...' : 'Sauvegarder les notes'}
+                </button>
+              </div>
             </div>
 
             {/* Actions */}
             <div className="flex flex-wrap gap-3">
               <select
                 className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                defaultValue={selectedLead.status}
+                value={toUIStatus(selectedLead.status)}
+                onChange={(e) => handleStatusChange(e.target.value as UIStatus)}
+                disabled={isPending}
               >
                 {Object.entries(STATUS_CONFIG).map(([key, conf]) => (
                   <option key={key} value={key}>
@@ -269,14 +338,20 @@ export default function LeadsPage() {
                   </option>
                 ))}
               </select>
-              <button className="btn-primary">
-                <Euro className="w-4 h-4" />
-                Envoyer un devis
-              </button>
-              <button className="btn-secondary">
+              <Link
+                href={`/espace-pro/messages?to=${selectedLead.email}`}
+                className="btn-primary flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                Envoyer un message
+              </Link>
+              <a
+                href={`tel:${selectedLead.phone}`}
+                className="btn-secondary flex items-center gap-2"
+              >
                 <Phone className="w-4 h-4" />
                 Appeler
-              </button>
+              </a>
             </div>
           </div>
         )}

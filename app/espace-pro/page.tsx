@@ -1,7 +1,9 @@
+export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { ArrowUp, ArrowDown, TrendingUp, Users, Euro, Star } from 'lucide-react'
+
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700' },

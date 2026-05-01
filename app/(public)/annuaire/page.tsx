@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 }
 
 interface AnnuairePageProps {
-  searchParams: Promise<{
+  searchParams: {
     q?: string
     specialite?: string
     region?: string
@@ -21,11 +21,11 @@ interface AnnuairePageProps {
     minRating?: string
     sort?: string
     page?: string
-  }>
+  }
 }
 
 export default async function AnnuairePage({ searchParams }: AnnuairePageProps) {
-  const params = await searchParams
+  const params = searchParams
   const { artisans, total } = await getArtisansWithFilters(params)
   const currentPage = Math.max(1, parseInt(params.page ?? '1', 10))
   const limit = 12

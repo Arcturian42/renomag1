@@ -1,7 +1,10 @@
+export const dynamic = 'force-dynamic'
+
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { MapPin, Home, Calendar, Wrench, Euro } from 'lucide-react'
+import ProjectSubsidy from './ProjectSubsidy'
 
 export default async function MonProjetPage() {
   const supabase = await createClient()
@@ -42,9 +45,6 @@ export default async function MonProjetPage() {
       <div className="bg-white rounded-xl border border-slate-200 p-6 mb-5">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-semibold text-slate-900">Résumé du projet</h2>
-          <button className="text-xs text-primary-600 hover:text-primary-800 font-medium">
-            Modifier
-          </button>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-5">
@@ -100,32 +100,13 @@ export default async function MonProjetPage() {
         </div>
       </div>
 
-      {/* Subsidy estimate */}
-      <div className="bg-eco-50 border border-eco-200 rounded-xl p-6 mb-5">
-        <h2 className="font-semibold text-eco-900 mb-4">Estimation de vos aides</h2>
-        <div className="space-y-3">
-          {[
-            { name: "MaPrimeRénov'", amount: '2 000€', color: 'bg-blue-500' },
-            { name: 'CEE', amount: '800€', color: 'bg-green-500' },
-            { name: 'TVA 5,5%', amount: '~1 100€', color: 'bg-purple-500' },
-          ].map((aid) => (
-            <div key={aid.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className={`w-2 h-2 rounded-full ${aid.color}`} />
-                <span className="text-sm text-eco-800">{aid.name}</span>
-              </div>
-              <span className="text-sm font-bold text-eco-700">{aid.amount}</span>
-            </div>
-          ))}
-          <div className="pt-3 border-t border-eco-200 flex items-center justify-between">
-            <span className="text-sm font-bold text-eco-900">Total estimé</span>
-            <span className="text-lg font-bold text-eco-700">≈ 3 900€</span>
-          </div>
-        </div>
-        <p className="text-xs text-eco-600 mt-3">
-          Estimation indicative. Le montant exact sera calculé par votre artisan.
-        </p>
-      </div>
+      {/* Dynamic subsidy */}
+      {latestLead && (
+        <ProjectSubsidy
+          projectType={latestLead.projectType}
+          budget={latestLead.budget || ''}
+        />
+      )}
 
       {/* Timeline */}
       <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -135,10 +116,10 @@ export default async function MonProjetPage() {
         </h2>
         <div className="space-y-3 text-sm">
           {[
-            { phase: 'Réception de tous les devis', date: 'Avant le 20 avril 2024', status: 'current' },
-            { phase: 'Choix de l\'artisan', date: '20-25 avril 2024', status: 'pending' },
+            { phase: 'Réception de tous les devis', date: 'Dès réception', status: 'current' },
+            { phase: 'Choix de l\'artisan', date: '1-2 semaines', status: 'pending' },
             { phase: 'Dépôt dossier MaPrimeRénov\'', date: 'Avant début des travaux', status: 'pending' },
-            { phase: 'Réalisation des travaux', date: 'Mai-Juin 2024', status: 'pending' },
+            { phase: 'Réalisation des travaux', date: '2-8 semaines selon projet', status: 'pending' },
             { phase: 'Réception des aides', date: '2-3 mois après travaux', status: 'pending' },
           ].map((item, idx) => (
             <div key={idx} className="flex items-center gap-4">

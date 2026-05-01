@@ -54,19 +54,58 @@ export function getInitials(name: string): string {
     .slice(0, 2)
 }
 
+export function parseBudget(budget: string): number {
+  if (!budget) return 0
+  // Parse strings like "< 5 000€", "5 000€ - 10 000€", "> 50 000€"
+  const cleaned = budget.replace(/\s/g, '').replace(/€/g, '').replace(/,/g, '.')
+  const match = cleaned.match(/(\d+)/g)
+  if (!match) return 0
+  const nums = match.map((n) => parseInt(n, 10))
+  if (cleaned.startsWith('<')) return nums[0] ?? 0
+  if (cleaned.startsWith('>')) return nums[0] ?? 0
+  if (nums.length >= 2) return Math.round((nums[0] + nums[1]) / 2)
+  return nums[0] ?? 0
+}
+
 export function calculateSubsidy(
-  workType: string,
+  workTypes: string[],
   income: 'modeste' | 'intermediaire' | 'superieur',
   budget: number
-): number {
-  // Simplified calculation stub
-  const baseRates: Record<string, number> = {
-    modeste: 0.7,
-    intermediaire: 0.4,
-    superieur: 0.3,
+): { maprimerenov: number; cee: number; tva: number; total: number } {
+  // 2024-2025 rates
+  const incomeRates: Record<string, number> = {
+    modeste: 0.8,
+    intermediaire: 0.5,
+    superieur: 0.2,
   }
-  const rate = workType === 'isolation' ? baseRates[income] : baseRates[income] * 0.6666666666666666
-  return Math.round(budget * (rate ?? 0.2))
+
+  const hasIsolation = workTypes.some((w) =>
+    /isolation|combles|murs|ite|menuiserie|fenêtre/i.test(w)
+  )
+  const hasPac = workTypes.some((w) => /pompe|chaleur|pac|chauffage|chaudière|poêle/i.test(w))
+  const hasSolaire = workTypes.some((w) => /solaire|photovoltaïque|pv/i.test(w))
+
+  let maprimerenovRate = incomeRates[income] ?? 0.2
+
+  // Cap MaPrimeRénov' per project type
+  const maprimerenovMax = hasIsolation ? 15000 : hasPac ? 12000 : hasSolaire ? 9000 : 7000
+  let maprimerenov = Math.round(budget * maprimerenovRate)
+  maprimerenov = Math.min(maprimerenov, maprimerenovMax)
+
+  // CEE : ~15% of budget, capped
+  const ceeMax = hasIsolation ? 4000 : hasPac ? 3000 : 2000
+  let cee = Math.round(budget * 0.15)
+  cee = Math.min(cee, ceeMax)
+
+  // TVA 5.5% vs 20% : saves ~14.5% of budget
+  const tva = Math.round(budget * 0.145)
+
+  return {
+    maprimerenov,
+    cee,
+    tva,
+    total: maprimerenov + cee + tva,
+  }
 }
 
 export function calculateEstimate(
@@ -75,7 +114,6 @@ export function calculateEstimate(
   surface: string,
   income: string
 ): { cost: number; aids: number; remaining: number } {
-  // Simplified calculation stub
   const surfaceNum = parseInt(surface, 10) || 50
   const cost = surfaceNum * 150 * workTypes.length
   const aids = Math.round(cost * 0.4)

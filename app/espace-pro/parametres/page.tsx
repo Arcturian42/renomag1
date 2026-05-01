@@ -1,6 +1,36 @@
-import { Settings, Bell, Shield, CreditCard, Trash2 } from 'lucide-react'
+export const dynamic = 'force-dynamic'
 
-export default function EspaceProParametresPage() {
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
+import { updateArtisanProfileForm } from '@/app/actions/data'
+import { changePassword } from '@/app/actions/auth'
+import { Settings, Bell, Shield, CreditCard } from 'lucide-react'
+
+async function handleChangePassword(formData: FormData) {
+  'use server'
+  await changePassword(formData)
+}
+
+export default async function EspaceProParametresPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/connexion')
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { artisan: true, profile: true },
+  })
+
+  if (!dbUser || dbUser.role !== 'ARTISAN') {
+    redirect('/espace-proprietaire')
+  }
+
+  const artisan = dbUser.artisan
+
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
       <div className="mb-8">
@@ -17,11 +47,11 @@ export default function EspaceProParametresPage() {
           </div>
           <div className="space-y-4">
             {[
-              { label: 'Nouveau lead disponible', desc: 'Email + SMS immédiat', enabled: true },
-              { label: 'Message client reçu', desc: 'Email', enabled: true },
-              { label: 'Rapport hebdomadaire', desc: 'Email le lundi matin', enabled: true },
-              { label: 'Alertes certification RGE', desc: 'Email 30 jours avant expiration', enabled: true },
-              { label: 'Offres et promotions RENOMAG', desc: 'Email mensuel', enabled: false },
+              { label: 'Nouveau lead disponible', desc: 'Email + SMS immédiat' },
+              { label: 'Message client reçu', desc: 'Email' },
+              { label: 'Rapport hebdomadaire', desc: 'Email le lundi matin' },
+              { label: 'Alertes certification RGE', desc: 'Email 30 jours avant expiration' },
+              { label: 'Offres et promotions RENOMAG', desc: 'Email mensuel' },
             ].map((item) => (
               <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                 <div>
@@ -29,9 +59,10 @@ export default function EspaceProParametresPage() {
                   <p className="text-xs text-slate-400">{item.desc}</p>
                 </div>
                 <button
-                  className={`relative inline-flex w-10 h-6 rounded-full transition-colors ${item.enabled ? 'bg-primary-600' : 'bg-slate-200'}`}
+                  type="button"
+                  className="relative inline-flex w-10 h-6 rounded-full bg-primary-600"
                 >
-                  <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${item.enabled ? 'translate-x-5' : 'translate-x-1'}`} />
+                  <span className="absolute top-1 w-4 h-4 rounded-full bg-white shadow translate-x-5" />
                 </button>
               </div>
             ))}
@@ -39,69 +70,52 @@ export default function EspaceProParametresPage() {
         </div>
 
         {/* Lead preferences */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <form action={updateArtisanProfileForm} className="bg-white rounded-xl border border-slate-200 p-6">
+          <input type="hidden" name="userId" value={user.id} />
           <div className="flex items-center gap-3 mb-5">
             <Settings className="w-5 h-5 text-primary-600" />
             <h2 className="font-semibold text-slate-900">Préférences leads</h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="label" htmlFor="rayon-dintervention-km">Rayon d'intervention (km)</label>
-              <select id="rayon-dintervention-km" className="input-field">
-                <option>25 km</option>
-                <option>50 km</option>
-                <option selected>75 km</option>
-                <option>100 km</option>
+              <label className="label" htmlFor="rayon">Rayon d&apos;intervention (km)</label>
+              <select id="rayon" name="rayon" className="input-field" defaultValue={artisan?.responseTime?.replace(/[^0-9]/g, '') || '50'}>
+                <option value="25">25 km</option>
+                <option value="50">50 km</option>
+                <option value="75">75 km</option>
+                <option value="100">100 km</option>
               </select>
             </div>
             <div>
-              <label className="label" htmlFor="budget-minimum-">Budget minimum (€)</label>
-              <input id="budget-minimum-" type="number" className="input-field" defaultValue="3000" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="label">Types de travaux acceptés</p>
-            <div className="grid sm:grid-cols-2 gap-2 mt-2">
-              {[
-                { label: 'Isolation combles', checked: true },
-                { label: 'Isolation murs', checked: true },
-                { label: 'Pompes à chaleur', checked: true },
-                { label: 'Panneaux solaires', checked: false },
-                { label: 'VMC', checked: true },
-                { label: 'Fenêtres / menuiseries', checked: false },
-              ].map((item) => (
-                <label key={item.label} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" defaultChecked={item.checked} className="rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
-                  <span className="text-sm text-slate-700">{item.label}</span>
-                </label>
-              ))}
+              <label className="label" htmlFor="budget">Budget minimum (€)</label>
+              <input id="budget" name="budget" type="number" className="input-field" defaultValue="3000" />
             </div>
           </div>
           <div className="mt-5 flex justify-end">
-            <button className="btn-primary px-5 py-2.5">Enregistrer</button>
+            <button type="submit" className="btn-primary px-5 py-2.5">Enregistrer</button>
           </div>
-        </div>
+        </form>
 
         {/* Security */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <form action={handleChangePassword} className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex items-center gap-3 mb-5">
             <Shield className="w-5 h-5 text-primary-600" />
             <h2 className="font-semibold text-slate-900">Sécurité</h2>
           </div>
           <div className="space-y-4">
             <div>
-              <label className="label" htmlFor="mot-de-passe-actuel">Mot de passe actuel</label>
-              <input id="mot-de-passe-actuel" type="password" className="input-field" placeholder="••••••••" />
+              <label className="label" htmlFor="newPassword">Nouveau mot de passe</label>
+              <input id="newPassword" name="newPassword" type="password" className="input-field" placeholder="••••••••" minLength={8} required />
             </div>
             <div>
-              <label className="label" htmlFor="nouveau-mot-de-passe">Nouveau mot de passe</label>
-              <input id="nouveau-mot-de-passe" type="password" className="input-field" placeholder="••••••••" />
+              <label className="label" htmlFor="confirmPassword">Confirmer le mot de passe</label>
+              <input id="confirmPassword" name="confirmPassword" type="password" className="input-field" placeholder="••••••••" minLength={8} required />
             </div>
           </div>
           <div className="mt-5 flex justify-end">
-            <button className="btn-primary px-5 py-2.5">Modifier</button>
+            <button type="submit" className="btn-primary px-5 py-2.5">Modifier</button>
           </div>
-        </div>
+        </form>
 
         {/* Billing */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -111,39 +125,15 @@ export default function EspaceProParametresPage() {
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             <div>
-              <label className="label" htmlFor="raison-sociale">Raison sociale</label>
-              <input id="raison-sociale" type="text" className="input-field" defaultValue="ThermoConfort Paris" />
+              <label className="label" htmlFor="raison">Raison sociale</label>
+              <input id="raison" type="text" className="input-field" defaultValue={artisan?.name || ''} readOnly />
             </div>
             <div>
-              <label className="label" htmlFor="siret">SIRET</label>
-              <input id="siret" type="text" className="input-field" defaultValue="123 456 789 00012" />
-            </div>
-            <div>
-              <label className="label" htmlFor="adresse-de-facturation">Adresse de facturation</label>
-              <input id="adresse-de-facturation" type="text" className="input-field" defaultValue="12 rue de la République, 75011 Paris" />
-            </div>
-            <div>
-              <label className="label" htmlFor="numro-de-tva-intra">Numéro de TVA intra.</label>
-              <input id="numro-de-tva-intra" type="text" className="input-field" defaultValue="FR12 123456789" />
+              <label className="label" htmlFor="siret-fact">SIRET</label>
+              <input id="siret-fact" type="text" className="input-field" defaultValue={artisan?.siret || ''} readOnly />
             </div>
           </div>
-          <div className="mt-5 flex justify-end">
-            <button className="btn-primary px-5 py-2.5">Enregistrer</button>
-          </div>
-        </div>
-
-        {/* Danger zone */}
-        <div className="bg-red-50 rounded-xl border border-red-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Trash2 className="w-5 h-5 text-red-600" />
-            <h2 className="font-semibold text-red-900">Zone de danger</h2>
-          </div>
-          <p className="text-sm text-red-700 mb-4">
-            La suppression de votre compte artisan est définitive. Tous vos leads et données seront effacés.
-          </p>
-          <button className="text-sm font-medium text-red-600 hover:text-red-800 border border-red-300 rounded-lg px-4 py-2 hover:bg-red-100 transition-colors">
-            Fermer mon compte artisan
-          </button>
+          <p className="text-xs text-slate-400 mt-3">Modifiez ces informations dans votre profil artisan.</p>
         </div>
       </div>
     </div>

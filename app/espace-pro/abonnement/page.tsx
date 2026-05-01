@@ -1,8 +1,10 @@
+export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { CheckCircle, CreditCard, ArrowRight, TrendingUp } from 'lucide-react'
+
 
 export default async function AbonnementPage() {
   const supabase = await createClient()

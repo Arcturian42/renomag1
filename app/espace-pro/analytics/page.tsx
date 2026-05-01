@@ -1,7 +1,9 @@
+export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { TrendingUp, Euro, Users, Star, ArrowUp } from 'lucide-react'
+
 
 export default async function EspaceProAnalyticsPage() {
   const supabase = await createClient()

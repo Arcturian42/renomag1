@@ -48,9 +48,12 @@ describe('getInitials', () => {
 
 describe('calculateSubsidy', () => {
   it('calculates modeste isolation', () => {
-    expect(calculateSubsidy('isolation', 'modeste', 10000)).toBe(7000)
+    const result = calculateSubsidy(['isolation'], 'modeste', 10000)
+    expect(result.maprimerenov).toBe(8000)
+    expect(result.total).toBeGreaterThan(8000)
   })
   it('calculates superieur default', () => {
-    expect(calculateSubsidy('unknown', 'superieur', 10000)).toBe(2000)
+    const result = calculateSubsidy(['unknown'], 'superieur', 10000)
+    expect(result.maprimerenov).toBe(2000)
   })
 })

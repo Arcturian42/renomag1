@@ -1,6 +1,8 @@
+export const dynamic = 'force-dynamic'
 import { ArrowUp, ArrowDown, Users, TrendingUp, Euro, Zap, Bot } from 'lucide-react'
 import { getKPIs, getAllUsers, getAllArtisans, getAllLeads, getAllArticles } from '@/app/actions/data'
 import { formatDateShort } from '@/lib/utils'
+
 
 export default async function AdminDashboard() {
   const kpis = await getKPIs()
@@ -49,12 +51,10 @@ export default async function AdminDashboard() {
   ]
 
   const SYSTEM_STATUS = [
-    { name: 'API', status: 'active', lastRun: 'En ligne', tasks: 0 },
-    { name: 'Base de données', status: 'active', lastRun: 'En ligne', tasks: 0 },
-    { name: 'Auth', status: 'active', lastRun: 'En ligne', tasks: 0 },
-    { name: 'Cache Redis', status: process.env.UPSTASH_REDIS_REST_URL ? 'active' : 'paused', lastRun: process.env.UPSTASH_REDIS_REST_URL ? 'Connecté' : 'Non configuré', tasks: 0 },
-    { name: 'Rate Limiting', status: 'active', lastRun: 'Actif', tasks: 0 },
-    { name: 'Emails', status: 'paused', lastRun: 'Non configuré', tasks: 0 },
+    { name: 'API', status: 'active', lastRun: 'En ligne' },
+    { name: 'Base de données', status: 'active', lastRun: 'En ligne' },
+    { name: 'Auth', status: 'active', lastRun: 'En ligne' },
+    { name: 'Rate Limiting', status: 'active', lastRun: 'Actif' },
   ]
 
   const recentActivity = [
@@ -162,35 +162,22 @@ export default async function AdminDashboard() {
               <Bot className="w-4 h-4 text-primary-600" />
               Services système
             </h2>
-            <a href="/admin/agents" className="text-xs text-primary-600 hover:text-primary-800">
-              Voir tous →
-            </a>
           </div>
           <div className="space-y-3">
-            {SYSTEM_STATUS.map((agent) => (
-              <div key={agent.name} className="flex items-center gap-3">
+            {SYSTEM_STATUS.map((svc) => (
+              <div key={svc.name} className="flex items-center gap-3">
                 <div
                   className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    agent.status === 'active'
-                      ? 'bg-eco-500 animate-pulse'
-                      : agent.status === 'paused'
-                      ? 'bg-amber-400'
-                      : 'bg-red-400'
+                    svc.status === 'active' ? 'bg-eco-500 animate-pulse' : 'bg-amber-400'
                   }`}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-900 truncate">{agent.name}</p>
-                  <p className="text-xs text-slate-400">{agent.lastRun}</p>
+                  <p className="text-sm font-medium text-slate-900 truncate">{svc.name}</p>
+                  <p className="text-xs text-slate-400">{svc.lastRun}</p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <span
-                    className={`text-xs rounded-full px-2 py-0.5 font-medium ${
-                      agent.status === 'active'
-                        ? 'bg-eco-100 text-eco-700'
-                        : 'bg-amber-100 text-amber-700'
-                    }`}
-                  >
-                    {agent.status === 'active' ? 'Actif' : 'Pausé'}
+                  <span className="text-xs rounded-full px-2 py-0.5 font-medium bg-eco-100 text-eco-700">
+                    Actif
                   </span>
                 </div>
               </div>

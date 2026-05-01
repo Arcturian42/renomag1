@@ -14,15 +14,15 @@ export const metadata: Metadata = {
 }
 
 interface BlogPageProps {
-  searchParams: Promise<{
+  searchParams: {
     q?: string
     category?: string
     page?: string
-  }>
+  }
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {
-  const params = await searchParams
+  const params = searchParams
   const { articles, total } = await getArticlesWithFilters(params)
   const currentPage = Math.max(1, parseInt(params.page ?? '1', 10))
   const limit = 12

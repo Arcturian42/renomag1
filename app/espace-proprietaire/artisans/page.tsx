@@ -1,9 +1,11 @@
+export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { Star, CheckCircle, Phone, MessageSquare, ArrowRight } from 'lucide-react'
+
 
 export default async function ArtisansMatchesPage() {
   const supabase = await createClient()
