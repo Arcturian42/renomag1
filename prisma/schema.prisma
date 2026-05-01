@@ -6,3 +6,229 @@ provider  = "postgresql"
 url       = env("DATABASE_URL")
 directUrl = env("DIRECT_URL")
 }
+
+enum Role {
+  USER
+  ARTISAN
+  ADMIN
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  REJECTED
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  role          Role      @default(USER)
+  status        String    @default("active")
+  source        String    @default("Direct")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  profile       Profile?
+  artisan       ArtisanCompany?
+  messages      Message[]
+  notifications Notification[]
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  address   String?
+  city      String?
+  zipCode   String?
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model ArtisanCompany {
+  id              String          @id @default(uuid())
+  userId          String          @unique
+  slug            String          @unique
+  name            String
+  siret           String          @unique
+  description     String?
+  address         String
+  city            String
+  zipCode         String
+  department      String
+  region          String?
+  latitude        Float?
+  longitude       Float?
+  phone           String?
+  email           String?
+  website         String?
+  avatar          String?
+  logoUrl         String?
+  isFeatured      Boolean         @default(false)
+  verified        Boolean         @default(false)
+  premium         Boolean         @default(false)
+  available       Boolean         @default(true)
+  rating          Float           @default(0)
+  reviewCount     Int             @default(0)
+  projectCount    Int             @default(0)
+  yearsExperience Int             @default(0)
+  responseTime    String?
+  since           Int?
+  gallery         Json?
+  user            User            @relation(fields: [userId], references: [id])
+  certifications  Certification[]
+  specialties     Specialty[]
+  leads           Lead[]
+  reviews         Review[]
+  subscription    Subscription?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Certification {
+  id        String           @id @default(uuid())
+  name      String
+  code      String           @unique
+  artisans  ArtisanCompany[]
+}
+
+model Specialty {
+  id        String           @id @default(uuid())
+  name      String
+  slug      String           @unique
+  artisans  ArtisanCompany[]
+  leads     Lead[]
+}
+
+model Lead {
+  id              String          @id @default(uuid())
+  firstName       String
+  lastName        String
+  email           String
+  phone           String
+  zipCode         String
+  city            String?
+  department      String
+  projectType     String
+  description     String?
+  budget          String?
+  status          LeadStatus      @default(NEW)
+  score           Float?
+  source          String          @default("Formulaire devis")
+  campaign        String          @default("Organic")
+  country         String          @default("France")
+  artisanId       String?
+  specialtyId     String?
+  artisan         ArtisanCompany? @relation(fields: [artisanId], references: [id])
+  specialty       Specialty?      @relation(fields: [specialtyId], references: [id])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model Article {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  content     String
+  excerpt     String?
+  image       String?
+  published   Boolean   @default(false)
+  featured    Boolean   @default(false)
+  author      String?
+  authorRole  String?
+  readTime    Int       @default(5)
+  tags        Json?
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String
+  slug     String    @unique
+  articles Article[]
+}
+
+model Department {
+  id      String @id @default(uuid())
+  code    String @unique
+  name    String
+  region  String
+  density Float?
+}
+
+model Review {
+  id        String         @id @default(uuid())
+  rating    Int
+  comment   String?
+  author    String?
+  avatar    String?
+  date      String?
+  project   String?
+  artisanId String
+  artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
+  createdAt DateTime       @default(now())
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  senderId  String
+  receiverId String
+  content   String
+  read      Boolean  @default(false)
+  sender    User     @relation(fields: [senderId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String
+  read      Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model OutreachCampaign {
+  id        String            @id @default(uuid())
+  name      String
+  subject   String
+  body      String
+  contacts  OutreachContact[]
+  createdAt DateTime          @default(now())
+}
+
+model OutreachContact {
+  id         String           @id @default(uuid())
+  email      String
+  campaignId String
+  status     String           @default("PENDING")
+  campaign   OutreachCampaign @relation(fields: [campaignId], references: [id])
+}
+
+model Subscription {
+  id        String         @id @default(uuid())
+  artisanId String         @unique
+  plan      String
+  status    String
+  expiresAt DateTime?
+  artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
+}
+
+model KPI {
+  id        String   @id @default(uuid())
+  name      String
+  value     Float
+  date      DateTime @default(now())
+}
+
+model Setting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value String
+}
