@@ -1,13 +1,40 @@
 'use client'
 
+import { useState, useTransition } from 'react'
 import DataTable from './DataTable'
 import Link from 'next/link'
-import { BadgeCheck, BadgeX, Eye } from 'lucide-react'
+import { BadgeCheck, BadgeX, Eye, Trash2 } from 'lucide-react'
 import type { DashboardUser } from '@/lib/data/dashboard'
+import { updateUserStatus, deleteUser } from '@/app/actions/dashboard'
 
 type UserItem = DashboardUser
 
 export default function UsersTable({ users }: { users: UserItem[] }) {
+  const [items, setItems] = useState<UserItem[]>(users)
+  const [isPending, startTransition] = useTransition()
+
+  const handleToggleStatus = (user: UserItem) => {
+    const next = user.status === 'active' ? 'inactive' : 'active'
+    startTransition(async () => {
+      const res = await updateUserStatus(user.id, next)
+      if (res.success) {
+        setItems((prev) =>
+          prev.map((u) => (u.id === user.id ? { ...u, status: next } : u))
+        )
+      }
+    })
+  }
+
+  const handleDelete = (user: UserItem) => {
+    if (!confirm(`Supprimer définitivement ${user.email} ?`)) return
+    startTransition(async () => {
+      const res = await deleteUser(user.id)
+      if (res.success) {
+        setItems((prev) => prev.filter((u) => u.id !== user.id))
+      }
+    })
+  }
+
   const columns = [
     {
       key: 'name',
@@ -62,7 +89,12 @@ export default function UsersTable({ users }: { users: UserItem[] }) {
       header: 'Statut',
       sortable: true,
       render: (u: UserItem) => (
-        <span className="inline-flex items-center gap-1 text-xs">
+        <button
+          onClick={() => handleToggleStatus(u)}
+          disabled={isPending}
+          className="inline-flex items-center gap-1 text-xs disabled:opacity-50"
+          title={u.status === 'active' ? 'Désactiver' : 'Activer'}
+        >
           {u.status === 'active' ? (
             <>
               <BadgeCheck className="w-3.5 h-3.5 text-eco-500" />
@@ -74,7 +106,7 @@ export default function UsersTable({ users }: { users: UserItem[] }) {
               <span className="text-slate-500">Inactif</span>
             </>
           )}
-        </span>
+        </button>
       ),
     },
     {
@@ -97,15 +129,25 @@ export default function UsersTable({ users }: { users: UserItem[] }) {
       key: 'actions',
       header: '',
       render: (u: UserItem) => (
-        <Link
-          href={`/dashboard-prive/utilisateurs/${u.id}`}
-          className="text-primary-600 hover:text-primary-800"
-        >
-          <Eye className="w-4 h-4" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/dashboard-prive/utilisateurs/${u.id}`}
+            className="text-primary-600 hover:text-primary-800"
+          >
+            <Eye className="w-4 h-4" />
+          </Link>
+          <button
+            onClick={() => handleDelete(u)}
+            disabled={isPending}
+            className="text-red-400 hover:text-red-600 disabled:opacity-50"
+            title="Supprimer"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       ),
     },
   ]
 
-  return <DataTable data={users} columns={columns as any} />
+  return <DataTable data={items} columns={columns as any} />
 }

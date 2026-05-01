@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useTransition } from 'react'
 import { getLeads } from '@/lib/data/dashboard'
 import DataTable from '@/components/dashboard/DataTable'
 import ExportButton from '@/components/dashboard/ExportButton'
 import { Filter, X } from 'lucide-react'
+import { updateLeadStatus, deleteLead } from '@/app/actions/dashboard'
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'Tous' },
@@ -40,6 +41,7 @@ const CAMPAIGN_OPTIONS = [
 export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
     let cancelled = false
@@ -80,6 +82,27 @@ export default function LeadsPage() {
     }
     return result
   }, [leads, statusFilter, sourceFilter, campaignFilter, dateFrom, dateTo])
+
+  const handleStatusChange = (lead: any, status: string) => {
+    startTransition(async () => {
+      const res = await updateLeadStatus(lead.id, status as any)
+      if (res.success) {
+        setLeads((prev) =>
+          prev.map((l) => (l.id === lead.id ? { ...l, status } : l))
+        )
+      }
+    })
+  }
+
+  const handleDelete = (lead: any) => {
+    if (!confirm(`Supprimer le lead ${lead.firstName} ${lead.lastName} ?`)) return
+    startTransition(async () => {
+      const res = await deleteLead(lead.id)
+      if (res.success) {
+        setLeads((prev) => prev.filter((l) => l.id !== lead.id))
+      }
+    })
+  }
 
   const columns = [
     {
@@ -132,25 +155,28 @@ export default function LeadsPage() {
       header: 'Statut',
       sortable: true,
       render: (l: any) => (
-        <span
-          className={`text-xs rounded-full px-2 py-0.5 font-medium ${
-            l.status === 'NEW'
-              ? 'bg-blue-100 text-blue-700'
-              : l.status === 'CONTACTED'
-              ? 'bg-amber-100 text-amber-700'
-              : l.status === 'QUALIFIED'
-              ? 'bg-eco-100 text-eco-700'
-              : l.status === 'CONVERTED'
-              ? 'bg-primary-100 text-primary-700'
-              : 'bg-red-100 text-red-700'
-          }`}
+        <select
+          value={l.status}
+          onChange={(e) => handleStatusChange(l, e.target.value)}
+          disabled={isPending}
+          className="text-xs rounded-full px-2 py-0.5 font-medium border-0 cursor-pointer disabled:opacity-50 bg-transparent"
+          style={{
+            color:
+              l.status === 'NEW'
+                ? '#1d4ed8'
+                : l.status === 'CONTACTED'
+                ? '#b45309'
+                : l.status === 'QUALIFIED'
+                ? '#15803d'
+                : l.status === 'CONVERTED'
+                ? '#4338ca'
+                : '#b91c1c',
+          }}
         >
-          {l.status === 'NEW' && 'Nouveau'}
-          {l.status === 'CONTACTED' && 'Contacté'}
-          {l.status === 'QUALIFIED' && 'Qualifié'}
-          {l.status === 'CONVERTED' && 'Converti'}
-          {l.status === 'REJECTED' && 'Rejeté'}
-        </span>
+          {STATUS_OPTIONS.filter((s) => s.value !== 'ALL').map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
       ),
     },
     {
@@ -169,6 +195,20 @@ export default function LeadsPage() {
           </div>
           <span className="text-xs text-slate-500 font-medium">{l.score || 0}</span>
         </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      render: (l: any) => (
+        <button
+          onClick={() => handleDelete(l)}
+          disabled={isPending}
+          className="text-red-400 hover:text-red-600 disabled:opacity-50"
+          title="Supprimer"
+        >
+          <X className="w-4 h-4" />
+        </button>
       ),
     },
   ]
