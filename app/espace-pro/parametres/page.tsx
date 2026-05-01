@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { Settings, Bell, Shield, CreditCard, Trash2 } from 'lucide-react'
 
 export default function EspaceProParametresPage() {

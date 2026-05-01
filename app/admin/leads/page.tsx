@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { TrendingUp, Users, Euro, BarChart3 } from 'lucide-react'
 import { getAllLeads, getKPIs, getDepartments } from '@/app/actions/data'
 

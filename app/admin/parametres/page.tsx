@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { Settings, Bell, Shield, Database, Zap, Globe } from 'lucide-react'
 
 export default function AdminParametresPage() {

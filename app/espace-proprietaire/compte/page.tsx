@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { User, Home, Bell, Shield, LogOut } from 'lucide-react'
 
 export default function ProprietaireComptePage() {

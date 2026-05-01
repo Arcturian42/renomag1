@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { ArrowUp, ArrowDown, Users, TrendingUp, Euro, Zap, Bot } from 'lucide-react'
 import { getKPIs, getAllUsers, getAllArtisans, getAllLeads, getAllArticles } from '@/app/actions/data'
 import { formatDateShort } from '@/lib/utils'

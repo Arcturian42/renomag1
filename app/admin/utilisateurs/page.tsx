@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { Search, Filter, UserCheck, UserX } from 'lucide-react'
 import { getAllUsers, deleteUser } from '@/app/actions/data'
 import { formatDateShort } from '@/lib/utils'

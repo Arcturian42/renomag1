@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import Link from 'next/link'
 import { getAllArticles } from '@/app/actions/data'
 import { formatDateShort } from '@/lib/utils'

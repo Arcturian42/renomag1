@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { Bot, Play, Pause, RefreshCw, BarChart3, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 
 const AGENTS = [

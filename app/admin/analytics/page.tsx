@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { ArrowUp, ArrowDown, Users, Euro, TrendingUp, Zap, Bot } from 'lucide-react'
 import { getKPIs } from '@/app/actions/data'
 
