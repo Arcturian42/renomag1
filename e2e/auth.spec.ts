@@ -42,4 +42,31 @@ test.describe('Authentication & middleware', () => {
     // HTML5 validation should prevent submit; button remains enabled but form won't submit
     await expect(page.locator('text=Bon retour !')).toBeVisible()
   })
+
+  test('login page has Google OAuth button', async ({ page }) => {
+    await page.goto('/connexion')
+    const googleBtn = page.locator('button:has-text("Continuer avec Google")')
+    await expect(googleBtn).toBeVisible()
+    await expect(googleBtn.locator('svg')).toBeVisible()
+  })
+
+  test('signup page has Google OAuth button', async ({ page }) => {
+    await page.goto('/inscription')
+    await page.click('text=Je suis particulier')
+    const googleBtn = page.locator('button:has-text("S\'inscrire avec Google")')
+    await expect(googleBtn).toBeVisible()
+  })
+
+  test('password reset page renders form', async ({ page }) => {
+    await page.goto('/mot-de-passe-oublie')
+    await expect(page.locator('text=Mot de passe oublié')).toBeVisible()
+    await expect(page.locator('input[type="email"]')).toBeVisible()
+    await expect(page.locator('button:has-text("Envoyer le lien de réinitialisation")')).toBeVisible()
+  })
+
+  test('OAuth callback route exists and redirects without code', async ({ page }) => {
+    await page.goto('/auth/callback')
+    // Without a code param it should redirect to login with an error
+    await expect(page).toHaveURL(/\/connexion/)
+  })
 })
