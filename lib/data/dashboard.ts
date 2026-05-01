@@ -218,3 +218,57 @@ function mapPrismaLead(l: any): DashboardLead {
     updatedAt: l.updatedAt?.toISOString?.() ?? l.updatedAt,
   }
 }
+
+// ─── Cursor-based pagination ─────────────────────────────
+
+export interface CursorPaginationArgs {
+  cursor?: string
+  limit?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+export interface CursorPaginationResult<T> {
+  items: T[]
+  nextCursor: string | null
+  hasMore: boolean
+}
+
+export async function getUsersCursor(
+  args: CursorPaginationArgs = {}
+): Promise<CursorPaginationResult<DashboardUser>> {
+  const limit = Math.min(100, Math.max(1, args.limit ?? 20))
+  const orderBy = args.sortBy === 'email' ? { email: args.sortOrder ?? 'asc' } : { createdAt: args.sortOrder ?? 'desc' }
+
+  const db = await prisma.user.findMany({
+    take: limit + 1,
+    ...(args.cursor ? { skip: 1, cursor: { id: args.cursor } } : {}),
+    orderBy,
+    include: { profile: true },
+  })
+
+  const hasMore = db.length > limit
+  const items = hasMore ? db.slice(0, -1) : db
+  const nextCursor = hasMore ? items[items.length - 1].id : null
+
+  return { items: items.map(mapPrismaUser), nextCursor, hasMore }
+}
+
+export async function getLeadsCursor(
+  args: CursorPaginationArgs = {}
+): Promise<CursorPaginationResult<DashboardLead>> {
+  const limit = Math.min(100, Math.max(1, args.limit ?? 20))
+  const orderBy = args.sortBy === 'score' ? { score: args.sortOrder ?? 'desc' } : { createdAt: args.sortOrder ?? 'desc' }
+
+  const db = await prisma.lead.findMany({
+    take: limit + 1,
+    ...(args.cursor ? { skip: 1, cursor: { id: args.cursor } } : {}),
+    orderBy,
+  })
+
+  const hasMore = db.length > limit
+  const items = hasMore ? db.slice(0, -1) : db
+  const nextCursor = hasMore ? items[items.length - 1].id : null
+
+  return { items: items.map(mapPrismaLead), nextCursor, hasMore }
+}

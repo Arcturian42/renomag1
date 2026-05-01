@@ -1,0 +1,17 @@
+GRANT ALL ON "User" TO service_role;
+GRANT ALL ON "Profile" TO service_role;
+GRANT ALL ON "ArtisanCompany" TO service_role;
+GRANT ALL ON "Certification" TO service_role;
+GRANT ALL ON "Specialty" TO service_role;
+GRANT ALL ON "Lead" TO service_role;
+GRANT ALL ON "Article" TO service_role;
+GRANT ALL ON "Category" TO service_role;
+GRANT ALL ON "Department" TO service_role;
+GRANT ALL ON "Review" TO service_role;
+GRANT ALL ON "Message" TO service_role;
+GRANT ALL ON "Notification" TO service_role;
+GRANT ALL ON "OutreachCampaign" TO service_role;
+GRANT ALL ON "OutreachContact" TO service_role;
+GRANT ALL ON "Subscription" TO service_role;
+GRANT ALL ON "KPI" TO service_role;
+GRANT ALL ON "Setting" TO service_role;

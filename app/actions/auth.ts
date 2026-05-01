@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { validateEmail } from '@/lib/email-validation'
 import { slugify } from '@/lib/utils'
+import { sendWelcomeEmail } from './email'
 
 export async function getUserRoleByEmail(email: string): Promise<Role | null> {
   try {
@@ -189,6 +190,11 @@ export async function signup(formData: FormData) {
       },
     })
   }
+
+  // Send welcome email (non-blocking)
+  sendWelcomeEmail(authData.user.email!, firstName).catch(() => {
+    // Silently fail — auth succeeded, email is best-effort
+  })
 
   revalidatePath('/', 'layout')
   redirect('/connexion?message=Vérifiez votre email pour confirmer votre compte.')
