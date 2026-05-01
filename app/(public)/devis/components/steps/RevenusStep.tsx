@@ -70,7 +70,7 @@ export default function RevenusStep() {
         ))}
       </div>
       {errors.income && (
-        <p className="text-sm text-red-600 mt-3">{errors.income.message}</p>
+        <p role="alert" className="text-sm text-red-600 mt-3">{errors.income.message}</p>
       )}
     </div>
   )

@@ -134,10 +134,11 @@ export default function LeadsPage() {
           {filtered.map((lead) => {
             const statusConf = STATUS_CONFIG[lead.status as LeadStatus]
             return (
-              <div
+              <button
                 key={lead.id}
+                type="button"
                 onClick={() => setSelectedLead(lead)}
-                className={`bg-white rounded-xl border p-4 cursor-pointer transition-all ${
+                className={`w-full text-left bg-white rounded-xl border p-4 transition-all ${
                   selectedLead?.id === lead.id
                     ? 'border-primary-400 shadow-sm'
                     : 'border-slate-200 hover:border-slate-300'
@@ -168,7 +169,7 @@ export default function LeadsPage() {
                     })}
                   </div>
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>

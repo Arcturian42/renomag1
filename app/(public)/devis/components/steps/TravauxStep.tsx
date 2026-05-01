@@ -61,7 +61,7 @@ export default function TravauxStep() {
       />
 
       {errors.workTypes && (
-        <p className="text-sm text-red-600 mb-4">{errors.workTypes.message}</p>
+        <p role="alert" className="text-sm text-red-600 mb-4">{errors.workTypes.message}</p>
       )}
 
       <div>
@@ -81,7 +81,7 @@ export default function TravauxStep() {
           <option value="50000">Plus de 50 000€</option>
         </select>
         {errors.budget && (
-          <p className="text-sm text-red-600 mt-1">{errors.budget.message}</p>
+          <p role="alert" className="text-sm text-red-600 mt-1">{errors.budget.message}</p>
         )}
       </div>
     </div>

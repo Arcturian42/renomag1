@@ -1,4 +1,4 @@
-import { getUserById } from '@/lib/dashboard-data'
+import { getUserById } from '@/lib/data/dashboard'
 import Link from 'next/link'
 import { ArrowLeft, Mail, Phone, MapPin, Calendar, Shield, User as UserIcon } from 'lucide-react'
 import { notFound } from 'next/navigation'

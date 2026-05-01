@@ -28,7 +28,7 @@ export default function ContactStep() {
               {...register('firstName')}
             />
             {errors.firstName && (
-              <p className="text-sm text-red-600 mt-1">{errors.firstName.message}</p>
+              <p role="alert" className="text-sm text-red-600 mt-1">{errors.firstName.message}</p>
             )}
           </div>
           <div>
@@ -41,7 +41,7 @@ export default function ContactStep() {
               {...register('lastName')}
             />
             {errors.lastName && (
-              <p className="text-sm text-red-600 mt-1">{errors.lastName.message}</p>
+              <p role="alert" className="text-sm text-red-600 mt-1">{errors.lastName.message}</p>
             )}
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function ContactStep() {
             {...register('email')}
           />
           {errors.email && (
-            <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+            <p role="alert" className="text-sm text-red-600 mt-1">{errors.email.message}</p>
           )}
         </div>
 
@@ -70,7 +70,7 @@ export default function ContactStep() {
             {...register('phone')}
           />
           {errors.phone && (
-            <p className="text-sm text-red-600 mt-1">{errors.phone.message}</p>
+            <p role="alert" className="text-sm text-red-600 mt-1">{errors.phone.message}</p>
           )}
         </div>
 
@@ -86,7 +86,7 @@ export default function ContactStep() {
             {...register('message')}
           />
           {errors.message && (
-            <p className="text-sm text-red-600 mt-1">{errors.message.message}</p>
+            <p role="alert" className="text-sm text-red-600 mt-1">{errors.message.message}</p>
           )}
         </div>
 

@@ -1,4 +1,4 @@
-import { getUsers, getLeads, getKpis } from '@/lib/dashboard-data'
+import { getUsers, getLeads, getKpis } from '@/lib/data/dashboard'
 import KpiCards from '@/components/dashboard/KpiCards'
 import {
   TrendingUp,
