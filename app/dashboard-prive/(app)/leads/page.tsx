@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { getLeads } from '@/lib/dashboard-data'
+import { getLeads } from '@/lib/data/dashboard'
 import DataTable from '@/components/dashboard/DataTable'
 import ExportButton from '@/components/dashboard/ExportButton'
 import { Filter, X } from 'lucide-react'
@@ -305,7 +305,7 @@ export default function LeadsPage() {
       )}
 
       {loading ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm text-center text-slate-400">
+        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm text-center text-slate-500">
           Chargement des leads...
         </div>
       ) : (

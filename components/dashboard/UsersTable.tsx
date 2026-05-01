@@ -3,7 +3,7 @@
 import DataTable from './DataTable'
 import Link from 'next/link'
 import { BadgeCheck, BadgeX, Eye } from 'lucide-react'
-import type { DashboardUser } from '@/lib/dashboard-data'
+import type { DashboardUser } from '@/lib/data/dashboard'
 
 type UserItem = DashboardUser
 

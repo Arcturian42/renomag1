@@ -28,10 +28,11 @@ export default function LogementStep() {
       </p>
       <div className="space-y-4">
         <div className="relative">
-          <label className="label">Code postal et ville</label>
+          <label className="label" htmlFor="zipCode">Code postal et ville</label>
           <div className="relative">
             <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
+              id="zipCode"
               type="text"
               placeholder="75001 Paris"
               className="input-field pl-10"
@@ -39,12 +40,12 @@ export default function LogementStep() {
             />
           </div>
           {errors.zipCode && (
-            <p className="text-sm text-red-600 mt-1">{errors.zipCode.message}</p>
+            <p role="alert" className="text-sm text-red-600 mt-1">{errors.zipCode.message}</p>
           )}
         </div>
 
         <div>
-          <label className="label">Type de logement</label>
+          <p className="label">Type de logement</p>
           <div className="grid grid-cols-3 gap-3">
             {PROPERTY_TYPES.map((type) => (
               <button

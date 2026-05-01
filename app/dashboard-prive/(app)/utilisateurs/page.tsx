@@ -1,4 +1,4 @@
-import { getUsers } from '@/lib/dashboard-data'
+import { getUsers } from '@/lib/data/dashboard'
 import UsersTable from '@/components/dashboard/UsersTable'
 
 export default async function UtilisateursPage() {

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { calculateLeadScore } from '@/src/lib/scoring'
 import { ratelimit, getClientIdentifier, RateLimitError } from '@/lib/rate-limit'
@@ -60,8 +61,6 @@ export async function submitLead(formData: unknown) {
       income: data.income,
     })
 
-    const supabase = await createClient()
-
     const leadData = {
       firstName: data.firstName,
       lastName: data.lastName,
@@ -69,21 +68,30 @@ export async function submitLead(formData: unknown) {
       phone: data.phone,
       zipCode: data.zipCode,
       department: data.zipCode.slice(0, 2),
+      city: data.city ?? null,
       projectType: data.workTypes.join(', '),
       description: data.message ?? null,
       budget: data.budget,
       score: score,
       status: 'NEW' as const,
+      source: 'Formulaire devis',
+      campaign: 'Site web',
+      country: 'France',
     }
 
-    const { data: inserted, error } = await supabase
-      .from('Lead')
-      .insert([leadData])
-      .select()
-      .single()
-
-    if (error) {
-      throw error
+    // Try Prisma first, fallback to Supabase
+    let inserted: any
+    try {
+      inserted = await prisma.lead.create({ data: leadData })
+    } catch {
+      const supabase = await createClient()
+      const { data: sbData, error } = await supabase
+        .from('Lead')
+        .insert([leadData])
+        .select()
+        .single()
+      if (error) throw error
+      inserted = sbData
     }
 
     revalidatePath('/devis')

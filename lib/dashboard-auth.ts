@@ -1,12 +1,13 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createHash } from 'crypto'
+import { logger } from './logger'
 
 const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD
 const COOKIE_NAME = 'dashboard_session'
 
 if (!DASHBOARD_PASSWORD) {
-  console.warn('[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.')
+  logger.warn('[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.')
 }
 
 const effectivePassword = DASHBOARD_PASSWORD ?? `dev-fallback-${process.env.NODE_ENV}-${Date.now()}`

@@ -60,7 +60,7 @@ export default function EspaceProParametresPage() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="label">Types de travaux acceptés</label>
+            <p className="label">Types de travaux acceptés</p>
             <div className="grid sm:grid-cols-2 gap-2 mt-2">
               {[
                 { label: 'Isolation combles', checked: true },

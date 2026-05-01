@@ -39,7 +39,7 @@ export default function AdminParametresPage() {
             </div>
           </div>
           <div className="mt-4">
-            <label className="label mb-2">Maintenance</label>
+            <span className="label mb-2 block">Maintenance</span>
             <div className="flex items-center gap-3">
               <button className="relative inline-flex w-10 h-6 rounded-full bg-slate-200">
                 <span className="absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow" />

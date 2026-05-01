@@ -1,4 +1,4 @@
-import { getLeads, getUsers, getKpis, getLeadsBySource, getLeadsByCampaign, getLeadsByStatus, getLeadsByPeriod, getLeadsByCity } from '@/lib/dashboard-data'
+import { getLeads, getUsers, getKpis, getLeadsBySource, getLeadsByCampaign, getLeadsByStatus, getLeadsByPeriod, getLeadsByCity } from '@/lib/data/dashboard'
 import KpiCards from '@/components/dashboard/KpiCards'
 import LeadCharts from '@/components/dashboard/LeadCharts'
 

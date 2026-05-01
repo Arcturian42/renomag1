@@ -53,7 +53,12 @@ export default function DashboardMobileWrapper({
       {/* Mobile sidebar overlay */}
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <button
+            type="button"
+            aria-label="Fermer le menu"
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setOpen(false)}
+          />
           <div className="absolute left-0 top-0 h-full w-64">
             <div className="md:hidden absolute top-3 right-3 z-10">
               <button

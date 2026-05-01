@@ -57,4 +57,30 @@ test.describe('Public pages', () => {
       await expect(page.locator('body')).toBeVisible()
     }
   })
+
+  test('annuaire filters by specialty', async ({ page }) => {
+    await page.goto('/annuaire')
+    await expect(page.locator('text=Annuaire des artisans RGE')).toBeVisible()
+
+    // Select a specialty from the dropdown (the one with "Toutes spécialités" placeholder)
+    const specialtySelect = page.locator('select:has(option:has-text("Toutes spécialités"))')
+    await specialtySelect.selectOption({ label: 'Isolation thermique' })
+
+    // Wait for navigation and verify URL
+    await expect(page).toHaveURL(/specialite=Isolation[+%20]thermique/)
+
+    // Results should still be visible (mock data has artisans)
+    await expect(page.locator('text=artisans affichés')).toBeVisible()
+  })
+
+  test('annuaire search by query', async ({ page }) => {
+    await page.goto('/annuaire')
+
+    // Type in search box and wait for debounce
+    await page.fill('input[placeholder*="Ville"]', 'Paris')
+    await page.waitForTimeout(400)
+
+    // Should update URL with q param
+    await expect(page).toHaveURL(/q=Paris/)
+  })
 })
