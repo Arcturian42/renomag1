@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "title": "RENOMAG — The reference for energy renovation in France",
+    "description": "Find the best RGE-certified artisans near you. Take advantage of MaPrimeRénov' and CEE aid to finance your energy renovation."
+  },
+  "nav": {
+    "home": "Home",
+    "directory": "Directory",
+    "blog": "Blog",
+    "quote": "Free quote",
+    "login": "Log in",
+    "signup": "Sign up",
+    "logout": "Log out"
+  },
+  "hero": {
+    "title": "The reference for energy renovation",
+    "subtitle": "Find the best RGE-certified artisans and take advantage of MaPrimeRénov' and CEE aid.",
+    "cta": "Get my quotes",
+    "secondary": "Browse directory"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "close": "Close",
+    "next": "Next",
+    "previous": "Previous"
+  }
+}
