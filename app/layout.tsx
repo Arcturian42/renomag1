@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Lexend } from 'next/font/google'
 import { Toaster } from 'sonner'
+import PostHogProvider from '@/components/providers/PostHogProvider'
 import './globals.css'
 
 const inter = Inter({
@@ -74,8 +75,10 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} ${lexend.variable} font-sans antialiased`}>
-        {children}
-        <Toaster position="top-right" richColors closeButton />
+        <PostHogProvider>
+          {children}
+          <Toaster position="top-right" richColors closeButton />
+        </PostHogProvider>
       </body>
     </html>
   )
