@@ -93,6 +93,18 @@ export default async function EspaceProDashboard() {
 
   return (
     <div className="p-6 lg:p-8">
+      {!artisan && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+          <span className="text-amber-500 text-lg">⚠️</span>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Complétez votre profil professionnel</p>
+            <p className="text-sm text-amber-700 mt-0.5">
+              Ajoutez les informations de votre entreprise pour recevoir des leads et apparaître dans l'annuaire.{' '}
+              <a href="/espace-pro/profil" className="underline font-medium">Compléter maintenant →</a>
+            </p>
+          </div>
+        </div>
+      )}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Tableau de bord</h1>
         <p className="text-slate-500 mt-1">
