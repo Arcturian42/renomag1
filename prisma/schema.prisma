@@ -22,18 +22,56 @@ enum LeadStatus {
   REJECTED
 }
 
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum ProjectStatus {
+  QUOTE_REQUESTED
+  QUOTES_RECEIVED
+  QUOTE_ACCEPTED
+  WORK_SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  REVIEWED
+  CANCELLED
+}
+
+enum DocumentType {
+  DPE
+  DEVIS
+  CONTRAT
+  FACTURE
+  PHOTO_AVANT
+  PHOTO_APRES
+  CERTIFICATION
+  OTHER
+}
+
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  role          Role      @default(USER)
-  status        String    @default("active")
-  source        String    @default("Direct")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id            String          @id @default(uuid())
+  email         String          @unique
+  role          Role            @default(USER)
+  status        String          @default("active")
+  source        String          @default("Direct")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
   profile       Profile?
   artisan       ArtisanCompany?
-  messages      Message[]
+  messagesSent  Message[]       @relation("SentMessages")
+  messagesReceived Message[]    @relation("ReceivedMessages")
   notifications Notification[]
+  reviews       Review[]
+  projects      Project[]
+  payments      Payment[]
+  favorites     Favorite[]
+  documents     Document[]
+  auditLogs     AuditLog[]
 
   @@index([role])
   @@index([status])
@@ -88,8 +126,13 @@ model ArtisanCompany {
   leads           Lead[]
   reviews         Review[]
   subscription    Subscription?
+  quotes          Quote[]
+  projects        Project[]
+  contactAttempts ContactAttempt[]
+  favorites       Favorite[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
 
   @@index([city])
   @@index([department])
@@ -139,8 +182,13 @@ model Lead {
   specialtyId     String?
   artisan         ArtisanCompany? @relation(fields: [artisanId], references: [id])
   specialty       Specialty?      @relation(fields: [specialtyId], references: [id])
+  quotes          Quote[]
+  project         Project?
+  assignments     LeadAssignment[]
+  contactAttempts ContactAttempt[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
 
   @@index([status])
   @@index([artisanId])
@@ -165,6 +213,7 @@ model Article {
   category    Category? @relation(fields: [categoryId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
 
   @@index([published])
   @@index([featured])
@@ -195,22 +244,26 @@ model Review {
   avatar    String?
   date      String?
   project   String?
+  userId    String?
   artisanId String
   artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
+  user      User?          @relation(fields: [userId], references: [id])
   createdAt DateTime       @default(now())
 
   @@index([artisanId])
   @@index([rating])
+  @@index([userId])
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  senderId  String
+  id         String   @id @default(uuid())
+  senderId   String
   receiverId String
-  content   String
-  read      Boolean  @default(false)
-  sender    User     @relation(fields: [senderId], references: [id])
-  createdAt DateTime @default(now())
+  content    String
+  read       Boolean  @default(false)
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  createdAt  DateTime @default(now())
 
   @@index([senderId])
   @@index([receiverId])
@@ -232,23 +285,6 @@ model Notification {
   @@index([createdAt])
 }
 
-model OutreachCampaign {
-  id        String            @id @default(uuid())
-  name      String
-  subject   String
-  body      String
-  contacts  OutreachContact[]
-  createdAt DateTime          @default(now())
-}
-
-model OutreachContact {
-  id         String           @id @default(uuid())
-  email      String
-  campaignId String
-  status     String           @default("PENDING")
-  campaign   OutreachCampaign @relation(fields: [campaignId], references: [id])
-}
-
 model Subscription {
   id        String         @id @default(uuid())
   artisanId String         @unique
@@ -258,15 +294,142 @@ model Subscription {
   artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
 }
 
-model KPI {
-  id        String   @id @default(uuid())
-  name      String
-  value     Float
-  date      DateTime @default(now())
-}
-
 model Setting {
   id    String @id @default(uuid())
   key   String @unique
   value String
+}
+
+// ==================== NEW MODELS ====================
+
+model Quote {
+  id           String          @id @default(uuid())
+  leadId       String
+  artisanId    String
+  status       QuoteStatus     @default(DRAFT)
+  totalHT      Float           @default(0)
+  totalTTC     Float           @default(0)
+  tvaRate      Float           @default(0.20)
+  validityDays Int             @default(30)
+  notes        String?
+  acceptedAt   DateTime?
+  rejectedAt   DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  lead         Lead            @relation(fields: [leadId], references: [id])
+  artisan      ArtisanCompany  @relation(fields: [artisanId], references: [id])
+  lineItems    QuoteLineItem[]
+}
+
+model QuoteLineItem {
+  id          String   @id @default(uuid())
+  quoteId     String
+  designation String
+  quantity    Float    @default(1)
+  unitPrice   Float
+  total       Float
+  quote       Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  leadId      String        @unique
+  ownerId     String
+  artisanId   String
+  status      ProjectStatus @default(QUOTE_REQUESTED)
+  startDate   DateTime?
+  endDate     DateTime?
+  finalPrice  Float?
+  rating      Int?
+  review      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  lead        Lead          @relation(fields: [leadId], references: [id])
+  owner       User          @relation(fields: [ownerId], references: [id])
+  artisan     ArtisanCompany @relation(fields: [artisanId], references: [id])
+  documents   Document[]
+}
+
+model Document {
+  id        String       @id @default(uuid())
+  projectId String?
+  artisanId String?
+  userId    String?
+  type      DocumentType
+  name      String
+  url       String
+  size      Int?
+  mimeType  String?
+  createdAt DateTime     @default(now())
+  project   Project?     @relation(fields: [projectId], references: [id])
+  user      User?        @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  stripePaymentId String   @unique
+  userId          String
+  amount          Float
+  currency        String   @default("EUR")
+  status          String
+  description     String?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model Favorite {
+  id        String         @id @default(uuid())
+  userId    String
+  artisanId String
+  createdAt DateTime       @default(now())
+  user      User           @relation(fields: [userId], references: [id])
+  artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
+
+  @@unique([userId, artisanId])
+}
+
+model LeadAssignment {
+  id         String   @id @default(uuid())
+  leadId     String
+  artisanId  String
+  assignedAt DateTime @default(now())
+  accepted   Boolean?
+  acceptedAt DateTime?
+  reason     String?
+  lead       Lead     @relation(fields: [leadId], references: [id])
+
+  @@index([leadId])
+  @@index([artisanId])
+}
+
+model ContactAttempt {
+  id        String   @id @default(uuid())
+  leadId    String
+  artisanId String
+  type      String // CALL, EMAIL, VISIT, SMS
+  notes     String?
+  outcome   String? // ANSWERED, NO_ANSWER, MEETING_SCHEDULED
+  createdAt DateTime @default(now())
+  artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
+  lead      Lead     @relation(fields: [leadId], references: [id])
+
+  @@index([leadId])
+  @@index([artisanId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  oldValue  String?
+  newValue  String?
+  ip        String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
 }

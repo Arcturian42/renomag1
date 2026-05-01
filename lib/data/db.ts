@@ -65,14 +65,24 @@ function mapPrismaArticle(a: any): Article {
   }
 }
 
+function warnMockFallback(source: string) {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`[DEV WARNING] ${source} — fallback to mock data because DB is empty or unreachable`)
+  }
+}
+
 export async function getArtisans(): Promise<Artisan[]> {
   try {
     const db = await prisma.artisanCompany.findMany({
       include: { specialties: true, certifications: true, reviews: true },
     })
-    if (db.length === 0) return ARTISANS
+    if (db.length === 0) {
+      warnMockFallback('getArtisans')
+      return ARTISANS
+    }
     return db.map(mapPrismaArtisan)
   } catch {
+    warnMockFallback('getArtisans')
     return ARTISANS
   }
 }
@@ -83,9 +93,13 @@ export async function getArtisanBySlug(slug: string): Promise<Artisan | undefine
       where: { slug },
       include: { specialties: true, certifications: true, reviews: true },
     })
-    if (!db) return ARTISANS.find((a) => a.slug === slug)
+    if (!db) {
+      warnMockFallback('getArtisanBySlug')
+      return ARTISANS.find((a) => a.slug === slug)
+    }
     return mapPrismaArtisan(db)
   } catch {
+    warnMockFallback('getArtisanBySlug')
     return ARTISANS.find((a) => a.slug === slug)
   }
 }
@@ -97,9 +111,13 @@ export async function getArticles(): Promise<Article[]> {
       include: { category: true },
       orderBy: { createdAt: 'desc' },
     })
-    if (db.length === 0) return ARTICLES
+    if (db.length === 0) {
+      warnMockFallback('getArticles')
+      return ARTICLES
+    }
     return db.map(mapPrismaArticle)
   } catch {
+    warnMockFallback('getArticles')
     return ARTICLES
   }
 }
@@ -110,9 +128,13 @@ export async function getArticleBySlug(slug: string): Promise<Article | undefine
       where: { slug },
       include: { category: true },
     })
-    if (!db) return ARTICLES.find((a) => a.slug === slug)
+    if (!db) {
+      warnMockFallback('getArticleBySlug')
+      return ARTICLES.find((a) => a.slug === slug)
+    }
     return mapPrismaArticle(db)
   } catch {
+    warnMockFallback('getArticleBySlug')
     return ARTICLES.find((a) => a.slug === slug)
   }
 }

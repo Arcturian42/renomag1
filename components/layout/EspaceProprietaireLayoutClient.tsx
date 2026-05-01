@@ -9,13 +9,15 @@ import {
   MessageSquare,
   Settings,
   Bell,
+  FileText,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord', href: '/espace-proprietaire', icon: LayoutDashboard },
   { label: 'Mon projet', href: '/espace-proprietaire/mon-projet', icon: ClipboardList },
-  { label: 'Artisans matchés', href: '/espace-proprietaire/artisans', icon: Users, badge: 3 },
-  { label: 'Messages', href: '/espace-proprietaire/messages', icon: MessageSquare, badge: 2 },
+  { label: 'Mes devis', href: '/espace-proprietaire/devis', icon: FileText },
+  { label: 'Artisans matchés', href: '/espace-proprietaire/artisans', icon: Users },
+  { label: 'Messages', href: '/espace-proprietaire/messages', icon: MessageSquare },
   { label: 'Notifications', href: '/espace-proprietaire/notifications', icon: Bell },
   { label: 'Mon compte', href: '/espace-proprietaire/compte', icon: Settings },
 ]

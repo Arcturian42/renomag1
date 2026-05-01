@@ -3,7 +3,8 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { MapPin, Home, Calendar, Wrench, Euro } from 'lucide-react'
+import { MapPin, Home, Calendar, Wrench, Euro, FileText, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import ProjectSubsidy from './ProjectSubsidy'
 
 export default async function MonProjetPage() {
@@ -34,12 +35,46 @@ export default async function MonProjetPage() {
 
   const latestLead = leads[0]
 
+  const project = latestLead
+    ? await prisma.project.findUnique({
+        where: { leadId: latestLead.id },
+        include: { artisan: true },
+      })
+    : null
+
+  const quotes = latestLead
+    ? await prisma.quote.findMany({
+        where: { leadId: latestLead.id },
+        include: { artisan: true },
+      })
+    : []
+
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Mon projet</h1>
         <p className="text-slate-500 mt-1">Détails de votre demande de rénovation</p>
       </div>
+
+      {/* Project status */}
+      {project && (
+        <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-primary-900">Projet en cours</p>
+              <p className="text-xs text-primary-700 mt-0.5">
+                Statut : {project.status.replace(/_/g, ' ')} {project.artisan ? `— ${project.artisan.name}` : ''}
+              </p>
+            </div>
+            <Link
+              href="/espace-proprietaire/devis"
+              className="text-sm font-medium text-primary-700 hover:text-primary-900 flex items-center gap-1"
+            >
+              Voir les devis <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Project summary */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 mb-5">

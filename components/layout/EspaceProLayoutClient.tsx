@@ -10,14 +10,20 @@ import {
   CreditCard,
   MessageSquare,
   Settings,
+  Zap,
+  FolderKanban,
+  FileText,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord', href: '/espace-pro', icon: LayoutDashboard },
-  { label: 'Leads', href: '/espace-pro/leads', icon: Users, badge: 7 },
+  { label: 'Leads', href: '/espace-pro/leads', icon: Users },
+  { label: 'Leads potentiels', href: '/espace-pro/leads-potentiels', icon: Zap },
+  { label: 'Projets', href: '/espace-pro/projets', icon: FolderKanban },
+  { label: 'Devis', href: '/espace-pro/devis', icon: FileText },
   { label: 'Analytics', href: '/espace-pro/analytics', icon: BarChart3 },
   { label: 'Mon profil', href: '/espace-pro/profil', icon: UserCircle },
-  { label: 'Messages', href: '/espace-pro/messages', icon: MessageSquare, badge: 3 },
+  { label: 'Messages', href: '/espace-pro/messages', icon: MessageSquare },
   { label: 'Abonnement', href: '/espace-pro/abonnement', icon: CreditCard },
   { label: 'Paramètres', href: '/espace-pro/parametres', icon: Settings },
 ]

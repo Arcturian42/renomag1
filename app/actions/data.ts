@@ -1,47 +1,16 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import type { Artisan } from '@/lib/data/artisans'
 import type { Article } from '@/lib/data/blog'
 
 // ==================== LEADS ====================
 
-export async function submitLead(formData: FormData): Promise<{ success: boolean; error?: string }> {
-  try {
-    const firstName = formData.get('firstName') as string
-    const lastName = formData.get('lastName') as string
-    const email = formData.get('email') as string
-    const phone = formData.get('phone') as string
-    const zipCode = formData.get('zipCode') as string
-    const department = formData.get('department') as string
-    const projectType = formData.get('projectType') as string
-    const description = formData.get('description') as string
-    const budget = formData.get('budget') as string
-
-    if (!email || !firstName || !lastName || !zipCode) {
-      return { success: false, error: 'Veuillez remplir tous les champs obligatoires.' }
-    }
-
-    await prisma.lead.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone: phone || '',
-        zipCode,
-        department: department || zipCode.substring(0, 2),
-        projectType: projectType || 'Non spécifié',
-        description: description || '',
-        budget: budget || '',
-        status: 'NEW',
-      },
-    })
-
-    return { success: true }
-  } catch (err: any) {
-    console.error('submitLead error:', err)
-    return { success: false, error: err.message || 'Erreur serveur' }
-  }
+// NOTE: submitLead is now in app/actions/leads.ts (with Zod validation + rate limiting)
+import { submitLead as _submitLead } from './leads'
+export async function submitLead(formData: unknown) {
+  return _submitLead(formData)
 }
 
 export async function getAllLeads() {
@@ -63,7 +32,7 @@ export async function updateLeadStatus(leadId: string, status: string) {
     })
     return { success: true }
   } catch (err: any) {
-    console.error('updateLeadStatus error:', err)
+    logger.error({ err }, 'updateLeadStatus error')
     return { success: false, error: err.message || 'Erreur serveur' }
   }
 }
@@ -441,26 +410,16 @@ export async function updateArtisanProfileForm(formData: FormData) {
     }
 
   } catch (err: any) {
-    console.error('updateArtisanProfileForm error:', err)
+    logger.error({ err }, 'updateArtisanProfileForm error')
   }
 }
 
 // ==================== MESSAGING ====================
 
+// NOTE: sendMessage is now in app/actions/messages.ts (with email notification + revalidatePath)
+import { sendMessage as _sendMessage } from './messages'
 export async function sendMessage({ senderId, receiverId, content }: { senderId: string; receiverId: string; content: string }) {
-  'use server'
-  try {
-    if (!senderId || !receiverId || !content.trim()) {
-      return { success: false, error: 'Données invalides' }
-    }
-    const message = await prisma.message.create({
-      data: { senderId, receiverId, content: content.trim() },
-    })
-    return { success: true, data: message }
-  } catch (err: any) {
-    console.error('sendMessage error:', err)
-    return { success: false, error: err.message || 'Erreur serveur' }
-  }
+  return _sendMessage({ senderId, receiverId, content })
 }
 
 export async function markMessagesAsRead({ userId, partnerId }: { userId: string; partnerId: string }) {
@@ -472,7 +431,7 @@ export async function markMessagesAsRead({ userId, partnerId }: { userId: string
     })
     return { success: true }
   } catch (err: any) {
-    console.error('markMessagesAsRead error:', err)
+    logger.error({ err }, 'markMessagesAsRead error')
     return { success: false, error: err.message || 'Erreur serveur' }
   }
 }
@@ -488,7 +447,7 @@ export async function updateLeadNotes(leadId: string, notes: string) {
     })
     return { success: true }
   } catch (err: any) {
-    console.error('updateLeadNotes error:', err)
+    logger.error({ err }, 'updateLeadNotes error')
     return { success: false, error: err.message || 'Erreur serveur' }
   }
 }
@@ -513,7 +472,7 @@ export async function createArticle(data: { title: string; slug: string; content
     })
     return { success: true, data: article }
   } catch (err: any) {
-    console.error('createArticle error:', err)
+    logger.error({ err }, 'createArticle error')
     return { success: false, error: err.message || 'Erreur serveur' }
   }
 }
@@ -527,7 +486,7 @@ export async function updateArticle(id: string, data: Partial<{ title: string; s
     })
     return { success: true, data: article }
   } catch (err: any) {
-    console.error('updateArticle error:', err)
+    logger.error({ err }, 'updateArticle error')
     return { success: false, error: err.message || 'Erreur serveur' }
   }
 }
@@ -538,7 +497,7 @@ export async function deleteArticle(id: string) {
     await prisma.article.delete({ where: { id } })
     return { success: true }
   } catch (err: any) {
-    console.error('deleteArticle error:', err)
+    logger.error({ err }, 'deleteArticle error')
     return { success: false, error: err.message || 'Erreur serveur' }
   }
 }
@@ -554,7 +513,7 @@ export async function updateArtisanStatus(id: string, data: { verified?: boolean
     })
     return { success: true }
   } catch (err: any) {
-    console.error('updateArtisanStatus error:', err)
+    logger.error({ err }, 'updateArtisanStatus error')
     return { success: false, error: err.message || 'Erreur serveur' }
   }
 }
@@ -570,24 +529,10 @@ export async function getSetting(key: string) {
   }
 }
 
+// NOTE: changePassword is now in app/actions/auth.ts (with real Supabase update)
+import { changePassword as _changePassword } from './auth'
 export async function changePassword(formData: FormData) {
-  'use server'
-  try {
-    const newPassword = formData.get('newPassword') as string
-    const confirmPassword = formData.get('confirmPassword') as string
-    if (!newPassword || newPassword !== confirmPassword) {
-      return { success: false, error: 'Les mots de passe ne correspondent pas' }
-    }
-    if (newPassword.length < 8) {
-      return { success: false, error: '8 caractères minimum' }
-    }
-    // NOTE: changer le mot de passe Supabase nécessite le service role ou un client admin.
-    // Pour le MVP, on simule le succès. À brancher sur supabase.auth.admin.updateUserById() en production.
-    return { success: true }
-  } catch (err: any) {
-    console.error('changePassword error:', err)
-    return { success: false, error: err.message || 'Erreur serveur' }
-  }
+  return _changePassword(formData)
 }
 
 export async function updateSetting(formData: FormData) {

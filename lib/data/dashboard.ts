@@ -8,6 +8,12 @@ import {
 } from './dashboard-mocks'
 import { getCache, setCache, generateCacheKey } from '@/lib/cache'
 
+function warnMockFallback(source: string) {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`[DEV WARNING] ${source} — fallback to mock data because DB is empty or unreachable`)
+  }
+}
+
 // Re-exports for consumers
 export type { DashboardUser, DashboardLead, LeadStatus }
 
@@ -24,6 +30,7 @@ export async function getUsers(): Promise<DashboardUser[]> {
       orderBy: { createdAt: 'desc' },
     })
     if (!db || db.length === 0) {
+      warnMockFallback('getUsers')
       await setCache(cacheKey, MOCK_USERS, 60)
       return MOCK_USERS
     }
@@ -31,6 +38,7 @@ export async function getUsers(): Promise<DashboardUser[]> {
     await setCache(cacheKey, result, 120)
     return result
   } catch {
+    warnMockFallback('getUsers')
     return MOCK_USERS
   }
 }
@@ -66,6 +74,7 @@ export async function getLeads(): Promise<DashboardLead[]> {
       orderBy: { createdAt: 'desc' },
     })
     if (!db || db.length === 0) {
+      warnMockFallback('getLeads')
       await setCache(cacheKey, MOCK_LEADS, 60)
       return MOCK_LEADS
     }
@@ -73,6 +82,7 @@ export async function getLeads(): Promise<DashboardLead[]> {
     await setCache(cacheKey, result, 120)
     return result
   } catch {
+    warnMockFallback('getLeads')
     return MOCK_LEADS
   }
 }
