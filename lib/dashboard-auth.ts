@@ -2,9 +2,15 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createHash } from 'crypto'
 
-const DASHBOARD_PASSWORD = 'pershing'
+const DASHBOARD_PASSWORD = process.env.DASHBOARD_PASSWORD
 const COOKIE_NAME = 'dashboard_session'
-const HASHED_PASSWORD = createHash('sha256').update(DASHBOARD_PASSWORD).digest('hex')
+
+if (!DASHBOARD_PASSWORD) {
+  console.warn('[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.')
+}
+
+const effectivePassword = DASHBOARD_PASSWORD ?? `dev-fallback-${process.env.NODE_ENV}-${Date.now()}`
+const HASHED_PASSWORD = createHash('sha256').update(effectivePassword).digest('hex')
 
 export function verifyDashboardPassword(password: string): boolean {
   const hash = createHash('sha256').update(password).digest('hex')
@@ -24,7 +30,13 @@ export function setDashboardSession() {
 
 export function clearDashboardSession() {
   const cookieStore = cookies()
-  cookieStore.delete(COOKIE_NAME)
+  cookieStore.set(COOKIE_NAME, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 0,
+    path: '/dashboard-prive',
+  })
 }
 
 export function requireDashboardAuth() {

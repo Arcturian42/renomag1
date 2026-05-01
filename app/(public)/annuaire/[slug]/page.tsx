@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getArtisanBySlug } from '@/app/actions/data'
+import { getArtisans, getArtisanBySlug } from '@/lib/data/db'
 import {
   Star,
   MapPin,
@@ -19,8 +19,14 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import LocalBusinessJsonLd from '@/components/seo/LocalBusinessJsonLd'
 
 type Props = { params: { slug: string } }
+
+export async function generateStaticParams() {
+  const artisans = await getArtisans()
+  return artisans.map((a) => ({ slug: a.slug }))
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const artisan = await getArtisanBySlug(params.slug)
@@ -37,6 +43,7 @@ export default async function ArtisanProfilePage({ params }: Props) {
 
   return (
     <div className="bg-slate-50 min-h-screen">
+      <LocalBusinessJsonLd artisan={artisan} />
       {/* Breadcrumb */}
       <div className="bg-white border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
@@ -56,7 +63,7 @@ export default async function ArtisanProfilePage({ params }: Props) {
           className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
-          Retour à l&apos;annuaire
+          Retour à l'annuaire
         </Link>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -165,7 +172,7 @@ export default async function ArtisanProfilePage({ params }: Props) {
                   <div className="text-2xl font-bold text-primary-800">
                     {artisan.yearsExperience} ans
                   </div>
-                  <div className="text-xs text-slate-500 mt-0.5">D&apos;expérience</div>
+                  <div className="text-xs text-slate-500 mt-0.5">D'expérience</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary-800">

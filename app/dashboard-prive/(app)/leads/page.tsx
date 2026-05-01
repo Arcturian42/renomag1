@@ -39,9 +39,20 @@ const CAMPAIGN_OPTIONS = [
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setLeads(getLeads())
+    let cancelled = false
+    async function load() {
+      try {
+        const data = await getLeads()
+        if (!cancelled) setLeads(data)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
   }, [])
   const [statusFilter, setStatusFilter] = useState('ALL')
   const [sourceFilter, setSourceFilter] = useState('Tous')
@@ -293,12 +304,18 @@ export default function LeadsPage() {
         </div>
       )}
 
-      <DataTable
-        data={filteredLeads}
-        columns={columns as any}
-        searchKeys={['firstName', 'lastName', 'email', 'phone', 'city', 'projectType']}
-        itemsPerPage={20}
-      />
+      {loading ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm text-center text-slate-400">
+          Chargement des leads...
+        </div>
+      ) : (
+        <DataTable
+          data={filteredLeads}
+          columns={columns as any}
+          searchKeys={['firstName', 'lastName', 'email', 'phone', 'city', 'projectType']}
+          itemsPerPage={20}
+        />
+      )}
     </div>
   )
 }

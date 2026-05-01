@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ARTICLES } from '@/lib/data/blog'
+import { getFeaturedArticles } from '@/lib/data/db'
 import { formatDateShort } from '@/lib/utils'
 import { Clock, ArrowRight } from 'lucide-react'
 
-export default function FeaturedArticles() {
-  const featured = ARTICLES.filter((a) => a.featured).slice(0, 3)
+export default async function FeaturedArticles() {
+  const featured = await getFeaturedArticles()
 
   return (
     <section className="py-20 bg-white">
@@ -17,7 +17,7 @@ export default function FeaturedArticles() {
               Tout savoir sur la rénovation énergétique
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              Guides pratiques, actualités des aides et conseils d'experts
+              Guides pratiques, actualités des aides et conseils d&apos;experts
             </p>
           </div>
           <Link

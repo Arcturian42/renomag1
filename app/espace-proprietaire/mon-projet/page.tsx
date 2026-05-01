@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { MapPin, Home, Calendar, Wrench, Euro } from 'lucide-react'
 
 export default async function MonProjetPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

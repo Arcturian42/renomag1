@@ -14,7 +14,8 @@ type NavItem = {
 
 type Props = {
   navItems: NavItem[]
-  footerItems: NavItem[]
+  footerItems?: NavItem[]
+  footerExtra?: React.ReactNode
   title: string
   userInitials: string
   userName: string
@@ -24,7 +25,8 @@ type Props = {
 
 export default function DashboardMobileWrapper({
   navItems,
-  footerItems,
+  footerItems = [],
+  footerExtra,
   title,
   userInitials,
   userName,
@@ -40,6 +42,7 @@ export default function DashboardMobileWrapper({
         <DashboardSidebar
           navItems={navItems}
           footerItems={footerItems}
+          footerExtra={footerExtra}
           title={title}
           userInitials={userInitials}
           userName={userName}
@@ -52,9 +55,18 @@ export default function DashboardMobileWrapper({
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-64">
+            <div className="md:hidden absolute top-3 right-3 z-10">
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
             <DashboardSidebar
               navItems={navItems}
               footerItems={footerItems}
+              footerExtra={footerExtra}
               title={title}
               userInitials={userInitials}
               userName={userName}

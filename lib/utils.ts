@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -9,38 +9,40 @@ export function formatPrice(amount: number, currency = 'EUR'): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency,
-    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   }).format(amount)
 }
 
 export function formatDate(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
-  }).format(new Date(date))
+  }).format(d)
 }
 
 export function formatDateShort(date: string | Date): string {
+  const d = typeof date === 'string' ? new Date(date) : date
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(date))
+  }).format(d)
 }
 
 export function slugify(text: string): string {
   return text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+    .replace(/(^-|-$)+/g, '')
 }
 
-export function truncate(str: string, length: number): string {
-  if (str.length <= length) return str
-  return str.slice(0, length) + '...'
+export function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text
+  return text.slice(0, maxLength) + '...'
 }
 
 export function getInitials(name: string): string {
@@ -55,15 +57,28 @@ export function getInitials(name: string): string {
 export function calculateSubsidy(
   workType: string,
   income: 'modeste' | 'intermediaire' | 'superieur',
-  workCost: number
+  budget: number
 ): number {
-  const rates: Record<string, Record<string, number>> = {
-    isolation: { modeste: 0.7, intermediaire: 0.45, superieur: 0.3 },
-    pompe_chaleur: { modeste: 0.65, intermediaire: 0.4, superieur: 0.25 },
-    chaudiere_gaz: { modeste: 0.4, intermediaire: 0.25, superieur: 0.15 },
-    photovoltaique: { modeste: 0.3, intermediaire: 0.2, superieur: 0.1 },
-    default: { modeste: 0.5, intermediaire: 0.35, superieur: 0.2 },
+  // Simplified calculation stub
+  const baseRates: Record<string, number> = {
+    modeste: 0.7,
+    intermediaire: 0.4,
+    superieur: 0.3,
   }
-  const rate = (rates[workType] || rates.default)[income]
-  return Math.round(workCost * rate)
+  const rate = workType === 'isolation' ? baseRates[income] : baseRates[income] * 0.6666666666666666
+  return Math.round(budget * (rate ?? 0.2))
+}
+
+export function calculateEstimate(
+  workTypes: string[],
+  budget: string,
+  surface: string,
+  income: string
+): { cost: number; aids: number; remaining: number } {
+  // Simplified calculation stub
+  const surfaceNum = parseInt(surface, 10) || 50
+  const cost = surfaceNum * 150 * workTypes.length
+  const aids = Math.round(cost * 0.4)
+  const remaining = cost - aids
+  return { cost, aids, remaining }
 }

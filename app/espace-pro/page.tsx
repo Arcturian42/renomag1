@@ -12,7 +12,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 }
 
 export default async function EspaceProDashboard() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

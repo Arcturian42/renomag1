@@ -28,6 +28,8 @@ export type Artisan = {
   since: number
   gallery: string[]
   reviews: Review[]
+  latitude?: number
+  longitude?: number
 }
 
 export type Review = {

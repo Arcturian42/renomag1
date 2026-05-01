@@ -1,25 +1,101 @@
 'use server'
 
+import { prisma } from '@/lib/prisma'
+import { Role } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { prisma } from '@/lib/prisma'
+import { validateEmail } from '@/lib/email-validation'
+import { slugify } from '@/lib/utils'
+
+export async function getUserRoleByEmail(email: string): Promise<Role | null> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { role: true },
+    })
+    return user?.role ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function createUserInDb({
+  email,
+  role = Role.USER,
+}: {
+  email: string
+  role?: Role
+}) {
+  try {
+    const existing = await prisma.user.findUnique({
+      where: { email },
+    })
+
+    if (existing) {
+      return { success: true, user: existing }
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        role,
+        status: 'active',
+        source: 'Direct',
+      },
+    })
+
+    revalidatePath('/admin/utilisateurs')
+    return { success: true, user }
+  } catch (error) {
+    console.error('Error creating user in DB:', error)
+    return { success: false, error: 'Failed to create user' }
+  }
+}
+
+export async function getRedirectPathForRole(role: Role | null): Promise<string> {
+  if (role === Role.ADMIN) return '/admin'
+  if (role === Role.ARTISAN) return '/espace-pro'
+  return '/espace-proprietaire'
+}
+
+export async function requestPasswordReset(email: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? 'https://renomag.fr'}/reinitialiser-mot-de-passe`,
+    })
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    return { success: true }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erreur inconnue'
+    return { success: false, error: message }
+  }
+}
 
 export async function login(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+
+  // Validate email MX record
+  const emailValidation = await validateEmail(email)
+  if (!emailValidation.valid) {
+    redirect('/connexion?error=' + encodeURIComponent(emailValidation.error ?? 'Email invalide'))
   }
 
-  const { data: authData, error } = await supabase.auth.signInWithPassword(data)
+  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error || !authData.user) {
     redirect('/connexion?error=' + encodeURIComponent(error?.message || 'Erreur de connexion'))
   }
 
-  // Ensure user exists in Prisma (in case of auth reset or sync issue)
+  // Ensure user exists in Prisma
   let dbUser = await prisma.user.findUnique({
     where: { id: authData.user.id },
   })
@@ -34,9 +110,13 @@ export async function login(formData: FormData) {
     })
   }
 
+  // Sync role to Supabase Auth metadata for middleware access
+  if (dbUser?.role) {
+    await supabase.auth.updateUser({ data: { role: dbUser.role } })
+  }
+
   revalidatePath('/', 'layout')
 
-  // Redirect based on role
   if (dbUser.role === 'ADMIN') {
     redirect('/admin')
   } else if (dbUser.role === 'ARTISAN') {
@@ -47,7 +127,7 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
@@ -56,6 +136,12 @@ export async function signup(formData: FormData) {
   const lastName = formData.get('lastName') as string
   const companyName = formData.get('companyName') as string
   const siret = formData.get('siret') as string
+
+  // Validate email MX record
+  const emailValidation = await validateEmail(email)
+  if (!emailValidation.valid) {
+    redirect('/inscription?error=' + encodeURIComponent(emailValidation.error ?? 'Email invalide'))
+  }
 
   const { data: authData, error } = await supabase.auth.signUp({
     email,
@@ -93,6 +179,7 @@ export async function signup(formData: FormData) {
     await prisma.artisanCompany.create({
       data: {
         userId: dbUser.id,
+        slug: slugify(companyName),
         name: companyName,
         siret: siret || '00000000000000',
         address: '',
@@ -108,7 +195,7 @@ export async function signup(formData: FormData) {
 }
 
 export async function logout() {
-  const supabase = createClient()
+  const supabase = await createClient()
 
   const { error } = await supabase.auth.signOut()
 
@@ -118,19 +205,4 @@ export async function logout() {
 
   revalidatePath('/', 'layout')
   redirect('/connexion')
-}
-
-export async function resetPassword(formData: FormData) {
-  const supabase = createClient()
-  const email = formData.get('email') as string
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/callback?next=/mot-de-passe-oublie`,
-  })
-
-  if (error) {
-    redirect('/mot-de-passe-oublie?error=' + encodeURIComponent(error.message))
-  }
-
-  redirect('/mot-de-passe-oublie?message=Un email de réinitialisation a été envoyé.')
 }

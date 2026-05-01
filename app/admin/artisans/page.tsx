@@ -1,37 +1,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getAllArtisans } from '@/app/actions/data'
+import { ARTISANS } from '@/lib/data/artisans'
 import { Search, Filter, CheckCircle, Crown, AlertCircle, Plus } from 'lucide-react'
-import { slugify } from '@/lib/utils'
 
-export default async function AdminArtisansPage() {
-  const artisans = await getAllArtisans()
-
-  const stats = [
-    { label: 'Total', value: artisans.length.toLocaleString('fr-FR'), color: 'text-slate-900' },
-    {
-      label: 'Vérifiés',
-      value: artisans.filter((a) => a.certifications.length > 0).length.toLocaleString('fr-FR'),
-      color: 'text-eco-600',
-    },
-    {
-      label: 'Premium',
-      value: artisans.filter((a) => a.isFeatured || a.subscription?.status === 'active').length.toLocaleString('fr-FR'),
-      color: 'text-accent-600',
-    },
-    {
-      label: 'En attente',
-      value: artisans.filter((a) => a.certifications.length === 0).length.toLocaleString('fr-FR'),
-      color: 'text-amber-600',
-    },
-  ]
-
+export default function AdminArtisansPage() {
   return (
     <div className="p-6 lg:p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Artisans</h1>
-          <p className="text-slate-500 mt-1">{artisans.length} artisans dans la base</p>
+          <p className="text-slate-500 mt-1">{ARTISANS.length} artisans dans la base</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -55,7 +33,12 @@ export default async function AdminArtisansPage() {
 
       {/* Stats bar */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        {stats.map((stat) => (
+        {[
+          { label: 'Total', value: '2 418', color: 'text-slate-900' },
+          { label: 'Vérifiés', value: '2 104', color: 'text-eco-600' },
+          { label: 'Premium', value: '347', color: 'text-accent-600' },
+          { label: 'En attente', value: '12', color: 'text-amber-600' },
+        ].map((stat) => (
           <div key={stat.label} className="bg-white rounded-xl border border-slate-200 p-4 text-center">
             <p className={`text-xl font-bold ${stat.color}`}>{stat.value}</p>
             <p className="text-xs text-slate-500 mt-0.5">{stat.label}</p>
@@ -87,100 +70,81 @@ export default async function AdminArtisansPage() {
             </tr>
           </thead>
           <tbody>
-            {artisans.map((artisan) => {
-              const ownerName = artisan.user?.profile
-                ? `${artisan.user.profile.firstName || ''} ${artisan.user.profile.lastName || ''}`.trim()
-                : artisan.user?.email || 'Inconnu'
-              const avgRating =
-                artisan.reviews.length > 0
-                  ? (artisan.reviews.reduce((sum, r) => sum + r.rating, 0) / artisan.reviews.length).toFixed(1)
-                  : '0.0'
-              const slug = artisan.name ? slugify(artisan.name) : artisan.id
-
-              return (
-                <tr
-                  key={artisan.id}
-                  className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
-                >
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
-                        {artisan.logoUrl ? (
-                          <Image
-                            src={artisan.logoUrl}
-                            alt={artisan.name}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-xs font-bold text-slate-500">
-                            {artisan.name.slice(0, 2).toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900 flex items-center gap-1">
-                          {artisan.name}
-                          {(artisan.isFeatured || artisan.subscription?.status === 'active') && (
-                            <Crown className="w-3 h-3 text-accent-500" />
-                          )}
-                        </p>
-                        <p className="text-xs text-slate-400">{ownerName}</p>
-                      </div>
+            {ARTISANS.map((artisan) => (
+              <tr
+                key={artisan.id}
+                className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+              >
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                      <Image
+                        src={artisan.avatar}
+                        alt={artisan.name}
+                        fill
+                        className="object-cover"
+                        sizes="48px"
+                      />
                     </div>
-                  </td>
-                  <td className="px-4 py-4 text-slate-600">
-                    <p>{artisan.city}</p>
-                    <p className="text-xs text-slate-400">{artisan.department}</p>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {artisan.certifications.slice(0, 2).map((cert) => (
-                        <span key={cert.id} className="badge-rge text-xs">
-                          {cert.name}
-                        </span>
-                      ))}
+                    <div>
+                      <p className="font-medium text-slate-900 flex items-center gap-1">
+                        {artisan.company}
+                        {artisan.premium && <Crown className="w-3 h-3 text-accent-500" />}
+                      </p>
+                      <p className="text-xs text-slate-400">{artisan.name}</p>
                     </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-semibold text-slate-900">
-                        {avgRating}
+                  </div>
+                </td>
+                <td className="px-4 py-4 text-slate-600">
+                  <p>{artisan.city}</p>
+                  <p className="text-xs text-slate-400">{artisan.region}</p>
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex flex-wrap gap-1">
+                    {artisan.certifications.slice(0, 2).map((cert) => (
+                      <span key={cert} className="badge-rge text-xs">
+                        {cert}
                       </span>
-                      <span className="text-amber-400">⭐</span>
-                    </div>
-                    <p className="text-xs text-slate-400">{artisan.reviews.length} avis</p>
-                  </td>
-                  <td className="px-4 py-4">
-                    {artisan.certifications.length > 0 ? (
-                      <span className="flex items-center gap-1 text-xs text-eco-700 bg-eco-50 rounded-full px-2 py-0.5 w-fit">
-                        <CheckCircle className="w-3 h-3" />
-                        Vérifié
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">
-                        <AlertCircle className="w-3 h-3" />
-                        En attente
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/annuaire/${slug}`}
-                        className="text-xs text-primary-600 hover:text-primary-800 font-medium"
-                      >
-                        Voir
-                      </Link>
-                      <button className="text-xs text-slate-400 hover:text-slate-700 font-medium">
-                        Modifier
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )
-            })}
+                    ))}
+                  </div>
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm font-semibold text-slate-900">
+                      {artisan.rating}
+                    </span>
+                    <span className="text-amber-400">⭐</span>
+                  </div>
+                  <p className="text-xs text-slate-400">{artisan.reviewCount} avis</p>
+                </td>
+                <td className="px-4 py-4">
+                  {artisan.verified ? (
+                    <span className="flex items-center gap-1 text-xs text-eco-700 bg-eco-50 rounded-full px-2 py-0.5 w-fit">
+                      <CheckCircle className="w-3 h-3" />
+                      Vérifié
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">
+                      <AlertCircle className="w-3 h-3" />
+                      En attente
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/annuaire/${artisan.slug}`}
+                      className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+                    >
+                      Voir
+                    </Link>
+                    <button className="text-xs text-slate-400 hover:text-slate-700 font-medium">
+                      Modifier
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

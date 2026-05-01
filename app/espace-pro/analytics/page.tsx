@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { TrendingUp, Euro, Users, Star, ArrowUp } from 'lucide-react'
 
 export default async function EspaceProAnalyticsPage() {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
