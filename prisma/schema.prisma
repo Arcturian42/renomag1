@@ -33,6 +33,10 @@ model User {
   artisan       ArtisanCompany?
   messages      Message[]
   notifications Notification[]
+
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Profile {
@@ -85,6 +89,16 @@ model ArtisanCompany {
   subscription    Subscription?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+
+  @@index([city])
+  @@index([department])
+  @@index([region])
+  @@index([rating])
+  @@index([isFeatured])
+  @@index([verified])
+  @@index([premium])
+  @@index([available])
+  @@index([createdAt])
 }
 
 model Certification {
@@ -125,6 +139,11 @@ model Lead {
   specialty       Specialty?      @relation(fields: [specialtyId], references: [id])
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
+
+  @@index([status])
+  @@index([artisanId])
+  @@index([createdAt])
+  @@index([campaign])
 }
 
 model Article {
@@ -144,6 +163,11 @@ model Article {
   category    Category? @relation(fields: [categoryId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([published])
+  @@index([featured])
+  @@index([categoryId])
+  @@index([createdAt])
 }
 
 model Category {
@@ -172,6 +196,9 @@ model Review {
   artisanId String
   artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
   createdAt DateTime       @default(now())
+
+  @@index([artisanId])
+  @@index([rating])
 }
 
 model Message {
@@ -182,6 +209,11 @@ model Message {
   read      Boolean  @default(false)
   sender    User     @relation(fields: [senderId], references: [id])
   createdAt DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([read])
+  @@index([createdAt])
 }
 
 model Notification {
@@ -192,6 +224,10 @@ model Notification {
   read      Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
 }
 
 model OutreachCampaign {

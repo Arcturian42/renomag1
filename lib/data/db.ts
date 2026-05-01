@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { ARTISANS, type Artisan, type Review } from './artisans'
 import { ARTICLES, type Article } from './blog'
+import { getCache, setCache, generateCacheKey } from '@/lib/cache'
 
 function mapPrismaArtisan(a: any): Artisan {
   return {
@@ -146,6 +147,10 @@ export async function getArtisansWithFilters(
   const limit = Math.min(50, Math.max(1, parseInt(filters.limit ?? '12', 10)))
   const skip = (page - 1) * limit
 
+  const cacheKey = generateCacheKey('artisans', { ...filters, page, limit })
+  const cached = await getCache<{ artisans: Artisan[]; total: number }>(cacheKey)
+  if (cached) return cached
+
   try {
     const where: Prisma.ArtisanCompanyWhereInput = {}
 
@@ -209,7 +214,9 @@ export async function getArtisansWithFilters(
       throw new Error('Empty DB — fallback to mock')
     }
 
-    return { artisans: db.map(mapPrismaArtisan), total: totalCount }
+    const result = { artisans: db.map(mapPrismaArtisan), total: totalCount }
+    await setCache(cacheKey, result, 60)
+    return result
   } catch {
     // Fallback: in-memory filtering on mock data
     let artisans = [...ARTISANS]
@@ -266,11 +273,17 @@ export async function getArtisansWithFilters(
 
     const total = artisans.length
     const start = skip
-    return { artisans: artisans.slice(start, start + limit), total }
+    const result = { artisans: artisans.slice(start, start + limit), total }
+    await setCache(cacheKey, result, 60)
+    return result
   }
 }
 
 export async function getArticlesWithFilters(filters: ArticlesFilters = {}): Promise<{ articles: Article[]; total: number }> {
+  const cacheKey = generateCacheKey('articles', filters)
+  const cached = await getCache<{ articles: Article[]; total: number }>(cacheKey)
+  if (cached) return cached
+
   let articles = await getArticles()
 
   // Text search
@@ -296,8 +309,9 @@ export async function getArticlesWithFilters(filters: ArticlesFilters = {}): Pro
   const limit = Math.min(50, Math.max(1, parseInt(filters.limit ?? '12', 10)))
   const start = (page - 1) * limit
   const paginated = articles.slice(start, start + limit)
-
-  return { articles: paginated, total }
+  const result = { articles: paginated, total }
+  await setCache(cacheKey, result, 120)
+  return result
 }
 
 export async function getFeaturedArticles(): Promise<Article[]> {

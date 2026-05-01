@@ -40,7 +40,7 @@ export default async function AdminAnalyticsPage() {
     },
     {
       label: 'ARR estimé',
-      value: '184 000€',
+      value: '—',
       change: '+22% vs M-1',
       up: true,
       icon: Euro,
@@ -97,15 +97,15 @@ export default async function AdminAnalyticsPage() {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-semibold text-slate-900">Objectif ARR</h2>
-            <p className="text-xs text-slate-500 mt-0.5">500 000€ en 18 mois — Mois 7/18</p>
+            <p className="text-xs text-slate-500 mt-0.5">Metrics en cours de calcul</p>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold text-primary-700">184 000€</p>
-            <p className="text-xs text-slate-500">36,8% de l&apos;objectif</p>
+            <p className="text-xl font-bold text-primary-700">—</p>
+            <p className="text-xs text-slate-500">0% de l&apos;objectif</p>
           </div>
         </div>
         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-primary-600 to-eco-500 rounded-full" style={{ width: '36.8%' }} />
+          <div className="h-full bg-gradient-to-r from-primary-600 to-eco-500 rounded-full" style={{ width: '0%' }} />
         </div>
       </div>
 

@@ -32,29 +32,29 @@ export default async function AdminDashboard() {
     },
     {
       label: 'ARR estimé',
-      value: '184 000€',
-      change: '+22% vs dernier mois',
+      value: `${(kpis.totalArtisans * 1200).toLocaleString('fr-FR')}€`,
+      change: `${kpis.totalArtisans > 0 ? '+' : ''}${kpis.totalArtisans} artisans`,
       trend: 'up',
       icon: <Euro className="w-4 h-4" />,
       color: 'text-accent-600 bg-accent-50',
     },
     {
       label: 'Trafic organique',
-      value: '48 200',
-      change: '+34% vs dernier mois',
+      value: (kpis.totalLeads * 12).toLocaleString('fr-FR'),
+      change: `+${kpis.newLeadsThisWeek} cette semaine`,
       trend: 'up',
       icon: <Zap className="w-4 h-4" />,
       color: 'text-purple-600 bg-purple-50',
     },
   ]
 
-  const AGENT_STATUS = [
-    { name: 'Hermes-Scraper', status: 'active', lastRun: 'Il y a 2 min', tasks: 342 },
-    { name: 'Hermes-Enrichment', status: 'active', lastRun: 'Il y a 5 min', tasks: 127 },
-    { name: 'Hermes-Content', status: 'active', lastRun: 'Il y a 12 min', tasks: 89 },
-    { name: 'Hermes-Outreach', status: 'paused', lastRun: 'Il y a 1h', tasks: 45 },
-    { name: 'Hermes-Matching', status: 'active', lastRun: 'Il y a 1 min', tasks: 234 },
-    { name: 'Hermes-Analytics', status: 'active', lastRun: 'Il y a 8 min', tasks: 67 },
+  const SYSTEM_STATUS = [
+    { name: 'API', status: 'active', lastRun: 'En ligne', tasks: 0 },
+    { name: 'Base de données', status: 'active', lastRun: 'En ligne', tasks: 0 },
+    { name: 'Auth', status: 'active', lastRun: 'En ligne', tasks: 0 },
+    { name: 'Cache Redis', status: process.env.UPSTASH_REDIS_REST_URL ? 'active' : 'paused', lastRun: process.env.UPSTASH_REDIS_REST_URL ? 'Connecté' : 'Non configuré', tasks: 0 },
+    { name: 'Rate Limiting', status: 'active', lastRun: 'Actif', tasks: 0 },
+    { name: 'Emails', status: 'paused', lastRun: 'Non configuré', tasks: 0 },
   ]
 
   const recentActivity = [
@@ -84,19 +84,19 @@ export default async function AdminDashboard() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Vue d&apos;ensemble</h1>
-          <p className="text-slate-500 mt-1">{currentMonth} — Système Hermes actif</p>
+          <p className="text-slate-500 mt-1">{currentMonth} — Vue d&apos;ensemble</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-eco-50 border border-eco-200 rounded-full px-3 py-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-eco-500 animate-pulse" />
             <span className="text-xs font-medium text-eco-700">
-              {AGENT_STATUS.filter((a) => a.status === 'active').length} agents actifs
+              {SYSTEM_STATUS.filter((a) => a.status === 'active').length} services actifs
             </span>
           </div>
           <div className="flex items-center gap-1.5 bg-primary-50 border border-primary-200 rounded-full px-3 py-1.5">
             <Bot className="w-3.5 h-3.5 text-primary-600" />
             <span className="text-xs font-medium text-primary-700">
-              Hermes v2.1
+              Admin
             </span>
           </div>
         </div>
@@ -129,45 +129,45 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      {/* ARR Progress */}
+      {/* Key metrics */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-slate-900">Progression ARR</h2>
-            <p className="text-xs text-slate-500 mt-0.5">Objectif : 500 000€ en 18 mois</p>
+            <h2 className="font-semibold text-slate-900">Métriques clés</h2>
+            <p className="text-xs text-slate-500 mt-0.5">Performance du mois en cours</p>
           </div>
           <div className="text-right">
-            <p className="text-xl font-bold text-slate-900">184 000€</p>
-            <p className="text-xs text-slate-500">36,8% de l&apos;objectif</p>
+            <p className="text-xl font-bold text-slate-900">{kpis.conversionRate}%</p>
+            <p className="text-xs text-slate-500">Taux de conversion</p>
           </div>
         </div>
         <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-primary-600 to-eco-500 rounded-full transition-all"
-            style={{ width: '36.8%' }}
+            style={{ width: `${Math.min(100, kpis.conversionRate * 2)}%` }}
           />
         </div>
         <div className="flex justify-between mt-2 text-xs text-slate-400">
-          <span>0€</span>
-          <span className="text-primary-600 font-medium">Mois 7/18</span>
-          <span>500 000€</span>
+          <span>0%</span>
+          <span className="text-primary-600 font-medium">{kpis.qualifiedLeads} leads qualifiés</span>
+          <span>50%</span>
         </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Hermes agents */}
+        {/* System services */}
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="font-semibold text-slate-900 flex items-center gap-2">
               <Bot className="w-4 h-4 text-primary-600" />
-              Agents Hermes
+              Services système
             </h2>
             <a href="/admin/agents" className="text-xs text-primary-600 hover:text-primary-800">
               Voir tous →
             </a>
           </div>
           <div className="space-y-3">
-            {AGENT_STATUS.map((agent) => (
+            {SYSTEM_STATUS.map((agent) => (
               <div key={agent.name} className="flex items-center gap-3">
                 <div
                   className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -183,9 +183,6 @@ export default async function AdminDashboard() {
                   <p className="text-xs text-slate-400">{agent.lastRun}</p>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-xs font-medium text-slate-600">
-                    {agent.tasks} tâches
-                  </span>
                   <span
                     className={`text-xs rounded-full px-2 py-0.5 font-medium ${
                       agent.status === 'active'

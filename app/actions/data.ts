@@ -194,8 +194,13 @@ export async function getAllArtisanCompanies() {
 export async function getKPIs() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const startOfWeek = new Date(now)
+  const day = startOfWeek.getDay()
+  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
+  startOfWeek.setDate(diff)
+  startOfWeek.setHours(0, 0, 0, 0)
 
-  const [users, artisanCount, leads, articles, usersThisMonth, leadsThisMonth, convertedLeads] = await Promise.all([
+  const [users, artisanCount, leads, articles, usersThisMonth, leadsThisMonth, convertedLeads, qualifiedLeads, newLeadsThisWeek] = await Promise.all([
     prisma.user.count(),
     prisma.artisanCompany.count(),
     prisma.lead.count(),
@@ -203,6 +208,8 @@ export async function getKPIs() {
     prisma.user.count({ where: { createdAt: { gte: startOfMonth } } }),
     prisma.lead.count({ where: { createdAt: { gte: startOfMonth } } }),
     prisma.lead.count({ where: { status: 'CONVERTED' } }),
+    prisma.lead.count({ where: { status: { in: ['QUALIFIED', 'CONVERTED'] } } }),
+    prisma.lead.count({ where: { createdAt: { gte: startOfWeek } } }),
   ])
 
   const conversionRate = leads > 0 ? Math.round((convertedLeads / leads) * 100) : 0
@@ -216,6 +223,12 @@ export async function getKPIs() {
     usersThisMonth,
     leadsThisMonth,
     conversionRate,
+    convertedLeads,
+    qualifiedLeads,
+    newLeadsThisWeek,
+    totalUsers: users,
+    totalArtisans: artisanCount,
+    totalLeads: leads,
   }
 }
 

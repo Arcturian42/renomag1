@@ -6,6 +6,7 @@ import {
   type DashboardLead,
   type LeadStatus,
 } from './dashboard-mocks'
+import { getCache, setCache, generateCacheKey } from '@/lib/cache'
 
 // Re-exports for consumers
 export type { DashboardUser, DashboardLead, LeadStatus }
@@ -13,52 +14,82 @@ export type { DashboardUser, DashboardLead, LeadStatus }
 // ─── Users ───────────────────────────────────────────────
 
 export async function getUsers(): Promise<DashboardUser[]> {
+  const cacheKey = generateCacheKey('dashboard:users', {})
+  const cached = await getCache<DashboardUser[]>(cacheKey)
+  if (cached) return cached
+
   try {
     const db = await prisma.user.findMany({
       include: { profile: true },
       orderBy: { createdAt: 'desc' },
     })
-    if (!db || db.length === 0) return MOCK_USERS
-    return db.map(mapPrismaUser)
+    if (!db || db.length === 0) {
+      await setCache(cacheKey, MOCK_USERS, 60)
+      return MOCK_USERS
+    }
+    const result = db.map(mapPrismaUser)
+    await setCache(cacheKey, result, 120)
+    return result
   } catch {
     return MOCK_USERS
   }
 }
 
 export async function getUserById(id: string): Promise<DashboardUser | null> {
+  const cacheKey = generateCacheKey('dashboard:user', { id })
+  const cached = await getCache<DashboardUser>(cacheKey)
+  if (cached) return cached
+
   try {
     const db = await prisma.user.findUnique({
       where: { id },
       include: { profile: true },
     })
-    if (!db) return MOCK_USERS.find((u) => u.id === id) || null
-    return mapPrismaUser(db)
+    if (!db) return null
+    const result = mapPrismaUser(db)
+    await setCache(cacheKey, result, 300)
+    return result
   } catch {
-    return MOCK_USERS.find((u) => u.id === id) || null
+    return null
   }
 }
 
 // ─── Leads ───────────────────────────────────────────────
 
 export async function getLeads(): Promise<DashboardLead[]> {
+  const cacheKey = generateCacheKey('dashboard:leads', {})
+  const cached = await getCache<DashboardLead[]>(cacheKey)
+  if (cached) return cached
+
   try {
     const db = await prisma.lead.findMany({
       orderBy: { createdAt: 'desc' },
     })
-    if (!db || db.length === 0) return MOCK_LEADS
-    return db.map(mapPrismaLead)
+    if (!db || db.length === 0) {
+      await setCache(cacheKey, MOCK_LEADS, 60)
+      return MOCK_LEADS
+    }
+    const result = db.map(mapPrismaLead)
+    await setCache(cacheKey, result, 120)
+    return result
   } catch {
     return MOCK_LEADS
   }
 }
 
 export async function getLeadById(id: string): Promise<DashboardLead | null> {
+  const cacheKey = generateCacheKey('dashboard:lead', { id })
+  const cached = await getCache<DashboardLead>(cacheKey)
+  if (cached) return cached
+
   try {
     const db = await prisma.lead.findUnique({ where: { id } })
-    if (!db) return MOCK_LEADS.find((l) => l.id === id) || null
-    return mapPrismaLead(db)
+    if (!db) return null
+    const result = mapPrismaLead(db)
+    await setCache(cacheKey, result, 300)
+    return result
   } catch {
-    return MOCK_LEADS.find((l) => l.id === id) || null
+    return null
   }
 }
 
