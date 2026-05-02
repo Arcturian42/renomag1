@@ -205,25 +205,34 @@ export async function signup(formData: FormData) {
     })
 
     // If artisan, create the company record
-    if (role === 'ARTISAN' && companyName) {
-      // Generate unique SIRET if not provided (use timestamp + random to ensure uniqueness)
-      const uniqueSiret = siret || `TEMP${Date.now()}${Math.floor(Math.random() * 1000)}`
-      // Generate unique slug (append part of userId to avoid collisions)
-      const baseSlug = slugify(companyName)
-      const uniqueSlug = `${baseSlug}-${dbUser.id.substring(0, 8)}`
+    if (role === 'ARTISAN') {
+      // Only create company if companyName is provided
+      if (companyName && companyName.trim()) {
+        try {
+          // Generate unique SIRET if not provided (use timestamp + random to ensure uniqueness)
+          const uniqueSiret = siret && siret.trim() ? siret.trim() : `TEMP${Date.now()}${Math.floor(Math.random() * 1000)}`
+          // Generate unique slug (append part of userId to avoid collisions)
+          const baseSlug = slugify(companyName.trim())
+          const uniqueSlug = `${baseSlug}-${dbUser.id.substring(0, 8)}`
 
-      await prisma.artisanCompany.create({
-        data: {
-          userId: dbUser.id,
-          slug: uniqueSlug,
-          name: companyName,
-          siret: uniqueSiret,
-          address: '',
-          city: '',
-          zipCode: '',
-          department: '',
-        },
-      })
+          await prisma.artisanCompany.create({
+            data: {
+              userId: dbUser.id,
+              slug: uniqueSlug,
+              name: companyName.trim(),
+              siret: uniqueSiret,
+              address: '',
+              city: '',
+              zipCode: '',
+              department: '',
+            },
+          })
+        } catch (companyError) {
+          console.error('Error creating artisan company:', companyError)
+          // Continue with user creation even if company creation fails
+          // The artisan can complete their profile later
+        }
+      }
     }
 
     // Sync role to Supabase Auth metadata for middleware access
