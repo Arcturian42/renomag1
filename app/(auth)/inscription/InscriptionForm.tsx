@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Zap, ArrowRight, CheckCircle } from 'lucide-react'
 import { signup } from '@/app/actions/auth'
@@ -12,9 +12,9 @@ type UserType = 'particulier' | 'pro' | null
 export default function InscriptionForm() {
   const [userType, setUserType] = useState<UserType>(null)
   const [step, setStep] = useState<'type' | 'form'>('type')
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
-  const message = searchParams.get('message')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -139,11 +139,6 @@ export default function InscriptionForm() {
                   {error}
                 </div>
               )}
-              {message && (
-                <div className="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-sm text-green-700">
-                  {message}
-                </div>
-              )}
 
               {/* Social */}
               <div className="mb-5">
@@ -156,37 +151,61 @@ export default function InscriptionForm() {
                 <div className="flex-1 border-t border-slate-200" />
               </div>
 
-              <form action={signup} className="space-y-4">
+              <form onSubmit={async (e) => {
+                e.preventDefault()
+                setIsLoading(true)
+                setError(null)
+
+                try {
+                  const formData = new FormData(e.currentTarget)
+                  await signup(formData)
+                  // If signup succeeds, it will redirect via the server action
+                  // This code only runs if redirect fails
+                  const role = formData.get('role') as string
+                  if (role === 'ARTISAN') {
+                    router.push('/espace-pro')
+                  } else {
+                    router.push('/espace-proprietaire')
+                  }
+                } catch (err) {
+                  setIsLoading(false)
+                  if (err && typeof err === 'object' && 'digest' in err && typeof err.digest === 'string' && err.digest.startsWith('NEXT_REDIRECT')) {
+                    // This is a successful redirect, not an error
+                    return
+                  }
+                  setError(err instanceof Error ? err.message : "Erreur lors de l'inscription. Veuillez réessayer.")
+                }
+              }} className="space-y-4">
                 <input type="hidden" name="role" value={userType === 'pro' ? 'ARTISAN' : 'USER'} />
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label" htmlFor="firstName">Prénom</label>
-                    <input type="text" id="firstName" name="firstName" placeholder="Jean" className="input-field" />
+                    <input type="text" id="firstName" name="firstName" placeholder="Jean" className="input-field" disabled={isLoading} />
                   </div>
                   <div>
                     <label className="label" htmlFor="lastName">Nom</label>
-                    <input type="text" id="lastName" name="lastName" placeholder="Dupont" className="input-field" />
+                    <input type="text" id="lastName" name="lastName" placeholder="Dupont" className="input-field" disabled={isLoading} />
                   </div>
                 </div>
                 <div>
                   <label className="label" htmlFor="email">Email</label>
-                  <input type="email" id="email" name="email" placeholder="jean.dupont@email.fr" className="input-field" required />
+                  <input type="email" id="email" name="email" placeholder="jean.dupont@email.fr" className="input-field" required disabled={isLoading} />
                 </div>
                 {userType === 'pro' && (
                   <>
                     <div>
                       <label className="label" htmlFor="companyName">Nom de l'entreprise</label>
-                      <input type="text" id="companyName" name="companyName" placeholder="Mon Entreprise SARL" className="input-field" />
+                      <input type="text" id="companyName" name="companyName" placeholder="Mon Entreprise SARL" className="input-field" disabled={isLoading} />
                     </div>
                     <div>
                       <label className="label" htmlFor="siret">SIRET</label>
-                      <input type="text" id="siret" name="siret" placeholder="123 456 789 00012" className="input-field" />
+                      <input type="text" id="siret" name="siret" placeholder="123 456 789 00012" className="input-field" disabled={isLoading} />
                     </div>
                   </>
                 )}
                 <div>
                   <label className="label" htmlFor="password">Mot de passe</label>
-                  <input type="password" id="password" name="password" placeholder="8 caractères minimum" className="input-field" required minLength={6} />
+                  <input type="password" id="password" name="password" placeholder="8 caractères minimum" className="input-field" required minLength={6} disabled={isLoading} />
                 </div>
 
                 <div className="flex items-start gap-2">
@@ -195,6 +214,7 @@ export default function InscriptionForm() {
                     id="cgu"
                     name="cgu"
                     required
+                    disabled={isLoading}
                     className="mt-0.5 rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                   />
                   <label htmlFor="cgu" className="text-xs text-slate-500 cursor-pointer">
@@ -209,9 +229,9 @@ export default function InscriptionForm() {
                   </label>
                 </div>
 
-                <button type="submit" className="btn-primary w-full py-3">
-                  Créer mon compte
-                  <ArrowRight className="w-4 h-4" />
+                <button type="submit" className="btn-primary w-full py-3" disabled={isLoading}>
+                  {isLoading ? 'Création en cours...' : 'Créer mon compte'}
+                  {!isLoading && <ArrowRight className="w-4 h-4" />}
                 </button>
               </form>
             </div>
