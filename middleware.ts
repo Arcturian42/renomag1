@@ -87,11 +87,20 @@ export async function middleware(request: NextRequest) {
       for (const [route, allowedRoles] of Object.entries(ROLE_ROUTES)) {
         if (pathname.startsWith(route)) {
           if (!userRole || !allowedRoles.includes(userRole)) {
-            // Wrong role → redirect to their appropriate space
-            const redirectPath = getRedirectForRole(userRole ?? undefined)
-            const url = request.nextUrl.clone()
-            url.pathname = redirectPath
-            return NextResponse.redirect(url)
+            // No role or wrong role → redirect appropriately
+            if (!userRole) {
+              // No role found, redirect to login
+              const url = request.nextUrl.clone()
+              url.pathname = '/connexion'
+              return NextResponse.redirect(url)
+            }
+            // Wrong role → redirect to their appropriate space (avoid loop)
+            const redirectPath = getRedirectForRole(userRole)
+            if (redirectPath !== pathname) {
+              const url = request.nextUrl.clone()
+              url.pathname = redirectPath
+              return NextResponse.redirect(url)
+            }
           }
           break
         }
@@ -102,10 +111,20 @@ export async function middleware(request: NextRequest) {
       for (const [route, allowedRoles] of Object.entries(ROLE_ROUTES)) {
         if (pathname.startsWith(route)) {
           if (!userRole || !allowedRoles.includes(userRole)) {
-            const redirectPath = getRedirectForRole(userRole ?? undefined)
-            const url = request.nextUrl.clone()
-            url.pathname = redirectPath
-            return NextResponse.redirect(url)
+            // No role or wrong role → redirect appropriately
+            if (!userRole) {
+              // No role found, redirect to login
+              const url = request.nextUrl.clone()
+              url.pathname = '/connexion'
+              return NextResponse.redirect(url)
+            }
+            // Wrong role → redirect to their appropriate space (avoid loop)
+            const redirectPath = getRedirectForRole(userRole)
+            if (redirectPath !== pathname) {
+              const url = request.nextUrl.clone()
+              url.pathname = redirectPath
+              return NextResponse.redirect(url)
+            }
           }
           break
         }
