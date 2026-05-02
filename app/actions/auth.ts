@@ -218,8 +218,19 @@ export async function signup(formData: FormData) {
       })
     }
 
+    // Sync role to Supabase Auth metadata for middleware access
+    await supabase.auth.updateUser({ data: { role: dbUser.role } })
+
     revalidatePath('/', 'layout')
-    redirect('/connexion?message=Vérifiez votre email pour confirmer votre compte.')
+
+    // Redirect to appropriate dashboard based on role
+    if (dbUser.role === 'ADMIN') {
+      redirect('/admin')
+    } else if (dbUser.role === 'ARTISAN') {
+      redirect('/espace-pro')
+    } else {
+      redirect('/espace-proprietaire')
+    }
   } catch (error) {
     // Re-throw NEXT_REDIRECT errors (successful redirects are not errors)
     if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {
