@@ -126,6 +126,11 @@ export async function login(formData: FormData) {
       redirect('/espace-proprietaire')
     }
   } catch (error) {
+    // Re-throw NEXT_REDIRECT errors (successful redirects are not errors)
+    if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {
+      throw error
+    }
+
     console.error('Error in login:', error)
     redirect('/connexion?error=' + encodeURIComponent('Erreur lors de la connexion. Veuillez réessayer.'))
   }
@@ -216,6 +221,11 @@ export async function signup(formData: FormData) {
     revalidatePath('/', 'layout')
     redirect('/connexion?message=Vérifiez votre email pour confirmer votre compte.')
   } catch (error) {
+    // Re-throw NEXT_REDIRECT errors (successful redirects are not errors)
+    if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {
+      throw error
+    }
+
     console.error('Error in signup:', error)
     // Check if it's a unique constraint error
     if (error && typeof error === 'object' && 'code' in error) {
@@ -242,6 +252,11 @@ export async function logout() {
     revalidatePath('/', 'layout')
     redirect('/connexion')
   } catch (error) {
+    // Re-throw NEXT_REDIRECT errors (successful redirects are not errors)
+    if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {
+      throw error
+    }
+
     console.error('Unexpected error in logout:', error)
     redirect('/connexion')
   }
