@@ -22,39 +22,66 @@ export default async function EspaceProprietaireDashboard() {
     redirect('/connexion')
   }
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: { profile: true },
-  })
+  let dbUser = null
+  let profile = null
+  let notifications: any[] = []
+  let messages: any[] = []
+  let leads: any[] = []
 
-  if (!dbUser || dbUser.role === 'ARTISAN') {
-    redirect('/espace-pro')
-  }
+  try {
+    dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: { profile: true },
+    })
 
-  const profile = dbUser.profile
-  const displayName = profile?.firstName || user.email?.split('@')[0] || 'Propriétaire'
+    if (!dbUser || dbUser.role === 'ARTISAN') {
+      redirect('/espace-pro')
+    }
 
-  const notifications = await prisma.notification.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: 'desc' },
-  })
+    profile = dbUser.profile
 
-  const unreadNotifications = notifications.filter((n) => !n.read).length
-
-  const messages = await prisma.message.findMany({
-    where: { OR: [{ senderId: user.id }, { receiverId: user.id }] },
-  })
-
-  const unreadMessages = messages.filter((m) => m.receiverId === user.id && !m.read).length
-
-  // Try to find leads by email as a proxy for projects
-  const leads = dbUser.email
-    ? await prisma.lead.findMany({
-        where: { email: dbUser.email },
-        include: { artisan: true },
+    // Fetch notifications
+    try {
+      notifications = await prisma.notification.findMany({
+        where: { userId: user.id },
         orderBy: { createdAt: 'desc' },
       })
-    : []
+    } catch (error) {
+      console.error('Error fetching notifications:', error)
+      notifications = []
+    }
+
+    // Fetch messages
+    try {
+      messages = await prisma.message.findMany({
+        where: { OR: [{ senderId: user.id }, { receiverId: user.id }] },
+      })
+    } catch (error) {
+      console.error('Error fetching messages:', error)
+      messages = []
+    }
+
+    // Try to find leads by email as a proxy for projects
+    if (dbUser.email) {
+      try {
+        leads = await prisma.lead.findMany({
+          where: { email: dbUser.email },
+          include: { artisan: true },
+          orderBy: { createdAt: 'desc' },
+        })
+      } catch (error) {
+        console.error('Error fetching leads:', error)
+        leads = []
+      }
+    }
+  } catch (error) {
+    console.error('Error loading dashboard:', error)
+    redirect('/connexion')
+  }
+
+  const displayName = profile?.firstName || user.email?.split('@')[0] || 'Propriétaire'
+  const unreadNotifications = notifications.filter((n) => !n.read).length
+  const unreadMessages = messages.filter((m) => m.receiverId === user.id && !m.read).length
 
   const matchedArtisans = leads.filter((l) => l.artisanId).map((l) => l.artisan)
   const uniqueArtisans = matchedArtisans.filter((a, i, arr) => arr.findIndex((t) => t?.id === a?.id) === i)
@@ -116,6 +143,23 @@ export default async function EspaceProprietaireDashboard() {
             : 'Commencez votre projet de rénovation énergétique'}
         </p>
       </div>
+
+      {/* Welcome message for new homeowners */}
+      {leads.length === 0 && (
+        <div className="mb-8 bg-eco-50 border border-eco-200 rounded-xl p-6">
+          <h2 className="text-lg font-bold text-eco-900 mb-2">Bienvenue sur RENOMAG ! 🏠</h2>
+          <p className="text-sm text-eco-700 mb-4">
+            Votre compte a été créé avec succès. Commencez par demander un devis gratuit pour votre projet de rénovation énergétique et bénéficiez des aides MaPrimeRénov'.
+          </p>
+          <a
+            href="/devis"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-eco-600 hover:bg-eco-700 text-white text-sm font-medium rounded-lg transition-colors"
+          >
+            Demander un devis gratuit
+            <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
