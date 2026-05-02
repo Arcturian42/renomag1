@@ -80,7 +80,7 @@ export async function GET(request: Request) {
                 (user.email.split('@')[0] || 'artisan') + '-' + dbUser.id.slice(0, 4)
               ),
               name: fullName || 'Mon entreprise',
-              siret: '00000000000000',
+              siret: `TEMP${Date.now()}${Math.floor(Math.random() * 10000)}`,
               address: '',
               city: '',
               zipCode: '',

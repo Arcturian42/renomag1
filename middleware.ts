@@ -60,7 +60,12 @@ export async function middleware(request: NextRequest) {
   if (isProtected && !user) {
     const url = request.nextUrl.clone()
     url.pathname = '/connexion'
-    return NextResponse.redirect(url)
+    const redirectResponse = NextResponse.redirect(url)
+    // Preserve Supabase session cookies
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return redirectResponse
   }
 
   // Authenticated on protected route → check role from Prisma via API
@@ -92,14 +97,22 @@ export async function middleware(request: NextRequest) {
               // No role found, redirect to login
               const url = request.nextUrl.clone()
               url.pathname = '/connexion'
-              return NextResponse.redirect(url)
+              const redirectResponse = NextResponse.redirect(url)
+              supabaseResponse.cookies.getAll().forEach((cookie) => {
+                redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+              })
+              return redirectResponse
             }
             // Wrong role → redirect to their appropriate space (avoid loop)
             const redirectPath = getRedirectForRole(userRole)
             if (redirectPath !== pathname) {
               const url = request.nextUrl.clone()
               url.pathname = redirectPath
-              return NextResponse.redirect(url)
+              const redirectResponse = NextResponse.redirect(url)
+              supabaseResponse.cookies.getAll().forEach((cookie) => {
+                redirectResponse.cookies.set(cookie.name, cookie.value, cookie)
+              })
+              return redirectResponse
             }
           }
           break

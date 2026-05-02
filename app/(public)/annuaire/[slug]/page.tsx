@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import LocalBusinessJsonLd from '@/components/seo/LocalBusinessJsonLd'
+import ArtisanMessageButton from '@/components/directory/ArtisanMessageButton'
 
 type Props = { params: { slug: string } }
 
@@ -310,10 +311,7 @@ export default async function ArtisanProfilePage({ params }: Props) {
               <Link href="/devis" className="btn-accent w-full text-center mb-3">
                 Demander un devis gratuit
               </Link>
-              <button className="btn-secondary w-full">
-                <MessageSquare className="w-4 h-4" />
-                Envoyer un message
-              </button>
+              <ArtisanMessageButton redirectUrl={`/annuaire/${params.slug}`} />
 
               <div className="mt-4 flex items-center gap-2 text-xs text-slate-400 justify-center">
                 <Clock className="w-3 h-3" />

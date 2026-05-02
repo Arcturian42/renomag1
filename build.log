@@ -1,0 +1,132 @@
+
+> renomag@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 51ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+
+  ▲ Next.js 14.2.35
+  - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./app/espace-pro/leads/page.tsx
+182:15  Warning: Visible, non-interactive elements with click handlers must have at least one keyboard listener.  jsx-a11y/click-events-have-key-events
+182:15  Warning: Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element.  jsx-a11y/no-static-element-interactions
+
+./components/messaging/ChatInterface.tsx
+180:13  Warning: Visible, non-interactive elements with click handlers must have at least one keyboard listener.  jsx-a11y/click-events-have-key-events
+180:13  Warning: Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element.  jsx-a11y/no-static-element-interactions
+
+./components/notifications/NotificationsClient.tsx
+142:13  Warning: Visible, non-interactive elements with click handlers must have at least one keyboard listener.  jsx-a11y/click-events-have-key-events
+142:13  Warning: Avoid non-native interactive elements. If using native HTML is not possible, add an appropriate role and support for tabbing, mouse, keyboard, and touch inputs to an interactive content element.  jsx-a11y/no-static-element-interactions
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+   Generating static pages (0/65) ...
+[dashboard-auth] DASHBOARD_PASSWORD is not set. Using a random fallback for development only.
+   Generating static pages (16/65) 
+   Generating static pages (32/65) 
+   Generating static pages (48/65) 
+ ✓ Generating static pages (65/65)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size     First Load JS
+┌ ƒ /                                       204 B           102 kB
+├ ○ /_not-found                             880 B          88.4 kB
+├ ƒ /admin                                  209 B          87.8 kB
+├ ƒ /admin/agents                           209 B          87.8 kB
+├ ƒ /admin/analytics                        209 B          87.8 kB
+├ ƒ /admin/artisans                         204 B           102 kB
+├ ƒ /admin/contenu                          206 B          96.5 kB
+├ ƒ /admin/leads                            209 B          87.8 kB
+├ ƒ /admin/parametres                       209 B          87.8 kB
+├ ƒ /admin/utilisateurs                     209 B          87.8 kB
+├ ƒ /aides                                  206 B          96.5 kB
+├ ƒ /annuaire                               2.83 kB         104 kB
+├ ● /annuaire/[slug]                        204 B           102 kB
+├   ├ /annuaire/thermoconfort-paris
+├   ├ /annuaire/eco-renov-lyon
+├   ├ /annuaire/artisan-renov-marseille
+├   └ [+3 more paths]
+├ ƒ /api/auth/role                          0 B                0 B
+├ ƒ /auth/callback                          0 B                0 B
+├ ƒ /blog                                   2.02 kB         103 kB
+├ ● /blog/[slug]                            204 B           102 kB
+├   ├ /blog/maprimrenov-2024-tout-savoir
+├   ├ /blog/pompe-a-chaleur-guide-complet
+├   ├ /blog/isolation-combles-perdus-guide
+├   └ [+3 more paths]
+├ ƒ /cgv                                    209 B          87.8 kB
+├ ƒ /comment-ca-marche                      206 B          96.5 kB
+├ ƒ /confidentialite                        209 B          87.8 kB
+├ ƒ /connexion                              1.35 kB         160 kB
+├ ƒ /cookies                                209 B          87.8 kB
+├ ƒ /dashboard-prive                        2.4 kB           90 kB
+├ ƒ /dashboard-prive/api/auth               0 B                0 B
+├ ƒ /dashboard-prive/leads                  21.6 kB         116 kB
+├ ƒ /dashboard-prive/repartition            109 kB          196 kB
+├ ƒ /dashboard-prive/tableau-de-bord        1.91 kB        89.5 kB
+├ ƒ /dashboard-prive/utilisateurs           2.92 kB         106 kB
+├ ƒ /dashboard-prive/utilisateurs/[id]      206 B          96.5 kB
+├ ƒ /devis                                  29.7 kB         133 kB
+├ ƒ /espace-pro                             209 B          87.8 kB
+├ ƒ /espace-pro/abonnement                  206 B          96.5 kB
+├ ƒ /espace-pro/analytics                   209 B          87.8 kB
+├ ƒ /espace-pro/articles                    206 B          96.5 kB
+├ ƒ /espace-pro/articles/nouveau            206 B          96.5 kB
+├ ƒ /espace-pro/leads                       4.43 kB         155 kB
+├ ƒ /espace-pro/messages                    2.18 kB        89.7 kB
+├ ƒ /espace-pro/notifications               139 B          91.2 kB
+├ ƒ /espace-pro/parametres                  209 B          87.8 kB
+├ ƒ /espace-pro/profil                      300 B            93 kB
+├ ƒ /espace-proprietaire                    206 B          96.5 kB
+├ ƒ /espace-proprietaire/artisans           204 B           102 kB
+├ ƒ /espace-proprietaire/compte             209 B          87.8 kB
+├ ƒ /espace-proprietaire/messages           2.18 kB        89.7 kB
+├ ƒ /espace-proprietaire/mon-projet         209 B          87.8 kB
+├ ƒ /espace-proprietaire/notifications      139 B          91.2 kB
+├ ƒ /faq                                    209 B          87.8 kB
+├ ƒ /glossaire                              209 B          87.8 kB
+├ ƒ /inscription                            4.52 kB         164 kB
+├ ƒ /mentions-legales                       209 B          87.8 kB
+├ ○ /mot-de-passe-oublie                    1.56 kB        97.8 kB
+├ ƒ /partenaires                            209 B          87.8 kB
+├ ○ /robots.txt                             0 B                0 B
+├ ○ /sitemap.xml                            0 B                0 B
+└ ƒ /tarifs                                 203 B          96.5 kB
++ First Load JS shared by all               87.6 kB
+  ├ chunks/2117-226c7cbf75860c4b.js         31.9 kB
+  ├ chunks/fd9d1056-64c6dbfa47b67e02.js     53.6 kB
+  └ other shared chunks (total)             2.01 kB
+
+Route (pages)                               Size     First Load JS
+─   /_app                                   0 B            81.6 kB
++ First Load JS shared by all               81.6 kB
+  ├ chunks/framework-c4221b8ed35c5a52.js    44.9 kB
+  ├ chunks/main-d489cbfaa9453c82.js         34.7 kB
+  └ other shared chunks (total)             2.08 kB
+
+ƒ Middleware                                79.5 kB
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses getStaticProps)
+ƒ  (Dynamic)  server-rendered on demand
+

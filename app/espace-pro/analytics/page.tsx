@@ -1,10 +1,16 @@
 export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { Role } from '@prisma/client'
 import { TrendingUp, Euro, Users, Star, ArrowUp } from 'lucide-react'
 
-export default async function EspaceProAnalyticsPage() {
+export default async function EspaceProAnalyticsPage({
+  searchParams,
+}: {
+  searchParams: { period?: string }
+}) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -17,15 +23,31 @@ export default async function EspaceProAnalyticsPage() {
     include: { artisan: true },
   })
 
-  if (!dbUser || dbUser.role !== 'ARTISAN') {
+  if (!dbUser || dbUser.role !== Role.ARTISAN) {
     redirect('/espace-proprietaire')
   }
 
   const artisan = dbUser.artisan
 
+  // Period filter
+  const period = searchParams.period || '6m'
+  const now = new Date()
+  let monthsBack = 6
+  if (period === '7d') monthsBack = 0
+  if (period === '30d') monthsBack = 1
+  if (period === '3m') monthsBack = 3
+  if (period === '12m') monthsBack = 12
+
+  const fromDate = new Date(now.getFullYear(), now.getMonth() - monthsBack, now.getDate())
+  if (period === '7d') fromDate.setDate(now.getDate() - 7)
+  if (period === '30d') fromDate.setDate(now.getDate() - 30)
+
   const leads = artisan
     ? await prisma.lead.findMany({
-        where: { artisanId: artisan.id },
+        where: {
+          artisanId: artisan.id,
+          createdAt: { gte: fromDate },
+        },
         orderBy: { createdAt: 'asc' },
       })
     : []
@@ -43,8 +65,7 @@ export default async function EspaceProAnalyticsPage() {
 
   // Group leads by month for chart
   const monthMap = new Map<string, number>()
-  const now = new Date()
-  for (let i = 5; i >= 0; i--) {
+  for (let i = monthsBack - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const key = d.toLocaleDateString('fr-FR', { month: 'short' })
     monthMap.set(key, 0)
@@ -103,17 +124,24 @@ export default async function EspaceProAnalyticsPage() {
 
       {/* Period selector */}
       <div className="flex items-center gap-2 mb-8">
-        {['7 jours', '30 jours', '3 mois', '6 mois', '12 mois'].map((period) => (
-          <button
-            key={period}
+        {[
+          { label: '7 jours', value: '7d' },
+          { label: '30 jours', value: '30d' },
+          { label: '3 mois', value: '3m' },
+          { label: '6 mois', value: '6m' },
+          { label: '12 mois', value: '12m' },
+        ].map((p) => (
+          <Link
+            key={p.value}
+            href={`/espace-pro/analytics?period=${p.value}`}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              period === '6 mois'
+              period === p.value
                 ? 'bg-primary-600 text-white'
                 : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
             }`}
           >
-            {period}
-          </button>
+            {p.label}
+          </Link>
         ))}
       </div>
 

@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { getSpecialtyFromWorkType } from '@/lib/data/specialties'
 import { calculateLeadScore } from '@/src/lib/scoring'
+import { ratelimit, getClientIdentifier } from '@/lib/rate-limit'
 
 async function requireAuth() {
   const supabase = await createClient()
@@ -35,6 +36,13 @@ export type LeadFormData = z.infer<typeof leadSchema>
 
 export async function submitLead(formData: unknown) {
   try {
+    // Rate limiting
+    const ip = await getClientIdentifier()
+    const limit = await ratelimit.publicForm.limit(ip)
+    if (!limit.success) {
+      return { success: false, error: 'Trop de requêtes. Veuillez réessayer dans une minute.' }
+    }
+
     const parsed = leadSchema.safeParse(formData)
 
     if (!parsed.success) {

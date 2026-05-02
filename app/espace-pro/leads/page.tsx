@@ -2,17 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { Search, Filter, Phone, Mail, MapPin, Euro, Clock, ShoppingCart } from 'lucide-react'
-import { getArtisanLeads, getMatchedLeadsForArtisan, purchaseLead } from '@/app/actions/leads'
+import { getArtisanLeads, getMatchedLeadsForArtisan, purchaseLead, updateLeadStatus } from '@/app/actions/leads'
 import { createClient } from '@/lib/supabase/client'
 
-type LeadStatus = 'new' | 'contacted' | 'devis_sent' | 'won' | 'lost'
+type LeadStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'REJECTED'
 
 const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: string }> = {
-  new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700', dot: 'bg-primary-500' },
-  contacted: { label: 'Contacté', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
-  devis_sent: { label: 'Devis envoyé', color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500' },
-  won: { label: 'Gagné', color: 'bg-eco-100 text-eco-700', dot: 'bg-eco-500' },
-  lost: { label: 'Perdu', color: 'bg-red-100 text-red-700', dot: 'bg-red-400' },
+  NEW: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700', dot: 'bg-primary-500' },
+  CONTACTED: { label: 'Contacté', color: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500' },
+  QUALIFIED: { label: 'Qualifié', color: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500' },
+  CONVERTED: { label: 'Converti', color: 'bg-eco-100 text-eco-700', dot: 'bg-eco-500' },
+  REJECTED: { label: 'Rejeté', color: 'bg-red-100 text-red-700', dot: 'bg-red-400' },
 }
 
 export default function LeadsPage() {
@@ -22,6 +22,7 @@ export default function LeadsPage() {
   const [selectedLead, setSelectedLead] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null)
+  const [statusLoading, setStatusLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -175,7 +176,7 @@ export default function LeadsPage() {
             </p>
           )}
           {currentList.map((lead: any) => {
-            const statusKey = (lead.status === 'NEW' ? 'new' : lead.status === 'CONTACTED' ? 'contacted' : lead.status === 'QUALIFIED' ? 'devis_sent' : lead.status === 'CONVERTED' ? 'won' : 'lost') as LeadStatus
+            const statusKey = lead.status as LeadStatus
             const statusConf = STATUS_CONFIG[statusKey]
             const isHot = lead.temperature === 'HOT'
             return (
@@ -308,7 +309,20 @@ export default function LeadsPage() {
                 <>
                   <select
                     className="text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                    defaultValue={selectedLead.status}
+                    value={selectedLead.status}
+                    disabled={statusLoading === selectedLead.id}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value as LeadStatus
+                      setStatusLoading(selectedLead.id)
+                      try {
+                        await updateLeadStatus(selectedLead.id, newStatus)
+                        setMyLeads(prev => prev.map(l => l.id === selectedLead.id ? { ...l, status: newStatus } : l))
+                        setSelectedLead({ ...selectedLead, status: newStatus })
+                      } catch (e: any) {
+                        setError(e.message)
+                      }
+                      setStatusLoading(null)
+                    }}
                   >
                     {Object.entries(STATUS_CONFIG).map(([key, conf]) => (
                       <option key={key} value={key}>{conf.label}</option>
