@@ -153,15 +153,25 @@ export async function getMatchedLeadsForArtisan(artisanId: string) {
   if (!artisan) return []
 
   const specialtyIds = artisan.specialties.map((s) => s.id)
-  if (specialtyIds.length === 0) return []
+
+  // Build where clause: only filter by department/specialty if explicitly set
+  const where: any = {
+    purchasedById: null,
+    artisanId: null,
+  }
+
+  // Only filter by department if artisan has one set
+  if (artisan.department) {
+    where.department = artisan.department
+  }
+
+  // Only filter by specialty if artisan has at least one
+  if (specialtyIds.length > 0) {
+    where.specialtyId = { in: specialtyIds }
+  }
 
   return prisma.lead.findMany({
-    where: {
-      department: artisan.department,
-      specialtyId: { in: specialtyIds },
-      purchasedById: null,
-      artisanId: null,
-    },
+    where,
     orderBy: { createdAt: 'desc' },
     include: { specialty: true },
   })
