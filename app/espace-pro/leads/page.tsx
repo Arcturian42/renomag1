@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Search, Filter, Phone, Mail, MapPin, Euro, Clock, ShoppingCart } from 'lucide-react'
-import { getArtisanLeads, getMatchedLeadsForArtisan, purchaseLead, updateLeadStatus } from '@/app/actions/leads'
+import { getArtisanLeads, getMatchedLeadsForArtisan, purchaseLead, updateLeadStatus, getCurrentArtisanCompanyId } from '@/app/actions/leads'
 import { createClient } from '@/lib/supabase/client'
 
 type LeadStatus = 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'CONVERTED' | 'REJECTED'
@@ -31,26 +31,38 @@ export default function LeadsPage() {
 
   useEffect(() => {
     async function fetchLeads() {
+      console.log('🔍 [LeadsPage] Starting fetchLeads...')
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
 
-      const { data: dbUser } = await supabase
-        .from('ArtisanCompany')
-        .select('id')
-        .eq('userId', user.id)
-        .single()
+      console.log('  User:', user?.email || 'NO USER')
+      if (!user) {
+        console.log('  ❌ No user - stopping')
+        return
+      }
 
-      if (!dbUser?.id) {
+      console.log('  Getting artisan company ID via server action...')
+      const artisanId = await getCurrentArtisanCompanyId()
+
+      console.log('  Artisan company ID:', artisanId || 'NOT FOUND')
+
+      if (!artisanId) {
+        console.log('  ❌ No artisan company found - stopping')
         setLoading(false)
         return
       }
 
+      console.log('  ✅ Artisan company ID:', artisanId)
+      console.log('  Fetching leads...')
+
       try {
         const [matched, owned] = await Promise.all([
-          getMatchedLeadsForArtisan(dbUser.id),
-          getArtisanLeads(dbUser.id),
+          getMatchedLeadsForArtisan(artisanId),
+          getArtisanLeads(artisanId),
         ])
+        console.log('  ✅ Matched leads:', matched.length)
+        console.log('  ✅ Owned leads:', owned.length)
+
         setAvailableLeads(matched)
         setMyLeads(owned)
         if (activeTab === 'available' && matched.length > 0) {
@@ -59,6 +71,7 @@ export default function LeadsPage() {
           setSelectedLead(owned[0])
         }
       } catch (e: any) {
+        console.log('  ❌ Error fetching leads:', e.message)
         setError(e.message)
       }
       setLoading(false)
@@ -71,24 +84,19 @@ export default function LeadsPage() {
     setPurchaseLoading(leadId)
     setError(null)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      const artisanId = await getCurrentArtisanCompanyId()
+      if (!artisanId) {
+        setError('Artisan company not found')
+        setPurchaseLoading(null)
+        return
+      }
 
-      const { data: dbUser } = await supabase
-        .from('ArtisanCompany')
-        .select('id')
-        .eq('userId', user.id)
-        .single()
-
-      if (!dbUser?.id) return
-
-      const result = await purchaseLead(dbUser.id, leadId)
+      const result = await purchaseLead(artisanId, leadId)
       if (result.success) {
         // Refresh
         const [matched, owned] = await Promise.all([
-          getMatchedLeadsForArtisan(dbUser.id),
-          getArtisanLeads(dbUser.id),
+          getMatchedLeadsForArtisan(artisanId),
+          getArtisanLeads(artisanId),
         ])
         setAvailableLeads(matched)
         setMyLeads(owned)

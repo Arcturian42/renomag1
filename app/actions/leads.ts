@@ -15,6 +15,21 @@ async function requireAuth() {
   return user
 }
 
+// Get current user's artisan company ID
+export async function getCurrentArtisanCompanyId() {
+  try {
+    const authUser = await requireAuth()
+    const artisan = await prisma.artisanCompany.findFirst({
+      where: { userId: authUser.id },
+      select: { id: true },
+    })
+    return artisan?.id || null
+  } catch (error) {
+    console.error('Error getting artisan company ID:', error)
+    return null
+  }
+}
+
 const leadSchema = z.object({
   firstName: z.string().min(1, 'Le prénom est requis').max(100),
   lastName: z.string().min(1, 'Le nom est requis').max(100),
@@ -150,7 +165,19 @@ export async function getMatchedLeadsForArtisan(artisanId: string) {
     where: { id: artisanId, userId: authUser.id },
     include: { specialties: true },
   })
-  if (!artisan) return []
+
+  console.log('🔍 [getMatchedLeadsForArtisan] DEBUG:')
+  console.log('  artisanId:', artisanId)
+  console.log('  artisan found:', !!artisan)
+
+  if (!artisan) {
+    console.log('  ❌ No artisan found - returning empty array')
+    return []
+  }
+
+  console.log('  artisan.name:', artisan.name)
+  console.log('  artisan.department:', artisan.department || 'NOT SET')
+  console.log('  artisan.specialties:', artisan.specialties.map(s => s.name).join(', ') || 'NONE')
 
   const specialtyIds = artisan.specialties.map((s) => s.id)
 
@@ -163,18 +190,31 @@ export async function getMatchedLeadsForArtisan(artisanId: string) {
   // Only filter by department if artisan has one set
   if (artisan.department) {
     where.department = artisan.department
+    console.log('  ✓ Filtering by department:', artisan.department)
+  } else {
+    console.log('  ℹ️  No department filter - showing ALL departments')
   }
 
   // Only filter by specialty if artisan has at least one
   if (specialtyIds.length > 0) {
     where.specialtyId = { in: specialtyIds }
+    console.log('  ✓ Filtering by specialties:', specialtyIds)
+  } else {
+    console.log('  ℹ️  No specialty filter - showing ALL specialties')
   }
 
-  return prisma.lead.findMany({
+  console.log('  where clause:', JSON.stringify(where, null, 2))
+
+  const leads = await prisma.lead.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     include: { specialty: true },
   })
+
+  console.log('  ✅ Found', leads.length, 'matching leads')
+  console.log('  Lead IDs:', leads.map(l => l.id).slice(0, 5))
+
+  return leads
 }
 
 // Leads achetés / assignés à un artisan
