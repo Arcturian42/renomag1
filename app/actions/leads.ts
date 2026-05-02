@@ -84,7 +84,19 @@ export async function submitLead(formData: unknown) {
     const temperature = isContactRequested ? 'HOT' : 'COLD'
     const price = isContactRequested ? 7000 : 2000
 
-    // 4. Créer le lead
+    // 4. Matching : artisans par spécialité + département
+    const matchedArtisans = await prisma.artisanCompany.findMany({
+      where: {
+        department: data.zipCode.slice(0, 2),
+        ...(specialtyId ? { specialties: { some: { id: specialtyId } } } : {}),
+      },
+      orderBy: { projectCount: 'desc' },
+      take: 1,
+    })
+
+    const bestArtisanId = matchedArtisans[0]?.id
+
+    // 5. Créer le lead avec artisan assigné si matché
     const lead = await prisma.lead.create({
       data: {
         firstName: data.firstName,
@@ -103,16 +115,8 @@ export async function submitLead(formData: unknown) {
         price,
         isContactRequested,
         specialtyId,
+        ...(bestArtisanId ? { artisanId: bestArtisanId } : {}),
       },
-    })
-
-    // 5. Matching : artisans par spécialité + département
-    const matchedArtisans = await prisma.artisanCompany.findMany({
-      where: {
-        department: lead.department,
-        ...(specialtyId ? { specialties: { some: { id: specialtyId } } } : {}),
-      },
-      include: { user: true },
     })
 
     // 6. Notifications pour artisans matchés

@@ -27,23 +27,38 @@ export default function LogementStep() {
         Ces informations nous permettent de sélectionner les artisans dans votre zone
       </p>
       <div className="space-y-4">
-        <div className="relative">
-          <label className="label" htmlFor="zipCode">Code postal et ville</label>
+        <div className="grid grid-cols-2 gap-4">
           <div className="relative">
-            <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              id="zipCode"
-              type="text"
-              placeholder="75001 Paris"
-              className="input-field pl-10"
-              required
-              aria-required="true"
-              {...register('zipCode')}
-            />
+            <label className="label" htmlFor="zipCode">Code postal</label>
+            <div className="relative">
+              <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                id="zipCode"
+                type="text"
+                placeholder="75001"
+                className="input-field pl-10"
+                required
+                aria-required="true"
+                {...register('zipCode')}
+              />
+            </div>
+            {errors.zipCode && (
+              <p role="alert" className="text-sm text-red-600 mt-1">{errors.zipCode.message}</p>
+            )}
           </div>
-          {errors.zipCode && (
-            <p role="alert" className="text-sm text-red-600 mt-1">{errors.zipCode.message}</p>
-          )}
+          <div>
+            <label className="label" htmlFor="city">Ville</label>
+            <input
+              id="city"
+              type="text"
+              placeholder="Paris"
+              className="input-field"
+              {...register('city')}
+            />
+            {errors.city && (
+              <p role="alert" className="text-sm text-red-600 mt-1">{errors.city.message}</p>
+            )}
+          </div>
         </div>
 
         <div>
