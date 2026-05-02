@@ -110,7 +110,7 @@ export default function TarifsPage() {
             Choisissez l'offre adaptée à votre ambition. Sans engagement, résiliable à tout moment.
           </p>
           <div className="mt-6 inline-flex items-center gap-2 bg-eco-900/50 border border-eco-700 rounded-full px-4 py-2">
-            <span className="text-eco-400 text-sm font-medium">🎁 1 mois offert pour toute inscription avant le 31 mai 2024</span>
+            <span className="text-eco-400 text-sm font-medium">🎁 1 mois offert pour toute nouvelle inscription</span>
           </div>
         </div>
       </div>

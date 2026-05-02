@@ -14,16 +14,16 @@ export default function MentionsLegalesPage() {
           <section>
             <h2 className="text-lg font-bold text-slate-900 mb-3">Éditeur du site</h2>
             <p>RENOMAG SAS<br />
-            Capital social : 10 000€<br />
-            RCS Paris — SIRET : 123 456 789 00012<br />
-            Siège social : 12 rue de la Paix, 75002 Paris<br />
-            Téléphone : 01 23 45 67 89<br />
-            Email : contact@renomag.fr</p>
+            Capital social : [Montant du capital social à compléter]<br />
+            RCS Paris — SIRET : [À compléter — 14 chiffres]<br />
+            Siège social : [Adresse du siège social à compléter]<br />
+            Téléphone : [Numéro à compléter]<br />
+            Email : [Email de contact à compléter]</p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-slate-900 mb-3">Directeur de la publication</h2>
-            <p>Le directeur de la publication est le représentant légal de RENOMAG SAS.</p>
+            <p>Le directeur de la publication est <strong>[Prénom Nom du directeur à compléter]</strong>, représentant légal de RENOMAG SAS.</p>
           </section>
 
           <section>

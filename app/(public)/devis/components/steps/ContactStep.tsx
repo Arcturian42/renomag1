@@ -25,6 +25,8 @@ export default function ContactStep() {
               type="text"
               placeholder="Jean"
               className="input-field"
+              required
+              aria-required="true"
               {...register('firstName')}
             />
             {errors.firstName && (
@@ -38,6 +40,8 @@ export default function ContactStep() {
               type="text"
               placeholder="Dupont"
               className="input-field"
+              required
+              aria-required="true"
               {...register('lastName')}
             />
             {errors.lastName && (
@@ -53,6 +57,8 @@ export default function ContactStep() {
             type="email"
             placeholder="jean.dupont@email.fr"
             className="input-field"
+            required
+            aria-required="true"
             {...register('email')}
           />
           {errors.email && (
@@ -67,6 +73,8 @@ export default function ContactStep() {
             type="tel"
             placeholder="06 12 34 56 78"
             className="input-field"
+            required
+            aria-required="true"
             {...register('phone')}
           />
           {errors.phone && (

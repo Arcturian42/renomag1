@@ -7,8 +7,8 @@ export default function OrganizationJsonLd() {
         '@context': 'https://schema.org',
         '@type': 'Organization',
         name: 'RENOMAG',
-        url: 'https://renomag.fr',
-        logo: 'https://renomag.fr/logo.png',
+        url: process.env.NEXT_PUBLIC_SITE_URL || 'https://renomag.fr',
+        logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://renomag.fr'}/logo.png`,
         description:
           'La plateforme de référence pour connecter les particuliers aux meilleurs artisans RGE et maximiser leurs aides à la rénovation énergétique.',
         contactPoint: {
