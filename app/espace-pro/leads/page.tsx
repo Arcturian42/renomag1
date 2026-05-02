@@ -24,6 +24,10 @@ export default function LeadsPage() {
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null)
   const [statusLoading, setStatusLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
+  const [filterTemperature, setFilterTemperature] = useState<'ALL' | 'HOT' | 'COLD'>('ALL')
+  const [filterProjectType, setFilterProjectType] = useState('')
 
   useEffect(() => {
     async function fetchLeads() {
@@ -101,6 +105,34 @@ export default function LeadsPage() {
 
   const currentList = activeTab === 'available' ? availableLeads : myLeads
 
+  // Filter leads based on search query and filters
+  const filteredList = currentList.filter((lead) => {
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      const matchesSearch = (
+        lead.city?.toLowerCase().includes(query) ||
+        lead.zipCode?.includes(query) ||
+        lead.projectType?.toLowerCase().includes(query) ||
+        lead.firstName?.toLowerCase().includes(query) ||
+        lead.lastName?.toLowerCase().includes(query)
+      )
+      if (!matchesSearch) return false
+    }
+
+    // Temperature filter
+    if (filterTemperature !== 'ALL' && lead.temperature !== filterTemperature) {
+      return false
+    }
+
+    // Project type filter
+    if (filterProjectType && !lead.projectType?.toLowerCase().includes(filterProjectType.toLowerCase())) {
+      return false
+    }
+
+    return true
+  })
+
   if (loading) {
     return (
       <div className="p-6 lg:p-8 h-full flex items-center justify-center">
@@ -123,12 +155,21 @@ export default function LeadsPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Chercher..."
-              className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400"
+              placeholder="Chercher par ville, code postal, projet..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-400 w-64"
             />
           </div>
-          <button className="flex items-center gap-1.5 px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white hover:bg-slate-50 transition-colors">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-sm border rounded-lg transition-colors ${
+              showFilters || filterTemperature !== 'ALL' || filterProjectType
+                ? 'border-primary-400 bg-primary-50 text-primary-700'
+                : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-600'
+            }`}
+          >
+            <Filter className="w-3.5 h-3.5" />
             Filtres
           </button>
         </div>
@@ -164,18 +205,62 @@ export default function LeadsPage() {
         </div>
       )}
 
+      {/* Filter Panel */}
+      {showFilters && (
+        <div className="mb-4 bg-white rounded-xl border border-slate-200 p-4">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-slate-600">Température:</label>
+              <select
+                value={filterTemperature}
+                onChange={(e) => setFilterTemperature(e.target.value as 'ALL' | 'HOT' | 'COLD')}
+                className="text-xs border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+              >
+                <option value="ALL">Tous</option>
+                <option value="HOT">🔥 Chauds</option>
+                <option value="COLD">Froids</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-slate-600">Type de projet:</label>
+              <input
+                type="text"
+                value={filterProjectType}
+                onChange={(e) => setFilterProjectType(e.target.value)}
+                placeholder="ex: isolation, PAC..."
+                className="text-xs border border-slate-200 rounded px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500 w-48"
+              />
+            </div>
+            <button
+              onClick={() => {
+                setFilterTemperature('ALL')
+                setFilterProjectType('')
+              }}
+              className="text-xs text-slate-500 hover:text-slate-700 underline ml-auto"
+            >
+              Réinitialiser
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Split view */}
       <div className="flex gap-5 flex-1 overflow-hidden">
         {/* List */}
         <div className="w-80 flex-shrink-0 space-y-2 overflow-y-auto">
-          {currentList.length === 0 && (
+          {filteredList.length === 0 && currentList.length === 0 && (
             <p className="text-sm text-slate-500 p-4">
               {activeTab === 'available'
                 ? 'Aucun lead disponible pour le moment. Vérifiez vos spécialités et département.'
                 : 'Vous n\'avez acheté aucun lead pour le moment.'}
             </p>
           )}
-          {currentList.map((lead: any) => {
+          {filteredList.length === 0 && currentList.length > 0 && (
+            <p className="text-sm text-slate-500 p-4">
+              Aucun résultat pour &quot;{searchQuery}&quot;
+            </p>
+          )}
+          {filteredList.map((lead: any) => {
             const statusKey = lead.status as LeadStatus
             const statusConf = STATUS_CONFIG[statusKey]
             const isHot = lead.temperature === 'HOT'
