@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import type { Artisan } from '@/lib/data/artisans'
@@ -258,6 +259,100 @@ export async function getUnreadNotificationsCount(userId: string) {
   if (authUser.id !== userId) throw new Error('Forbidden')
   return prisma.notification.count({
     where: { userId, read: false },
+  })
+}
+
+export async function sendMessage(receiverId: string, content: string) {
+  const authUser = await requireAuth()
+  if (!receiverId || !content.trim()) throw new Error('Invalid message data')
+
+  const message = await prisma.message.create({
+    data: {
+      senderId: authUser.id,
+      receiverId,
+      content: content.trim(),
+    },
+  })
+
+  // Create notification for receiver
+  await prisma.notification.create({
+    data: {
+      userId: receiverId,
+      title: 'Nouveau message',
+      content: `Vous avez reçu un nouveau message`,
+    },
+  })
+
+  revalidatePath('/espace-pro/messages')
+  revalidatePath('/espace-proprietaire/messages')
+  revalidatePath('/espace-proprietaire/notifications')
+  revalidatePath('/espace-pro/notifications')
+  return message
+}
+
+export async function markMessageAsRead(messageId: string) {
+  const authUser = await requireAuth()
+  const message = await prisma.message.findUnique({ where: { id: messageId } })
+  if (!message) throw new Error('Message not found')
+  if (message.receiverId !== authUser.id) throw new Error('Forbidden')
+
+  return prisma.message.update({
+    where: { id: messageId },
+    data: { read: true },
+  })
+}
+
+export async function markConversationAsRead(partnerId: string) {
+  const authUser = await requireAuth()
+  await prisma.message.updateMany({
+    where: {
+      senderId: partnerId,
+      receiverId: authUser.id,
+      read: false,
+    },
+    data: { read: true },
+  })
+  revalidatePath('/espace-pro/messages')
+  revalidatePath('/espace-proprietaire/messages')
+}
+
+export async function createNotification(userId: string, title: string, content: string) {
+  await requireAuth()
+  return prisma.notification.create({
+    data: { userId, title, content },
+  })
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  const authUser = await requireAuth()
+  const notif = await prisma.notification.findUnique({ where: { id: notificationId } })
+  if (!notif) throw new Error('Notification not found')
+  if (notif.userId !== authUser.id) throw new Error('Forbidden')
+
+  return prisma.notification.update({
+    where: { id: notificationId },
+    data: { read: true },
+  })
+}
+
+export async function markAllNotificationsAsRead(userId: string) {
+  const authUser = await requireAuth()
+  if (authUser.id !== userId) throw new Error('Forbidden')
+
+  await prisma.notification.updateMany({
+    where: { userId, read: false },
+    data: { read: true },
+  })
+
+  revalidatePath('/espace-proprietaire/notifications')
+  revalidatePath('/espace-pro/notifications')
+}
+
+export async function getUnreadMessageCount(userId: string) {
+  const authUser = await requireAuth()
+  if (authUser.id !== userId) throw new Error('Forbidden')
+  return prisma.message.count({
+    where: { receiverId: userId, read: false },
   })
 }
 

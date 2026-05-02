@@ -36,6 +36,8 @@ export default function LogementStep() {
               type="text"
               placeholder="75001 Paris"
               className="input-field pl-10"
+              required
+              aria-required="true"
               {...register('zipCode')}
             />
           </div>

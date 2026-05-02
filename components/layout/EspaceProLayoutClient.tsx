@@ -10,25 +10,17 @@ import {
   CreditCard,
   MessageSquare,
   Settings,
+  Bell,
 } from 'lucide-react'
-
-const NAV_ITEMS = [
-  { label: 'Tableau de bord', href: '/espace-pro', icon: LayoutDashboard },
-  { label: 'Leads', href: '/espace-pro/leads', icon: Users, badge: 7 },
-  { label: 'Analytics', href: '/espace-pro/analytics', icon: BarChart3 },
-  { label: 'Mon profil', href: '/espace-pro/profil', icon: UserCircle },
-  { label: 'Messages', href: '/espace-pro/messages', icon: MessageSquare, badge: 3 },
-  { label: 'Abonnement', href: '/espace-pro/abonnement', icon: CreditCard },
-  { label: 'Paramètres', href: '/espace-pro/parametres', icon: Settings },
-]
-
-const FOOTER_ITEMS: { label: string; href: string; icon: typeof LayoutDashboard; badge?: number }[] = []
 
 interface EspaceProLayoutClientProps {
   children: React.ReactNode
   userName?: string
   userInitials?: string
   userRole?: string
+  unreadMessages?: number
+  unreadNotifications?: number
+  newLeads?: number
 }
 
 export default function EspaceProLayoutClient({
@@ -36,12 +28,28 @@ export default function EspaceProLayoutClient({
   userName = 'Artisan',
   userInitials = 'AR',
   userRole = 'Abonnement Pro',
+  unreadMessages = 0,
+  unreadNotifications = 0,
+  newLeads = 0,
 }: EspaceProLayoutClientProps) {
+  const navItems = [
+    { label: 'Tableau de bord', href: '/espace-pro', icon: LayoutDashboard },
+    { label: 'Leads', href: '/espace-pro/leads', icon: Users, badge: newLeads > 0 ? newLeads : undefined },
+    { label: 'Analytics', href: '/espace-pro/analytics', icon: BarChart3 },
+    { label: 'Mon profil', href: '/espace-pro/profil', icon: UserCircle },
+    { label: 'Messages', href: '/espace-pro/messages', icon: MessageSquare, badge: unreadMessages > 0 ? unreadMessages : undefined },
+    { label: 'Notifications', href: '/espace-pro/notifications', icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined },
+    { label: 'Abonnement', href: '/espace-pro/abonnement', icon: CreditCard },
+    { label: 'Paramètres', href: '/espace-pro/parametres', icon: Settings },
+  ]
+
+  const footerItems: { label: string; href: string; icon: typeof LayoutDashboard; badge?: number }[] = []
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <DashboardSidebar
-        navItems={NAV_ITEMS}
-        footerItems={FOOTER_ITEMS}
+        navItems={navItems}
+        footerItems={footerItems}
         footerExtra={<SignOutButton />}
         title="Espace Professionnel"
         userInitials={userInitials}

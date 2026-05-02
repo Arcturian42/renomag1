@@ -112,10 +112,10 @@ export default function DevisForm() {
   return (
     <FormProvider {...methods}>
       {/* Progress */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2">
+      <nav aria-label="Progression du formulaire" className="mb-6">
+        <ol className="flex items-center gap-2">
           {STEPS.map((step, idx) => (
-            <div key={step.id} className="flex items-center gap-2 flex-1">
+            <li key={step.id} className="flex items-center gap-2 flex-1" aria-current={idx === stepIndex ? 'step' : undefined}>
               <div
                 className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 transition-colors ${
                   idx < stepIndex
@@ -141,9 +141,12 @@ export default function DevisForm() {
                   }`}
                 />
               )}
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
+      </nav>
+      <div aria-live="polite" className="sr-only">
+        Étape {stepIndex + 1} sur {STEPS.length} : {STEPS[stepIndex]?.label}
       </div>
 
       <div className="grid lg:grid-cols-[1fr_260px] gap-6">

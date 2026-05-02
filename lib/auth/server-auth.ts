@@ -46,7 +46,7 @@ export async function requireAuth() {
 export async function requireRole(
   pathname: string,
   allowedRoles: Role[]
-): Promise<{ user: Awaited<ReturnType<typeof getCurrentUser>>; role: Role }> {
+): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>; role: Role }> {
   const user = await requireAuth()
   const role = await getCurrentUserRole()
 

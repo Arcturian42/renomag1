@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import NotificationsClient from '@/components/notifications/NotificationsClient'
 
-export default async function ProprietaireNotificationsPage() {
+export default async function EspaceProNotificationsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -21,7 +21,7 @@ export default async function ProprietaireNotificationsPage() {
     <NotificationsClient
       initialNotifications={notifications}
       userId={user.id}
-      settingsHref="/espace-proprietaire/compte"
+      settingsHref="/espace-pro/parametres"
     />
   )
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Lexend } from 'next/font/google'
 import { Toaster } from 'sonner'
+import CookieBanner from '@/components/CookieBanner'
 import './globals.css'
 
 const inter = Inter({
@@ -18,6 +19,7 @@ const lexend = Lexend({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://renomag.fr'),
   title: {
     default: 'RENOMAG — La référence de la rénovation énergétique en France',
     template: '%s | RENOMAG',
@@ -76,6 +78,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${lexend.variable} font-sans antialiased`}>
         {children}
         <Toaster position="top-right" richColors closeButton />
+        <CookieBanner />
       </body>
     </html>
   )
