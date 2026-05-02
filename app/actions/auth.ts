@@ -95,34 +95,39 @@ export async function login(formData: FormData) {
     redirect('/connexion?error=' + encodeURIComponent(error?.message || 'Erreur de connexion'))
   }
 
-  // Ensure user exists in Prisma
-  let dbUser = await prisma.user.findUnique({
-    where: { id: authData.user.id },
-  })
-
-  if (!dbUser) {
-    dbUser = await prisma.user.create({
-      data: {
-        id: authData.user.id,
-        email: authData.user.email!,
-        role: 'USER',
-      },
+  try {
+    // Ensure user exists in Prisma
+    let dbUser = await prisma.user.findUnique({
+      where: { id: authData.user.id },
     })
-  }
 
-  // Sync role to Supabase Auth metadata for middleware access
-  if (dbUser?.role) {
-    await supabase.auth.updateUser({ data: { role: dbUser.role } })
-  }
+    if (!dbUser) {
+      dbUser = await prisma.user.create({
+        data: {
+          id: authData.user.id,
+          email: authData.user.email!,
+          role: 'USER',
+        },
+      })
+    }
 
-  revalidatePath('/', 'layout')
+    // Sync role to Supabase Auth metadata for middleware access
+    if (dbUser?.role) {
+      await supabase.auth.updateUser({ data: { role: dbUser.role } })
+    }
 
-  if (dbUser.role === 'ADMIN') {
-    redirect('/admin')
-  } else if (dbUser.role === 'ARTISAN') {
-    redirect('/espace-pro')
-  } else {
-    redirect('/espace-proprietaire')
+    revalidatePath('/', 'layout')
+
+    if (dbUser.role === 'ADMIN') {
+      redirect('/admin')
+    } else if (dbUser.role === 'ARTISAN') {
+      redirect('/espace-pro')
+    } else {
+      redirect('/espace-proprietaire')
+    }
+  } catch (error) {
+    console.error('Error in login:', error)
+    redirect('/connexion?error=' + encodeURIComponent('Erreur lors de la connexion. Veuillez réessayer.'))
   }
 }
 
@@ -143,66 +148,101 @@ export async function signup(formData: FormData) {
     redirect('/inscription?error=' + encodeURIComponent(emailValidation.error ?? 'Email invalide'))
   }
 
-  const { data: authData, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        role,
-        firstName,
-        lastName,
-      },
-    },
-  })
+  try {
+    // Check if user already exists in database
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    })
 
-  if (error || !authData.user) {
-    redirect('/inscription?error=' + encodeURIComponent(error?.message || "Erreur lors de l'inscription"))
-  }
+    if (existingUser) {
+      redirect('/inscription?error=' + encodeURIComponent('Cette adresse email est déjà enregistrée. Veuillez vous connecter.'))
+    }
 
-  // Create Prisma user record
-  const dbUser = await prisma.user.create({
-    data: {
-      id: authData.user.id,
-      email: authData.user.email!,
-      role: role === 'ARTISAN' ? 'ARTISAN' : 'USER',
-      profile: firstName || lastName ? {
-        create: {
-          firstName: firstName || null,
-          lastName: lastName || null,
+    const { data: authData, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          role,
+          firstName,
+          lastName,
         },
-      } : undefined,
-    },
-  })
-
-  // If artisan, create the company record
-  if (role === 'ARTISAN' && companyName) {
-    await prisma.artisanCompany.create({
-      data: {
-        userId: dbUser.id,
-        slug: slugify(companyName),
-        name: companyName,
-        siret: siret || '00000000000000',
-        address: '',
-        city: '',
-        zipCode: '',
-        department: '',
       },
     })
-  }
 
-  revalidatePath('/', 'layout')
-  redirect('/connexion?message=Vérifiez votre email pour confirmer votre compte.')
+    if (error) {
+      // Handle Supabase-specific errors
+      if (error.message.includes('already registered') || error.message.includes('already exists')) {
+        redirect('/inscription?error=' + encodeURIComponent('Cette adresse email est déjà enregistrée. Veuillez vous connecter.'))
+      }
+      redirect('/inscription?error=' + encodeURIComponent(error.message || "Erreur lors de l'inscription"))
+    }
+
+    if (!authData.user) {
+      redirect('/inscription?error=' + encodeURIComponent("Erreur lors de l'inscription. Veuillez réessayer."))
+    }
+
+    // Create Prisma user record
+    const dbUser = await prisma.user.create({
+      data: {
+        id: authData.user.id,
+        email: authData.user.email!,
+        role: role === 'ARTISAN' ? 'ARTISAN' : 'USER',
+        profile: firstName || lastName ? {
+          create: {
+            firstName: firstName || null,
+            lastName: lastName || null,
+          },
+        } : undefined,
+      },
+    })
+
+    // If artisan, create the company record
+    if (role === 'ARTISAN' && companyName) {
+      await prisma.artisanCompany.create({
+        data: {
+          userId: dbUser.id,
+          slug: slugify(companyName),
+          name: companyName,
+          siret: siret || '00000000000000',
+          address: '',
+          city: '',
+          zipCode: '',
+          department: '',
+        },
+      })
+    }
+
+    revalidatePath('/', 'layout')
+    redirect('/connexion?message=Vérifiez votre email pour confirmer votre compte.')
+  } catch (error) {
+    console.error('Error in signup:', error)
+    // Check if it's a unique constraint error
+    if (error && typeof error === 'object' && 'code' in error) {
+      const prismaError = error as { code: string; meta?: { target?: string[] } }
+      if (prismaError.code === 'P2002') {
+        redirect('/inscription?error=' + encodeURIComponent('Cette adresse email est déjà enregistrée. Veuillez vous connecter.'))
+      }
+    }
+    redirect('/inscription?error=' + encodeURIComponent("Erreur lors de l'inscription. Veuillez réessayer."))
+  }
 }
 
 export async function logout() {
-  const supabase = await createClient()
+  try {
+    const supabase = await createClient()
 
-  const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
 
-  if (error) {
-    redirect('/error')
+    if (error) {
+      console.error('Error during logout:', error)
+      redirect('/connexion?error=' + encodeURIComponent('Erreur lors de la déconnexion'))
+    }
+
+    revalidatePath('/', 'layout')
+    redirect('/connexion')
+  } catch (error) {
+    console.error('Unexpected error in logout:', error)
+    redirect('/connexion')
   }
-
-  revalidatePath('/', 'layout')
-  redirect('/connexion')
 }
