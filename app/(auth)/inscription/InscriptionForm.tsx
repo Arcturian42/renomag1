@@ -54,7 +54,7 @@ export default function InscriptionForm() {
                   className="group bg-white rounded-2xl border-2 border-slate-200 hover:border-primary-500 p-6 text-left transition-all hover:shadow-md"
                 >
                   <div className="text-4xl mb-4">🏠</div>
-                  <h2 className="font-bold text-slate-900 text-lg mb-2">Je suis particulier</h2>
+                  <h2 className="font-bold text-slate-900 text-lg mb-2">Je suis un particulier</h2>
                   <p className="text-sm text-slate-500 mb-4">
                     Je veux rénover mon logement et obtenir des aides
                   </p>
