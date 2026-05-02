@@ -206,12 +206,18 @@ export async function signup(formData: FormData) {
 
     // If artisan, create the company record
     if (role === 'ARTISAN' && companyName) {
+      // Generate unique SIRET if not provided (use timestamp + random to ensure uniqueness)
+      const uniqueSiret = siret || `TEMP${Date.now()}${Math.floor(Math.random() * 1000)}`
+      // Generate unique slug (append part of userId to avoid collisions)
+      const baseSlug = slugify(companyName)
+      const uniqueSlug = `${baseSlug}-${dbUser.id.substring(0, 8)}`
+
       await prisma.artisanCompany.create({
         data: {
           userId: dbUser.id,
-          slug: slugify(companyName),
+          slug: uniqueSlug,
           name: companyName,
-          siret: siret || '00000000000000',
+          siret: uniqueSiret,
           address: '',
           city: '',
           zipCode: '',
