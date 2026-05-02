@@ -1,50 +1,35 @@
 'use server'
 
 import { prisma } from '@/lib/prisma'
+import { createClient } from '@/lib/supabase/server'
 import type { Artisan } from '@/lib/data/artisans'
 import type { Article } from '@/lib/data/blog'
 
-// ==================== LEADS ====================
+// ==================== AUTH HELPERS ====================
 
-export async function submitLead(formData: FormData): Promise<{ success: boolean; error?: string }> {
-  try {
-    const firstName = formData.get('firstName') as string
-    const lastName = formData.get('lastName') as string
-    const email = formData.get('email') as string
-    const phone = formData.get('phone') as string
-    const zipCode = formData.get('zipCode') as string
-    const department = formData.get('department') as string
-    const projectType = formData.get('projectType') as string
-    const description = formData.get('description') as string
-    const budget = formData.get('budget') as string
-
-    if (!email || !firstName || !lastName || !zipCode) {
-      return { success: false, error: 'Veuillez remplir tous les champs obligatoires.' }
-    }
-
-    await prisma.lead.create({
-      data: {
-        firstName,
-        lastName,
-        email,
-        phone: phone || '',
-        zipCode,
-        department: department || zipCode.substring(0, 2),
-        projectType: projectType || 'Non spécifié',
-        description: description || '',
-        budget: budget || '',
-        status: 'NEW',
-      },
-    })
-
-    return { success: true }
-  } catch (err: any) {
-    console.error('submitLead error:', err)
-    return { success: false, error: err.message || 'Erreur serveur' }
-  }
+async function getSessionUser() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
 }
 
+async function requireAuth() {
+  const user = await getSessionUser()
+  if (!user) throw new Error('Unauthorized: authentication required')
+  return user
+}
+
+async function requireAdmin() {
+  const authUser = await requireAuth()
+  const dbUser = await prisma.user.findUnique({ where: { id: authUser.id } })
+  if (!dbUser || dbUser.role !== 'ADMIN') throw new Error('Forbidden: admin access required')
+  return dbUser
+}
+
+// ==================== LEADS (ADMIN) ====================
+
 export async function getAllLeads() {
+  await requireAdmin()
   return prisma.lead.findMany({
     orderBy: { createdAt: 'desc' },
     include: { specialty: true, artisan: true },
@@ -52,13 +37,14 @@ export async function getAllLeads() {
 }
 
 export async function updateLeadStatus(leadId: string, status: string) {
+  await requireAdmin()
   return prisma.lead.update({
     where: { id: leadId },
     data: { status: status as any },
   })
 }
 
-// ==================== ARTISANS ====================
+// ==================== ARTISANS (PUBLIC) ====================
 
 export async function getArtisans(): Promise<Artisan[]> {
   const artisans = await prisma.artisanCompany.findMany({
@@ -124,7 +110,7 @@ export async function getArtisanBySlug(slug: string): Promise<Artisan | null> {
   return artisans.find((a) => a.slug === slug) || null
 }
 
-// ==================== ARTICLES ====================
+// ==================== ARTICLES (PUBLIC) ====================
 
 export async function getArticles(): Promise<Article[]> {
   const articles = await prisma.article.findMany({
@@ -178,6 +164,7 @@ export async function getArticleBySlug(slug: string): Promise<Article | null> {
 // ==================== USERS / ADMIN ====================
 
 export async function getAllUsers() {
+  await requireAdmin()
   return prisma.user.findMany({
     include: { profile: true, artisan: true },
     orderBy: { createdAt: 'desc' },
@@ -185,6 +172,7 @@ export async function getAllUsers() {
 }
 
 export async function getAllArtisanCompanies() {
+  await requireAdmin()
   return prisma.artisanCompany.findMany({
     include: { specialties: true, certifications: true, reviews: true, user: true },
     orderBy: { createdAt: 'desc' },
@@ -192,6 +180,7 @@ export async function getAllArtisanCompanies() {
 }
 
 export async function getKPIs() {
+  await requireAdmin()
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
@@ -220,6 +209,7 @@ export async function getKPIs() {
 }
 
 export async function getAllArtisans() {
+  await requireAdmin()
   return prisma.artisanCompany.findMany({
     include: { specialties: true, certifications: true, reviews: true, subscription: true, user: { include: { profile: true } } },
     orderBy: { createdAt: 'desc' },
@@ -227,6 +217,7 @@ export async function getAllArtisans() {
 }
 
 export async function getAllArticles() {
+  await requireAdmin()
   return prisma.article.findMany({
     include: { category: true },
     orderBy: { createdAt: 'desc' },
@@ -237,22 +228,16 @@ export async function getDepartments() {
   return prisma.department.findMany({ orderBy: { code: 'asc' } })
 }
 
-export async function getArtisanLeads(artisanId: string) {
-  return prisma.lead.findMany({
-    where: { artisanId },
-    orderBy: { createdAt: 'desc' },
-    include: { specialty: true },
-  })
-}
-
 export async function deleteUser(userId: string) {
-  'use server'
+  await requireAdmin()
   await prisma.user.delete({ where: { id: userId } })
 }
 
-// ==================== MESSAGES / NOTIFICATIONS ====================
+// ==================== MESSAGES / NOTIFICATIONS (OWNER-ONLY) ====================
 
 export async function getMessages(userId: string) {
+  const authUser = await requireAuth()
+  if (authUser.id !== userId) throw new Error('Forbidden')
   return prisma.message.findMany({
     where: { OR: [{ senderId: userId }, { receiverId: userId }] },
     orderBy: { createdAt: 'desc' },
@@ -260,6 +245,8 @@ export async function getMessages(userId: string) {
 }
 
 export async function getNotifications(userId: string) {
+  const authUser = await requireAuth()
+  if (authUser.id !== userId) throw new Error('Forbidden')
   return prisma.notification.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
@@ -267,16 +254,19 @@ export async function getNotifications(userId: string) {
 }
 
 export async function getUnreadNotificationsCount(userId: string) {
+  const authUser = await requireAuth()
+  if (authUser.id !== userId) throw new Error('Forbidden')
   return prisma.notification.count({
     where: { userId, read: false },
   })
 }
 
-// ==================== PROFILE UPDATES ====================
+// ==================== PROFILE UPDATES (SELF-ONLY) ====================
 
 export async function updateProfileForm(formData: FormData) {
+  const authUser = await requireAuth()
   const userId = formData.get('userId') as string
-  if (!userId) return
+  if (!userId || authUser.id !== userId) throw new Error('Forbidden')
 
   const data: any = {}
   const firstName = formData.get('firstName') as string
@@ -301,8 +291,9 @@ export async function updateProfileForm(formData: FormData) {
 }
 
 export async function updateArtisanProfileForm(formData: FormData) {
+  const authUser = await requireAuth()
   const userId = formData.get('userId') as string
-  if (!userId) return
+  if (!userId || authUser.id !== userId) throw new Error('Forbidden')
 
   const artisanData: any = {}
   const name = formData.get('companyName') as string

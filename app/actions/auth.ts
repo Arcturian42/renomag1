@@ -141,11 +141,10 @@ export async function signup(formData: FormData) {
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
-  const role = (formData.get('role') as string) || 'USER'
+  // SECURITY FIX: force USER role for self-registration. Artisan accounts must be created by an admin or via a verified onboarding process.
+  const role = 'USER'
   const firstName = formData.get('firstName') as string
   const lastName = formData.get('lastName') as string
-  const companyName = formData.get('companyName') as string
-  const siret = formData.get('siret') as string
 
   // Validate email MX record
   const emailValidation = await validateEmail(email)
@@ -192,7 +191,7 @@ export async function signup(formData: FormData) {
       data: {
         id: authData.user.id,
         email: authData.user.email!,
-        role: role === 'ARTISAN' ? 'ARTISAN' : 'USER',
+        role: 'USER',
         profile: firstName || lastName ? {
           create: {
             firstName: firstName || null,
@@ -201,22 +200,6 @@ export async function signup(formData: FormData) {
         } : undefined,
       },
     })
-
-    // If artisan, create the company record
-    if (role === 'ARTISAN' && companyName) {
-      await prisma.artisanCompany.create({
-        data: {
-          userId: dbUser.id,
-          slug: slugify(companyName),
-          name: companyName,
-          siret: siret || '00000000000000',
-          address: '',
-          city: '',
-          zipCode: '',
-          department: '',
-        },
-      })
-    }
 
     // Sync role to Supabase Auth metadata for middleware access
     await supabase.auth.updateUser({ data: { role: dbUser.role } })

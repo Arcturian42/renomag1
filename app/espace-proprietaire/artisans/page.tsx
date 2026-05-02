@@ -30,7 +30,7 @@ export default async function ArtisansMatchesPage() {
       specialties: true,
       reviews: true,
       subscription: true,
-      leads: true,
+      receivedLeads: true,
     },
     take: 10,
   })
@@ -59,7 +59,7 @@ export default async function ArtisansMatchesPage() {
       certifications: artisan.certifications.map((c) => c.name) as any,
       rating: Number(avgRating.toFixed(1)) || 4.5,
       reviewCount: artisan.reviews.length,
-      projectCount: artisan.leads.length,
+      projectCount: artisan.receivedLeads.length,
       yearsExperience: 10,
       responseTime: '< 2h',
       verified: true,
