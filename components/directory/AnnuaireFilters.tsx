@@ -71,7 +71,7 @@ export default function AnnuaireFilters({
     setMinRating('')
     setSort('note')
     startTransition(() => {
-      router.push(pathname)
+      router.push(pathname || '/annuaire')
     })
   }
 

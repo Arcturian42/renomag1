@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { ArrowUp, ArrowDown, TrendingUp, Users, Euro, Star } from 'lucide-react'
+import { getArtisanLeads, getMatchedLeadsForArtisan } from '@/app/actions/leads'
+import { ArrowUp, ArrowDown, TrendingUp, Users, Euro, Star, Zap } from 'lucide-react'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700' },
@@ -33,12 +34,8 @@ export default async function EspaceProDashboard() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  const leads = artisan
-    ? await prisma.lead.findMany({
-        where: { artisanId: artisan.id },
-        orderBy: { createdAt: 'desc' },
-      })
-    : []
+  const leads = artisan ? await getArtisanLeads(artisan.id) : []
+  const matchedLeads = artisan ? await getMatchedLeadsForArtisan(artisan.id) : []
 
   const leadsThisMonth = leads.filter((l) => new Date(l.createdAt) >= startOfMonth)
   const convertedLeads = leads.filter((l) => l.status === 'CONVERTED')
@@ -52,6 +49,7 @@ export default async function EspaceProDashboard() {
   })
 
   const newLeadsCount = leads.filter((l) => l.status === 'NEW').length
+  const availableLeadsCount = matchedLeads.length
 
   const displayName = artisan?.name || dbUser.profile?.firstName || user.email?.split('@')[0] || 'Artisan'
 
@@ -103,7 +101,7 @@ export default async function EspaceProDashboard() {
   const profileScore = Math.round((scoreFields.filter(Boolean).length / scoreFields.length) * 100)
 
   const quotaUsed = leadsThisMonth.length
-  const quotaMax = artisan?.subscription?.plan?.toLowerCase().includes('premium') ? 999 : 20
+  const quotaMax = artisan?.subscription?.plan?.toLowerCase().includes('premium') ? 999 : 5
   const overQuota = quotaUsed > quotaMax && quotaMax !== 999
 
   return (
@@ -155,11 +153,16 @@ export default async function EspaceProDashboard() {
           </div>
           <div className="space-y-3">
             {recentLeads.length === 0 && (
-              <p className="text-sm text-slate-500">Aucun lead pour le moment.</p>
+              <p className="text-sm text-slate-500">
+                {matchedLeads.length > 0
+                  ? `${matchedLeads.length} lead(s) disponible(s) à l'achat dans l'onglet Leads.`
+                  : 'Aucun lead pour le moment.'}
+              </p>
             )}
             {recentLeads.map((lead) => {
               const statusKey = lead.status === 'NEW' ? 'new' : lead.status === 'CONTACTED' ? 'contacted' : lead.status === 'QUALIFIED' ? 'devis_sent' : lead.status === 'CONVERTED' ? 'won' : 'lost'
               const statusConf = STATUS_CONFIG[statusKey]
+              const isHot = lead.temperature === 'HOT'
               return (
                 <div
                   key={lead.id}
@@ -180,11 +183,14 @@ export default async function EspaceProDashboard() {
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <p className="text-sm font-semibold text-slate-900">{lead.budget || '—'}</p>
-                    <span
-                      className={`inline-block text-xs rounded-full px-2 py-0.5 font-medium mt-0.5 ${statusConf.color}`}
-                    >
-                      {statusConf.label}
-                    </span>
+                    <div className="flex items-center gap-1 justify-end mt-0.5">
+                      {isHot && <span className="text-[10px] font-bold text-accent-600">🔥</span>}
+                      <span
+                        className={`inline-block text-xs rounded-full px-2 py-0.5 font-medium ${statusConf.color}`}
+                      >
+                        {statusConf.label}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-xs text-slate-400 flex-shrink-0">
                     {new Date(lead.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
@@ -254,6 +260,25 @@ export default async function EspaceProDashboard() {
               ))}
             </div>
           </div>
+
+          {/* Available leads teaser */}
+          {availableLeadsCount > 0 && (
+            <div className="bg-accent-50 rounded-xl border border-accent-200 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-4 h-4 text-accent-600" />
+                <h3 className="text-sm font-semibold text-accent-900">Leads disponibles</h3>
+              </div>
+              <p className="text-xs text-accent-700 mb-3">
+                {availableLeadsCount} nouveau(x) lead(s) correspondent à vos spécialités dans votre département.
+              </p>
+              <a
+                href="/espace-pro/leads"
+                className="block text-center text-xs font-semibold bg-accent-500 hover:bg-accent-600 text-white rounded-lg px-4 py-2 transition-colors"
+              >
+                Voir et acheter
+              </a>
+            </div>
+          )}
 
           {/* Quick actions */}
           <div className="bg-white rounded-xl border border-slate-200 p-5">

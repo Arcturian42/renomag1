@@ -1,10 +1,11 @@
 generator client {
-provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
+
 datasource db {
-provider  = "postgresql"
-url       = env("DATABASE_URL")
-directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 enum Role {
@@ -21,18 +22,24 @@ enum LeadStatus {
   REJECTED
 }
 
+enum LeadTemperature {
+  COLD
+  HOT
+}
+
 model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  role          Role      @default(USER)
-  status        String    @default("active")
-  source        String    @default("Direct")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  profile       Profile?
-  artisan       ArtisanCompany?
-  messages      Message[]
-  notifications Notification[]
+  id               String         @id @default(uuid())
+  email            String         @unique
+  role             Role           @default(USER)
+  status           String         @default("active")
+  source           String         @default("Direct")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  profile          Profile?
+  artisan          ArtisanCompany?
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  notifications    Notification[]
 }
 
 model Profile {
@@ -77,12 +84,16 @@ model ArtisanCompany {
   responseTime    String?
   since           Int?
   gallery         Json?
+  credits         Int             @default(0)
   user            User            @relation(fields: [userId], references: [id])
   certifications  Certification[]
   specialties     Specialty[]
-  leads           Lead[]
+  receivedLeads   Lead[]          @relation("LeadArtisan")
+  purchasedLeads  Lead[]          @relation("LeadPurchaser")
+  leadPurchases   LeadPurchase[]
   reviews         Review[]
   subscription    Subscription?
+  articles        Article[]
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -103,47 +114,54 @@ model Specialty {
 }
 
 model Lead {
-  id              String          @id @default(uuid())
-  firstName       String
-  lastName        String
-  email           String
-  phone           String
-  zipCode         String
-  city            String?
-  department      String
-  projectType     String
-  description     String?
-  budget          String?
-  status          LeadStatus      @default(NEW)
-  score           Float?
-  source          String          @default("Formulaire devis")
-  campaign        String          @default("Organic")
-  country         String          @default("France")
-  artisanId       String?
-  specialtyId     String?
-  artisan         ArtisanCompany? @relation(fields: [artisanId], references: [id])
-  specialty       Specialty?      @relation(fields: [specialtyId], references: [id])
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                 String           @id @default(uuid())
+  firstName          String
+  lastName           String
+  email              String
+  phone              String
+  zipCode            String
+  city               String?
+  department         String
+  projectType        String
+  description        String?
+  budget             String?
+  status             LeadStatus       @default(NEW)
+  temperature        LeadTemperature  @default(COLD)
+  price              Int              @default(2000)
+  isContactRequested Boolean          @default(false)
+  score              Float?
+  source             String           @default("Formulaire devis")
+  campaign           String           @default("Organic")
+  country            String           @default("France")
+  artisanId          String?
+  specialtyId        String?
+  purchasedById      String?
+  artisan            ArtisanCompany?  @relation("LeadArtisan", fields: [artisanId], references: [id])
+  purchasedBy        ArtisanCompany?  @relation("LeadPurchaser", fields: [purchasedById], references: [id])
+  specialty          Specialty?       @relation(fields: [specialtyId], references: [id])
+  purchases          LeadPurchase[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 }
 
 model Article {
-  id          String    @id @default(uuid())
+  id          String          @id @default(uuid())
   title       String
-  slug        String    @unique
+  slug        String          @unique
   content     String
   excerpt     String?
   image       String?
-  published   Boolean   @default(false)
-  featured    Boolean   @default(false)
-  author      String?
+  published   Boolean         @default(false)
+  featured    Boolean         @default(false)
+  authorId    String?
+  author      ArtisanCompany? @relation(fields: [authorId], references: [id])
   authorRole  String?
-  readTime    Int       @default(5)
+  readTime    Int             @default(5)
   tags        Json?
   categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  category    Category?       @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }
 
 model Category {
@@ -175,13 +193,18 @@ model Review {
 }
 
 model Message {
-  id        String   @id @default(uuid())
-  senderId  String
+  id         String   @id @default(uuid())
+  senderId   String
   receiverId String
-  content   String
-  read      Boolean  @default(false)
-  sender    User     @relation(fields: [senderId], references: [id])
-  createdAt DateTime @default(now())
+  content    String
+  read       Boolean  @default(false)
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([senderId, createdAt])
+  @@index([receiverId, createdAt])
+  @@index([receiverId, read])
 }
 
 model Notification {
@@ -192,6 +215,9 @@ model Notification {
   read      Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, read])
 }
 
 model OutreachCampaign {
@@ -212,11 +238,26 @@ model OutreachContact {
 }
 
 model Subscription {
+  id               String         @id @default(uuid())
+  artisanId        String         @unique
+  plan             String         @default("basic")
+  status           String         @default("active")
+  priceMonthly     Int            @default(1999)
+  leadQuotaMonthly Int            @default(0)
+  articlesQuota    Int            @default(1)
+  expiresAt        DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  artisan          ArtisanCompany @relation(fields: [artisanId], references: [id])
+}
+
+model LeadPurchase {
   id        String         @id @default(uuid())
-  artisanId String         @unique
-  plan      String
-  status    String
-  expiresAt DateTime?
+  leadId    String
+  artisanId String
+  price     Int
+  createdAt DateTime       @default(now())
+  lead      Lead           @relation(fields: [leadId], references: [id])
   artisan   ArtisanCompany @relation(fields: [artisanId], references: [id])
 }
 
