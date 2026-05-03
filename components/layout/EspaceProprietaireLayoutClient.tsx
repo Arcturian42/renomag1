@@ -84,7 +84,7 @@ export default function EspaceProprietaireLayoutClient({
                   <Icon className={`w-4 h-4 ${isActive ? 'text-primary-400' : ''}`} />
                   {item.label}
                 </div>
-                {item.badge > 0 && (
+                {(item.badge ?? 0) > 0 && (
                   <span className="flex items-center justify-center min-w-[20px] h-5 rounded-full bg-accent-500 text-white text-xs font-bold px-1.5">
                     {item.badge}
                   </span>
