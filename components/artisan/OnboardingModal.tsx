@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { X, Search, Building2, User, Phone, ChevronRight } from 'lucide-react'
 import { completeOnboarding } from '@/app/actions/onboarding'
 
@@ -15,6 +16,7 @@ interface OnboardingModalProps {
 }
 
 export default function OnboardingModal({ userId, userEmail, existingProfile }: OnboardingModalProps) {
+  const router = useRouter()
   const [step, setStep] = useState<'profile' | 'company'>('profile')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [firstName, setFirstName] = useState(existingProfile?.firstName || '')
@@ -46,7 +48,13 @@ export default function OnboardingModal({ userId, userEmail, existingProfile }: 
         phone,
         skipCompany,
       })
-      window.location.reload()
+
+      // Redirect to profile if user chose to create company, otherwise reload
+      if (!skipCompany) {
+        router.push('/espace-pro/profil')
+      } else {
+        window.location.reload()
+      }
     } catch (error) {
       console.error('Onboarding error:', error)
       alert('Une erreur est survenue. Veuillez réessayer.')
