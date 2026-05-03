@@ -37,6 +37,7 @@ export default function EspaceProprietaireLayoutClient({
     { label: 'Messages', href: '/espace-proprietaire/messages', icon: MessageSquare, badge: unreadMessages > 0 ? unreadMessages : undefined },
     { label: 'Notifications', href: '/espace-proprietaire/notifications', icon: Bell, badge: unreadNotifications > 0 ? unreadNotifications : undefined },
     { label: 'Mon compte', href: '/espace-proprietaire/compte', icon: Settings },
+    { label: 'Paramètres', href: '/espace-proprietaire/parametres', icon: Settings },
   ]
 
   const footerItems: { label: string; href: string; icon: typeof LayoutDashboard; badge?: number }[] = []

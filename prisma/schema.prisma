@@ -98,6 +98,7 @@ model ArtisanCompany {
   reviews            Review[]
   subscription       Subscription?
   articles           Article[]
+  quotes             Quote[]
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 }
@@ -144,6 +145,7 @@ model Lead {
   purchasedBy        ArtisanCompany?  @relation("LeadPurchaser", fields: [purchasedById], references: [id])
   specialty          Specialty?       @relation(fields: [specialtyId], references: [id])
   purchases          LeadPurchase[]
+  quotes             Quote[]
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 }
@@ -289,4 +291,30 @@ model ProjectDocument {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Quote {
+  id           String         @id @default(uuid())
+  leadId       String?
+  artisanId    String
+  amount       Int
+  description  String
+  validityDate DateTime
+  status       QuoteStatus    @default(DRAFT)
+  lead         Lead?          @relation(fields: [leadId], references: [id])
+  artisan      ArtisanCompany @relation(fields: [artisanId], references: [id])
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([artisanId, createdAt])
+  @@index([leadId])
+  @@index([status])
 }

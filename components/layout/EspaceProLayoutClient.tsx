@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Settings,
   Bell,
+  FileText,
 } from 'lucide-react'
 
 interface EspaceProLayoutClientProps {
@@ -35,6 +36,7 @@ export default function EspaceProLayoutClient({
   const navItems = [
     { label: 'Tableau de bord', href: '/espace-pro', icon: LayoutDashboard },
     { label: 'Leads', href: '/espace-pro/leads', icon: Users, badge: newLeads > 0 ? newLeads : undefined },
+    { label: 'Devis', href: '/espace-pro/devis', icon: FileText },
     { label: 'Analytics', href: '/espace-pro/analytics', icon: BarChart3 },
     { label: 'Mon profil', href: '/espace-pro/profil', icon: UserCircle },
     { label: 'Messages', href: '/espace-pro/messages', icon: MessageSquare, badge: unreadMessages > 0 ? unreadMessages : undefined },
