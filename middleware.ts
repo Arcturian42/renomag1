@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const ROLE_ROUTES: Record<string, string[]> = {
   '/admin': ['ADMIN'],
   '/espace-pro': ['ARTISAN'],
-  '/espace-proprietaire': ['USER', 'ADMIN'],
+  '/espace-proprietaire': ['USER'],
 }
 
 function getRedirectForRole(role: string | undefined): string {

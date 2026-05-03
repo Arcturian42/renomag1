@@ -6,7 +6,7 @@ import { Role } from '@prisma/client'
 export const ROLE_ROUTES: Record<string, Role[]> = {
   '/admin': [Role.ADMIN],
   '/espace-pro': [Role.ARTISAN],
-  '/espace-proprietaire': [Role.USER, Role.ADMIN],
+  '/espace-proprietaire': [Role.USER],
 }
 
 export async function getCurrentUser() {
