@@ -105,7 +105,8 @@ export async function middleware(request: NextRequest) {
             }
             // Wrong role → redirect to their appropriate space (avoid loop)
             const redirectPath = getRedirectForRole(userRole)
-            if (redirectPath !== pathname) {
+            // Only redirect if trying to access a different space, not sub-routes
+            if (!pathname.startsWith(redirectPath)) {
               const url = request.nextUrl.clone()
               url.pathname = redirectPath
               const redirectResponse = NextResponse.redirect(url)
@@ -133,7 +134,8 @@ export async function middleware(request: NextRequest) {
             }
             // Wrong role → redirect to their appropriate space (avoid loop)
             const redirectPath = getRedirectForRole(userRole)
-            if (redirectPath !== pathname) {
+            // Only redirect if trying to access a different space, not sub-routes
+            if (!pathname.startsWith(redirectPath)) {
               const url = request.nextUrl.clone()
               url.pathname = redirectPath
               return NextResponse.redirect(url)
