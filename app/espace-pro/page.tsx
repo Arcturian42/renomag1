@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { ArrowUp, ArrowDown, TrendingUp, Users, Euro, Star, ArrowRight } from 'lucide-react'
+import OnboardingModal from '@/components/artisan/OnboardingModal'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700' },
@@ -130,13 +131,24 @@ export default async function EspaceProDashboard() {
   const quotaMax = artisan?.subscription?.plan?.toLowerCase().includes('premium') ? 999 : 20
   const overQuota = quotaUsed > quotaMax && quotaMax !== 999
 
+  // Check if onboarding is needed
+  const needsOnboarding = !dbUser.onboardingCompleted
+
   return (
-    <div className="p-6 lg:p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Tableau de bord</h1>
-        <p className="text-slate-500 mt-1">{artisan?.name || displayName} — {now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
-      </div>
+    <>
+      {needsOnboarding && (
+        <OnboardingModal
+          userId={user.id}
+          userEmail={user.email || ''}
+          existingProfile={dbUser.profile}
+        />
+      )}
+      <div className="p-6 lg:p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-slate-900">Tableau de bord</h1>
+          <p className="text-slate-500 mt-1">{artisan?.name || displayName} — {now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</p>
+        </div>
 
       {/* Welcome message for new artisans without profile */}
       {!artisan && (
@@ -320,6 +332,7 @@ export default async function EspaceProDashboard() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

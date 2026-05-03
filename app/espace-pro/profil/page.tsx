@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { Role } from '@prisma/client'
 import { updateArtisanProfile } from '@/app/actions/artisan'
+import CertificationUpload from '@/components/upload/CertificationUpload'
 
 export default async function ProfilPage() {
   const supabase = await createClient()
@@ -109,6 +110,20 @@ export default async function ProfilPage() {
               </div>
             </div>
             <div>
+              <label className="label" htmlFor="googleBusinessUrl">Google Business Profile URL</label>
+              <input
+                id="googleBusinessUrl"
+                name="googleBusinessUrl"
+                type="url"
+                defaultValue={artisan?.googleBusinessUrl || ''}
+                className="input-field"
+                placeholder="https://g.page/votre-entreprise"
+              />
+              <p className="text-xs text-slate-400 mt-1.5">
+                Ajoutez le lien vers votre fiche Google My Business pour améliorer votre visibilité.
+              </p>
+            </div>
+            <div>
               <label className="label" htmlFor="address">Adresse</label>
               <input id="address" name="address" type="text" defaultValue={artisan?.address || ''} className="input-field" />
             </div>
@@ -157,6 +172,20 @@ export default async function ProfilPage() {
           </div>
         </div>
       </form>
+
+      {/* Certifications upload */}
+      {artisan && (
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <h2 className="font-semibold text-slate-900 mb-4">Certifications et documents</h2>
+          <p className="text-sm text-slate-500 mb-4">
+            Téléchargez vos certifications RGE, assurances et autres documents justificatifs
+          </p>
+          <CertificationUpload
+            artisanId={artisan.id}
+            existingFiles={(artisan.certificationDocs as any) || []}
+          />
+        </div>
+      )}
     </div>
   )
 }

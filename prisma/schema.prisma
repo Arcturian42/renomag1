@@ -28,18 +28,20 @@ enum LeadTemperature {
 }
 
 model User {
-  id               String         @id @default(uuid())
-  email            String         @unique
-  role             Role           @default(USER)
-  status           String         @default("active")
-  source           String         @default("Direct")
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  profile          Profile?
-  artisan          ArtisanCompany?
-  sentMessages     Message[]      @relation("SentMessages")
-  receivedMessages Message[]      @relation("ReceivedMessages")
-  notifications    Notification[]
+  id                   String         @id @default(uuid())
+  email                String         @unique
+  role                 Role           @default(USER)
+  status               String         @default("active")
+  source               String         @default("Direct")
+  onboardingCompleted  Boolean        @default(false)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  profile              Profile?
+  artisan              ArtisanCompany?
+  sentMessages         Message[]      @relation("SentMessages")
+  receivedMessages     Message[]      @relation("ReceivedMessages")
+  notifications        Notification[]
+  projectDocuments     ProjectDocument[]
 }
 
 model Profile {
@@ -55,47 +57,49 @@ model Profile {
 }
 
 model ArtisanCompany {
-  id              String          @id @default(uuid())
-  userId          String          @unique
-  slug            String          @unique
-  name            String
-  siret           String          @unique
-  description     String?
-  address         String
-  city            String
-  zipCode         String
-  department      String
-  region          String?
-  latitude        Float?
-  longitude       Float?
-  phone           String?
-  email           String?
-  website         String?
-  avatar          String?
-  logoUrl         String?
-  isFeatured      Boolean         @default(false)
-  verified        Boolean         @default(false)
-  premium         Boolean         @default(false)
-  available       Boolean         @default(true)
-  rating          Float           @default(0)
-  reviewCount     Int             @default(0)
-  projectCount    Int             @default(0)
-  yearsExperience Int             @default(0)
-  responseTime    String?
-  since           Int?
-  gallery         Json?
-  credits         Int             @default(0)
-  user            User            @relation(fields: [userId], references: [id])
-  certifications  Certification[]
-  specialties     Specialty[]
-  receivedLeads   Lead[]          @relation("LeadArtisan")
-  purchasedLeads  Lead[]          @relation("LeadPurchaser")
-  leadPurchases   LeadPurchase[]
-  reviews         Review[]
-  subscription    Subscription?
-  articles        Article[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                 String          @id @default(uuid())
+  userId             String          @unique
+  slug               String          @unique
+  name               String
+  siret              String          @unique
+  description        String?
+  address            String
+  city               String
+  zipCode            String
+  department         String
+  region             String?
+  latitude           Float?
+  longitude          Float?
+  phone              String?
+  email              String?
+  website            String?
+  googleBusinessUrl  String?
+  avatar             String?
+  logoUrl            String?
+  isFeatured         Boolean         @default(false)
+  verified           Boolean         @default(false)
+  premium            Boolean         @default(false)
+  available          Boolean         @default(true)
+  rating             Float           @default(0)
+  reviewCount        Int             @default(0)
+  projectCount       Int             @default(0)
+  yearsExperience    Int             @default(0)
+  responseTime       String?
+  since              Int?
+  gallery            Json?
+  credits            Int             @default(0)
+  certificationDocs  Json?
+  user               User            @relation(fields: [userId], references: [id])
+  certifications     Certification[]
+  specialties        Specialty[]
+  receivedLeads      Lead[]          @relation("LeadArtisan")
+  purchasedLeads     Lead[]          @relation("LeadPurchaser")
+  leadPurchases      LeadPurchase[]
+  reviews            Review[]
+  subscription       Subscription?
+  articles           Article[]
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 }
 
 model Certification {
@@ -272,4 +276,17 @@ model Setting {
   id    String @id @default(uuid())
   key   String @unique
   value String
+}
+
+model ProjectDocument {
+  id        String   @id @default(uuid())
+  userId    String
+  fileName  String
+  fileUrl   String
+  fileType  String
+  fileSize  Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

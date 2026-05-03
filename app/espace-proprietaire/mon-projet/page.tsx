@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { MapPin, Home, Calendar, Wrench, Euro } from 'lucide-react'
+import ProjectDocumentUpload from '@/components/upload/ProjectDocumentUpload'
 
 export default async function MonProjetPage() {
   const supabase = await createClient()
@@ -31,6 +32,12 @@ export default async function MonProjetPage() {
     : []
 
   const latestLead = leads[0]
+
+  // Fetch project documents
+  const projectDocuments = await prisma.projectDocument.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: 'desc' },
+  })
 
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
@@ -129,7 +136,7 @@ export default async function MonProjetPage() {
       </div>
 
       {/* Timeline */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-6 mb-5">
         <h2 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary-600" />
           Calendrier prévisionnel
@@ -153,6 +160,15 @@ export default async function MonProjetPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Project Documents */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <h2 className="font-semibold text-slate-900 mb-4">Documents du projet</h2>
+        <p className="text-sm text-slate-500 mb-4">
+          Téléchargez vos photos, plans, permis de construire et autres documents liés à votre projet de rénovation
+        </p>
+        <ProjectDocumentUpload userId={user.id} documents={projectDocuments} />
       </div>
     </div>
   )

@@ -306,6 +306,17 @@ export default async function ArtisanProfilePage({ params }: Props) {
                     <span className="text-sm font-medium text-primary-700">Site web</span>
                   </a>
                 )}
+                {(artisan as any).googleBusinessUrl && (
+                  <a
+                    href={(artisan as any).googleBusinessUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg bg-eco-50 hover:bg-eco-100 transition-colors"
+                  >
+                    <MapPin className="w-4 h-4 text-eco-600" />
+                    <span className="text-sm font-medium text-eco-700">Google Business Profile</span>
+                  </a>
+                )}
               </div>
 
               <Link href="/devis" className="btn-accent w-full text-center mb-3">

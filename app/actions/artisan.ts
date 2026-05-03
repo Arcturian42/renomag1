@@ -24,6 +24,7 @@ export async function updateArtisanProfile(formData: FormData) {
   const city = formData.get('city') as string
   const zipCode = formData.get('zipCode') as string
   const website = formData.get('website') as string
+  const googleBusinessUrl = formData.get('googleBusinessUrl') as string
   const description = formData.get('description') as string
   const departments = formData.get('departments') as string
 
@@ -37,6 +38,7 @@ export async function updateArtisanProfile(formData: FormData) {
       ...(city ? { city } : {}),
       ...(zipCode ? { zipCode } : {}),
       ...(website ? { website } : {}),
+      ...(googleBusinessUrl ? { googleBusinessUrl } : {}),
       ...(description ? { description } : {}),
       ...(departments ? { department: departments } : {}),
     },
