@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
@@ -18,7 +17,11 @@ export default async function MonProjetPage() {
     include: { profile: true },
   })
 
-  if (!dbUser || dbUser.role === 'ARTISAN') {
+  if (!dbUser) {
+    redirect('/connexion')
+  }
+
+  if (dbUser.role === 'ARTISAN') {
     redirect('/espace-pro')
   }
 
