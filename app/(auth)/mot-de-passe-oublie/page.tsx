@@ -15,20 +15,14 @@ export default function MotDePasseOubliePage() {
 
     setIsLoading(true)
     setResult(null)
-    const res = await requestPasswordReset(email.trim())
+    await requestPasswordReset(email.trim())
     setIsLoading(false)
 
-    if (res.success) {
-      setResult({
-        success: true,
-        message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.',
-      })
-    } else {
-      setResult({
-        success: false,
-        message: res.error ?? 'Une erreur est survenue. Veuillez réessayer.',
-      })
-    }
+    // Always show the same generic message to prevent email enumeration attacks
+    setResult({
+      success: true,
+      message: 'Si cette adresse email est enregistrée, vous recevrez un lien de réinitialisation sous peu.',
+    })
   }
 
   return (
