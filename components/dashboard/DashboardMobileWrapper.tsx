@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import DashboardSidebar from '@/components/layout/DashboardSidebar'
 import type { LucideIcon } from 'lucide-react'
@@ -34,6 +35,12 @@ export default function DashboardMobileWrapper({
   children,
 }: Props) {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
 
   return (
     <div className="flex min-h-screen bg-slate-950">

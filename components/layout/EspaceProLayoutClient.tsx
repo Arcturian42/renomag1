@@ -1,6 +1,6 @@
 'use client'
 
-import DashboardSidebar from '@/components/layout/DashboardSidebar'
+import DashboardMobileWrapper from '@/components/dashboard/DashboardMobileWrapper'
 import SignOutButton from '@/components/layout/SignOutButton'
 import {
   LayoutDashboard,
@@ -48,17 +48,16 @@ export default function EspaceProLayoutClient({
   const footerItems: { label: string; href: string; icon: typeof LayoutDashboard; badge?: number }[] = []
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <DashboardSidebar
-        navItems={navItems}
-        footerItems={footerItems}
-        footerExtra={<SignOutButton />}
-        title="Espace Professionnel"
-        userInitials={userInitials}
-        userName={userName}
-        userRole={userRole}
-      />
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
+    <DashboardMobileWrapper
+      navItems={navItems}
+      footerItems={footerItems}
+      footerExtra={<SignOutButton />}
+      title="Espace Professionnel"
+      userInitials={userInitials}
+      userName={userName}
+      userRole={userRole}
+    >
+      {children}
+    </DashboardMobileWrapper>
   )
 }
