@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { SPECIALTIES, REGIONS } from '@/lib/data/artisans'
 import { getArtisansWithFilters } from '@/lib/data/db'
 import ArtisanCard from '@/components/directory/ArtisanCard'
@@ -59,14 +60,18 @@ export default async function AnnuairePage({ searchParams }: AnnuairePageProps) 
           </div>
 
           <div className="mt-6">
-            <AnnuaireSearchBar specialties={SPECIALTIES} defaultValues={searchBarDefaults} />
+            <Suspense fallback={<div className="h-12 bg-slate-100 animate-pulse rounded-lg" />}>
+              <AnnuaireSearchBar specialties={SPECIALTIES} defaultValues={searchBarDefaults} />
+            </Suspense>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
-          <AnnuaireSidebar regions={REGIONS} defaultValues={sidebarDefaults} />
+          <Suspense fallback={<div className="hidden lg:block w-64 h-96 bg-slate-100 animate-pulse rounded-xl" />}>
+            <AnnuaireSidebar regions={REGIONS} defaultValues={sidebarDefaults} />
+          </Suspense>
 
           {/* Results */}
           <div className="flex-1">
