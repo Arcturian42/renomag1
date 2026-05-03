@@ -49,12 +49,35 @@ export default function AnnuaireSidebar({ regions, defaultValues }: AnnuaireSide
     })
   }
 
+  const resetAllFilters = () => {
+    startTransition(() => {
+      const params = new URLSearchParams(searchParams?.toString() ?? '')
+      params.delete('region')
+      params.delete('certification')
+      params.delete('minRating')
+      params.delete('page')
+      router.push(`?${params.toString()}`, { scroll: false })
+    })
+  }
+
+  const hasActiveFilters = defaultValues.region || defaultValues.certification || defaultValues.minRating
+
   return (
     <aside className="hidden lg:block w-64 flex-shrink-0">
       <div className="bg-white rounded-xl border border-slate-200 p-5 sticky top-24">
-        <div className="flex items-center gap-2 mb-5">
-          <Filter className="w-4 h-4 text-slate-600" />
-          <h2 className="font-semibold text-slate-900">Filtres</h2>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-600" />
+            <h2 className="font-semibold text-slate-900">Filtres</h2>
+          </div>
+          {hasActiveFilters && (
+            <button
+              onClick={resetAllFilters}
+              className="text-xs text-primary-700 hover:text-primary-900 font-medium transition-colors"
+            >
+              Réinitialiser
+            </button>
+          )}
         </div>
 
         {/* Region */}

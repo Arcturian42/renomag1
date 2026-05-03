@@ -118,7 +118,25 @@ export async function getArticleBySlug(slug: string): Promise<Article | undefine
 
 export async function getFeaturedArtisans(): Promise<Artisan[]> {
   const artisans = await getArtisans()
-  return artisans.filter((a) => a.premium).slice(0, 3)
+
+  // First try to get premium artisans
+  const premiumArtisans = artisans.filter((a) => a.premium)
+  if (premiumArtisans.length >= 3) {
+    return premiumArtisans.slice(0, 6)
+  }
+
+  // If not enough premium artisans, get verified ones
+  const verifiedArtisans = artisans.filter((a) => a.verified)
+  if (verifiedArtisans.length >= 3) {
+    return verifiedArtisans
+      .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
+      .slice(0, 6)
+  }
+
+  // Otherwise, return top-rated artisans with most reviews
+  return artisans
+    .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
+    .slice(0, 6)
 }
 
 export interface ArtisansFilters {

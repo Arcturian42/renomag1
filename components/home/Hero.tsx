@@ -1,7 +1,11 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, ShieldCheck, Star, Users } from 'lucide-react'
 
 export default function Hero() {
+  const [searchValue, setSearchValue] = useState('')
   return (
     <section className="relative overflow-hidden bg-brand-navy">
       {/* Background gradient */}
@@ -34,9 +38,16 @@ export default function Hero() {
                 type="text"
                 placeholder="Votre ville ou code postal..."
                 className="flex-1 rounded-xl bg-white/10 border border-white/20 px-5 py-3.5 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent-400/50 focus:border-accent-400 text-sm backdrop-blur-sm"
+                value={searchValue}
+                onChange={(e) => setSearchValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchValue.trim()) {
+                    window.location.href = `/annuaire?q=${encodeURIComponent(searchValue.trim())}`
+                  }
+                }}
               />
               <Link
-                href="/annuaire"
+                href={searchValue.trim() ? `/annuaire?q=${encodeURIComponent(searchValue.trim())}` : '/annuaire'}
                 className="btn-accent px-6 py-3.5 rounded-xl text-sm font-semibold whitespace-nowrap"
               >
                 Trouver un artisan
