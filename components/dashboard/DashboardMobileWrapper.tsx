@@ -45,7 +45,7 @@ export default function DashboardMobileWrapper({
   return (
     <div className="flex min-h-screen bg-slate-950">
       {/* Desktop sidebar */}
-      <div className="hidden md:block">
+      <div className="hidden md:block relative z-10">
         <DashboardSidebar
           navItems={navItems}
           footerItems={footerItems}
@@ -88,7 +88,7 @@ export default function DashboardMobileWrapper({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 relative z-0">
         {/* Mobile header */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
           <div className="flex items-center gap-2">
