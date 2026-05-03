@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { label: 'Vue d\'ensemble', href: '/admin', icon: LayoutDashboard },
   { label: 'Artisans', href: '/admin/artisans', icon: ShieldCheck, badge: 12 },
   { label: 'Leads', href: '/admin/leads', icon: TrendingUp },
+  { label: 'Devis', href: '/admin/devis', icon: FileText },
   { label: 'Utilisateurs', href: '/admin/utilisateurs', icon: Users },
   { label: 'Contenu', href: '/admin/contenu', icon: FileText },
   { label: 'Agents Hermes', href: '/admin/agents', icon: Bot, badge: 23 },
