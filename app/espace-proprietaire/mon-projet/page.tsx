@@ -168,7 +168,13 @@ export default async function MonProjetPage() {
         <p className="text-sm text-slate-500 mb-4">
           Téléchargez vos photos, plans, permis de construire et autres documents liés à votre projet de rénovation
         </p>
-        <ProjectDocumentUpload userId={user.id} documents={projectDocuments} />
+        <ProjectDocumentUpload
+          userId={user.id}
+          documents={projectDocuments.map(doc => ({
+            ...doc,
+            createdAt: doc.createdAt.toISOString()
+          }))}
+        />
       </div>
     </div>
   )
