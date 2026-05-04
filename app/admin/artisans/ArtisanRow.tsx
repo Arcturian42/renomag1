@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Crown, CheckCircle, AlertCircle, Check, X } from 'lucide-react'
@@ -27,28 +28,43 @@ type ArtisanRowProps = {
 }
 
 export function ArtisanRow({ artisan }: ArtisanRowProps) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [optimisticVerified, setOptimisticVerified] = useState(artisan.verified)
 
   const handleVerificationToggle = async () => {
     setIsLoading(true)
+    const previousState = optimisticVerified
+
+    // Optimistic update
+    setOptimisticVerified(!optimisticVerified)
+
     try {
       let result
-      if (artisan.verified) {
+      if (previousState) {
         result = await unverifyArtisan(artisan.id)
         if (result.success) {
           toast.success('Artisan non vérifié')
+          router.refresh()
         } else {
+          // Rollback on error
+          setOptimisticVerified(previousState)
           toast.error(result.error || 'Une erreur est survenue')
         }
       } else {
         result = await verifyArtisan(artisan.id)
         if (result.success) {
           toast.success('Artisan vérifié')
+          router.refresh()
         } else {
+          // Rollback on error
+          setOptimisticVerified(previousState)
           toast.error(result.error || 'Une erreur est survenue')
         }
       }
     } catch (error) {
+      // Rollback on error
+      setOptimisticVerified(previousState)
       toast.error('Une erreur est survenue')
       console.error(error)
     } finally {
@@ -95,7 +111,7 @@ export function ArtisanRow({ artisan }: ArtisanRowProps) {
         <p className="text-xs text-slate-400">{artisan.reviewCount} avis</p>
       </td>
       <td className="px-4 py-4">
-        {artisan.verified ? (
+        {optimisticVerified ? (
           <span className="flex items-center gap-1 text-xs text-eco-700 bg-eco-50 rounded-full px-2 py-0.5 w-fit">
             <CheckCircle className="w-3 h-3" />
             Vérifié
@@ -119,12 +135,12 @@ export function ArtisanRow({ artisan }: ArtisanRowProps) {
             onClick={handleVerificationToggle}
             disabled={isLoading}
             className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-              artisan.verified
+              optimisticVerified
                 ? 'bg-red-50 text-red-700 hover:bg-red-100'
                 : 'bg-eco-50 text-eco-700 hover:bg-eco-100'
             }`}
           >
-            {artisan.verified ? (
+            {optimisticVerified ? (
               <>
                 <X className="w-3 h-3" />
                 Retirer
