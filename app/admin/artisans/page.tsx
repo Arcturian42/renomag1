@@ -3,8 +3,8 @@ export const dynamic = 'force-dynamic'
 import Image from 'next/image'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { Search, Filter, Crown, Plus } from 'lucide-react'
-import { ArtisanVerifyButton } from './ArtisanVerifyButton'
+import { Search, Filter, CheckCircle, Crown, AlertCircle, Plus, Check, X } from 'lucide-react'
+import { verifyArtisan, unverifyArtisan } from '@/app/actions/admin'
 
 export default async function AdminArtisansPage() {
   const artisans = await prisma.artisanCompany.findMany({
@@ -124,18 +124,50 @@ export default async function AdminArtisansPage() {
                   </div>
                   <p className="text-xs text-slate-400">{artisan.reviewCount} avis</p>
                 </td>
-                <td className="px-4 py-4" colSpan={2}>
-                  <div className="flex items-center justify-between">
-                    <ArtisanVerifyButton
-                      userId={artisan.userId}
-                      initialVerified={artisan.verified}
-                    />
+                <td className="px-4 py-4">
+                  {artisan.verified ? (
+                    <span className="flex items-center gap-1 text-xs text-eco-700 bg-eco-50 rounded-full px-2 py-0.5 w-fit">
+                      <CheckCircle className="w-3 h-3" />
+                      Vérifié
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 rounded-full px-2 py-0.5 w-fit">
+                      <AlertCircle className="w-3 h-3" />
+                      En attente
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
                     <Link
                       href={`/annuaire/${artisan.slug}`}
                       className="text-xs text-primary-600 hover:text-primary-800 font-medium"
                     >
                       Voir
                     </Link>
+                    {artisan.verified ? (
+                      <form action={unverifyArtisan}>
+                        <input type="hidden" name="userId" value={artisan.userId} />
+                        <button
+                          type="submit"
+                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100"
+                        >
+                          <X className="w-3 h-3" />
+                          Retirer
+                        </button>
+                      </form>
+                    ) : (
+                      <form action={verifyArtisan}>
+                        <input type="hidden" name="userId" value={artisan.userId} />
+                        <button
+                          type="submit"
+                          className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors bg-eco-50 text-eco-700 hover:bg-eco-100"
+                        >
+                          <Check className="w-3 h-3" />
+                          Vérifier
+                        </button>
+                      </form>
+                    )}
                   </div>
                 </td>
               </tr>
