@@ -61,16 +61,15 @@ export async function deleteUserAdmin(userId: string) {
 
 // ==================== ARTISAN MANAGEMENT ====================
 
-export async function verifyArtisan(artisanId: string) {
+export async function verifyArtisan(formData: FormData) {
+  'use server'
+
   try {
     await requireAdmin()
 
-    const artisan = await prisma.artisanCompany.findUnique({
-      where: { id: artisanId },
-    })
-
-    if (!artisan) {
-      return { success: false, error: 'Artisan not found' }
+    const artisanId = formData.get('artisanId') as string
+    if (!artisanId) {
+      throw new Error('Artisan ID is required')
     }
 
     await prisma.artisanCompany.update({
@@ -79,23 +78,21 @@ export async function verifyArtisan(artisanId: string) {
     })
 
     revalidatePath('/admin/artisans')
-    return { success: true }
   } catch (error) {
     console.error('Error verifying artisan:', error)
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to verify artisan' }
+    throw error
   }
 }
 
-export async function unverifyArtisan(artisanId: string) {
+export async function unverifyArtisan(formData: FormData) {
+  'use server'
+
   try {
     await requireAdmin()
 
-    const artisan = await prisma.artisanCompany.findUnique({
-      where: { id: artisanId },
-    })
-
-    if (!artisan) {
-      return { success: false, error: 'Artisan not found' }
+    const artisanId = formData.get('artisanId') as string
+    if (!artisanId) {
+      throw new Error('Artisan ID is required')
     }
 
     await prisma.artisanCompany.update({
@@ -104,10 +101,9 @@ export async function unverifyArtisan(artisanId: string) {
     })
 
     revalidatePath('/admin/artisans')
-    return { success: true }
   } catch (error) {
     console.error('Error unverifying artisan:', error)
-    return { success: false, error: error instanceof Error ? error.message : 'Failed to unverify artisan' }
+    throw error
   }
 }
 
