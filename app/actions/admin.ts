@@ -67,20 +67,54 @@ export async function verifyArtisan(formData: FormData) {
   try {
     await requireAdmin()
 
-    const artisanId = formData.get('artisanId') as string
-    if (!artisanId) {
-      throw new Error('Artisan ID is required')
+    const userId = formData.get('userId') as string
+    if (!userId) {
+      console.error('User ID is required')
+      revalidatePath('/admin/artisans')
+      return
     }
 
-    await prisma.artisanCompany.update({
-      where: { id: artisanId },
-      data: { verified: true },
+    // Find existing ArtisanCompany by userId
+    let artisan = await prisma.artisanCompany.findUnique({
+      where: { userId },
     })
+
+    // If no ArtisanCompany exists, create one with default values
+    if (!artisan) {
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      if (!user) {
+        console.error('User not found:', userId)
+        revalidatePath('/admin/artisans')
+        return
+      }
+
+      // Create ArtisanCompany with minimal required fields
+      artisan = await prisma.artisanCompany.create({
+        data: {
+          userId,
+          slug: `artisan-${userId.slice(0, 8)}`,
+          name: user.email?.split('@')[0] || 'Artisan',
+          siret: `TEMP-${Date.now()}`,
+          address: 'À compléter',
+          city: 'À compléter',
+          zipCode: '00000',
+          department: 'À compléter',
+          verified: true, // Set verified to true immediately
+        },
+      })
+    } else {
+      // Update existing artisan
+      await prisma.artisanCompany.update({
+        where: { userId },
+        data: { verified: true },
+      })
+    }
 
     revalidatePath('/admin/artisans')
   } catch (error) {
     console.error('Error verifying artisan:', error)
-    throw error
+    // Don't throw - just log and revalidate
+    revalidatePath('/admin/artisans')
   }
 }
 
@@ -90,20 +124,35 @@ export async function unverifyArtisan(formData: FormData) {
   try {
     await requireAdmin()
 
-    const artisanId = formData.get('artisanId') as string
-    if (!artisanId) {
-      throw new Error('Artisan ID is required')
+    const userId = formData.get('userId') as string
+    if (!userId) {
+      console.error('User ID is required')
+      revalidatePath('/admin/artisans')
+      return
     }
 
+    // Find existing ArtisanCompany by userId
+    const artisan = await prisma.artisanCompany.findUnique({
+      where: { userId },
+    })
+
+    if (!artisan) {
+      console.error('ArtisanCompany not found for user:', userId)
+      revalidatePath('/admin/artisans')
+      return
+    }
+
+    // Update existing artisan
     await prisma.artisanCompany.update({
-      where: { id: artisanId },
+      where: { userId },
       data: { verified: false },
     })
 
     revalidatePath('/admin/artisans')
   } catch (error) {
     console.error('Error unverifying artisan:', error)
-    throw error
+    // Don't throw - just log and revalidate
+    revalidatePath('/admin/artisans')
   }
 }
 

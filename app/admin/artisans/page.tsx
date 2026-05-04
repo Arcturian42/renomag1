@@ -147,7 +147,7 @@ export default async function AdminArtisansPage() {
                     </Link>
                     {artisan.verified ? (
                       <form action={unverifyArtisan}>
-                        <input type="hidden" name="artisanId" value={artisan.id} />
+                        <input type="hidden" name="userId" value={artisan.userId} />
                         <button
                           type="submit"
                           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors bg-red-50 text-red-700 hover:bg-red-100"
@@ -158,7 +158,7 @@ export default async function AdminArtisansPage() {
                       </form>
                     ) : (
                       <form action={verifyArtisan}>
-                        <input type="hidden" name="artisanId" value={artisan.id} />
+                        <input type="hidden" name="userId" value={artisan.userId} />
                         <button
                           type="submit"
                           className="flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors bg-eco-50 text-eco-700 hover:bg-eco-100"
