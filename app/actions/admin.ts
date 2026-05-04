@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 
@@ -116,6 +117,8 @@ export async function verifyArtisan(formData: FormData) {
     // Don't throw - just log and revalidate
     revalidatePath('/admin/artisans')
   }
+
+  redirect('/admin/artisans')
 }
 
 export async function unverifyArtisan(formData: FormData) {
@@ -154,6 +157,8 @@ export async function unverifyArtisan(formData: FormData) {
     // Don't throw - just log and revalidate
     revalidatePath('/admin/artisans')
   }
+
+  redirect('/admin/artisans')
 }
 
 export async function togglePremiumArtisan(artisanId: string) {
