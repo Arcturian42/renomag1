@@ -32,12 +32,21 @@ export function ArtisanRow({ artisan }: ArtisanRowProps) {
   const handleVerificationToggle = async () => {
     setIsLoading(true)
     try {
+      let result
       if (artisan.verified) {
-        await unverifyArtisan(artisan.id)
-        toast.success('Artisan non vérifié')
+        result = await unverifyArtisan(artisan.id)
+        if (result.success) {
+          toast.success('Artisan non vérifié')
+        } else {
+          toast.error(result.error || 'Une erreur est survenue')
+        }
       } else {
-        await verifyArtisan(artisan.id)
-        toast.success('Artisan vérifié')
+        result = await verifyArtisan(artisan.id)
+        if (result.success) {
+          toast.success('Artisan vérifié')
+        } else {
+          toast.error(result.error || 'Une erreur est survenue')
+        }
       }
     } catch (error) {
       toast.error('Une erreur est survenue')

@@ -62,58 +62,98 @@ export async function deleteUserAdmin(userId: string) {
 // ==================== ARTISAN MANAGEMENT ====================
 
 export async function verifyArtisan(artisanId: string) {
-  await requireAdmin()
+  try {
+    await requireAdmin()
 
-  await prisma.artisanCompany.update({
-    where: { id: artisanId },
-    data: { verified: true },
-  })
+    const artisan = await prisma.artisanCompany.findUnique({
+      where: { id: artisanId },
+    })
 
-  revalidatePath('/admin/artisans')
-  return { success: true }
+    if (!artisan) {
+      return { success: false, error: 'Artisan not found' }
+    }
+
+    await prisma.artisanCompany.update({
+      where: { id: artisanId },
+      data: { verified: true },
+    })
+
+    revalidatePath('/admin/artisans')
+    return { success: true }
+  } catch (error) {
+    console.error('Error verifying artisan:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to verify artisan' }
+  }
 }
 
 export async function unverifyArtisan(artisanId: string) {
-  await requireAdmin()
+  try {
+    await requireAdmin()
 
-  await prisma.artisanCompany.update({
-    where: { id: artisanId },
-    data: { verified: false },
-  })
+    const artisan = await prisma.artisanCompany.findUnique({
+      where: { id: artisanId },
+    })
 
-  revalidatePath('/admin/artisans')
-  return { success: true }
+    if (!artisan) {
+      return { success: false, error: 'Artisan not found' }
+    }
+
+    await prisma.artisanCompany.update({
+      where: { id: artisanId },
+      data: { verified: false },
+    })
+
+    revalidatePath('/admin/artisans')
+    return { success: true }
+  } catch (error) {
+    console.error('Error unverifying artisan:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to unverify artisan' }
+  }
 }
 
 export async function togglePremiumArtisan(artisanId: string) {
-  await requireAdmin()
+  try {
+    await requireAdmin()
 
-  const artisan = await prisma.artisanCompany.findUnique({ where: { id: artisanId } })
-  if (!artisan) throw new Error('Artisan not found')
+    const artisan = await prisma.artisanCompany.findUnique({ where: { id: artisanId } })
+    if (!artisan) {
+      return { success: false, error: 'Artisan not found' }
+    }
 
-  await prisma.artisanCompany.update({
-    where: { id: artisanId },
-    data: { premium: !artisan.premium },
-  })
+    await prisma.artisanCompany.update({
+      where: { id: artisanId },
+      data: { premium: !artisan.premium },
+    })
 
-  revalidatePath('/admin/artisans')
-  return { success: true }
+    revalidatePath('/admin/artisans')
+    return { success: true }
+  } catch (error) {
+    console.error('Error toggling premium status:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to toggle premium status' }
+  }
 }
 
 export async function toggleFeaturedArtisan(artisanId: string) {
-  await requireAdmin()
+  try {
+    await requireAdmin()
 
-  const artisan = await prisma.artisanCompany.findUnique({ where: { id: artisanId } })
-  if (!artisan) throw new Error('Artisan not found')
+    const artisan = await prisma.artisanCompany.findUnique({ where: { id: artisanId } })
+    if (!artisan) {
+      return { success: false, error: 'Artisan not found' }
+    }
 
-  await prisma.artisanCompany.update({
-    where: { id: artisanId },
-    data: { isFeatured: !artisan.isFeatured },
-  })
+    await prisma.artisanCompany.update({
+      where: { id: artisanId },
+      data: { isFeatured: !artisan.isFeatured },
+    })
 
-  revalidatePath('/admin/artisans')
-  revalidatePath('/admin/parametres')
-  return { success: true }
+    revalidatePath('/admin/artisans')
+    revalidatePath('/admin/parametres')
+    return { success: true }
+  } catch (error) {
+    console.error('Error toggling featured status:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to toggle featured status' }
+  }
 }
 
 // ==================== LEAD MANAGEMENT ====================
