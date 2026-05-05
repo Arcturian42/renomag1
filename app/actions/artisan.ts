@@ -7,46 +7,70 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function updateArtisanProfile(formData: FormData) {
   'use server'
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/connexion')
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    include: { artisan: true },
-  })
-  if (!dbUser?.artisan) redirect('/espace-pro')
+  try {
+    console.log('[updateArtisanProfile] Starting profile update')
 
-  const name = formData.get('name') as string
-  const phone = formData.get('phone') as string
-  const email = formData.get('email') as string
-  const address = formData.get('address') as string
-  const city = formData.get('city') as string
-  const zipCode = formData.get('zipCode') as string
-  const website = formData.get('website') as string
-  const googleBusinessUrl = formData.get('googleBusinessUrl') as string
-  const description = formData.get('description') as string
-  const departments = formData.get('departments') as string
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      console.error('[updateArtisanProfile] No user found')
+      redirect('/connexion')
+    }
 
-  await prisma.artisanCompany.update({
-    where: { id: dbUser.artisan.id },
-    data: {
-      ...(name ? { name } : {}),
-      ...(phone ? { phone } : {}),
-      ...(email ? { email } : {}),
-      ...(address ? { address } : {}),
-      ...(city ? { city } : {}),
-      ...(zipCode ? { zipCode } : {}),
-      ...(website ? { website } : {}),
-      ...(googleBusinessUrl ? { googleBusinessUrl } : {}),
-      ...(description ? { description } : {}),
-      ...(departments ? { department: departments } : {}),
-    },
-  })
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: { artisan: true },
+    })
 
-  revalidatePath('/espace-pro/profil')
-  revalidatePath('/annuaire')
-  redirect('/espace-pro/profil?success=1')
+    if (!dbUser?.artisan) {
+      console.error('[updateArtisanProfile] No artisan found for user')
+      redirect('/espace-pro')
+    }
+
+    const name = formData.get('name') as string
+    const phone = formData.get('phone') as string
+    const email = formData.get('email') as string
+    const address = formData.get('address') as string
+    const city = formData.get('city') as string
+    const zipCode = formData.get('zipCode') as string
+    const website = formData.get('website') as string
+    const googleBusinessUrl = formData.get('googleBusinessUrl') as string
+    const description = formData.get('description') as string
+    const departments = formData.get('departments') as string
+
+    console.log('[updateArtisanProfile] Updating artisan:', dbUser.artisan.id)
+
+    await prisma.artisanCompany.update({
+      where: { id: dbUser.artisan.id },
+      data: {
+        ...(name ? { name } : {}),
+        ...(phone ? { phone } : {}),
+        ...(email ? { email } : {}),
+        ...(address ? { address } : {}),
+        ...(city ? { city } : {}),
+        ...(zipCode ? { zipCode } : {}),
+        ...(website ? { website } : {}),
+        ...(googleBusinessUrl ? { googleBusinessUrl } : {}),
+        ...(description ? { description } : {}),
+        ...(departments ? { department: departments } : {}),
+      },
+    })
+
+    console.log('[updateArtisanProfile] ✅ Profile updated successfully')
+
+    revalidatePath('/espace-pro/profil')
+    revalidatePath('/annuaire')
+    redirect('/espace-pro/profil?success=1')
+  } catch (error) {
+    console.error('[updateArtisanProfile] ❌ Error:', error)
+    // If it's a redirect, re-throw it
+    if (error && typeof error === 'object' && 'digest' in error) {
+      throw error
+    }
+    // Otherwise redirect with error
+    redirect('/espace-pro/profil?error=1')
+  }
 }
 
 export async function updateOwnerProfile(formData: FormData) {
