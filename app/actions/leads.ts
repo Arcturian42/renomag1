@@ -414,20 +414,37 @@ export async function purchaseLead(artisanId: string, leadId: string) {
 
     // Execute purchase transaction
     let transactionSuccess = false
+
+    // Calculate new credits explicitly (safer than using decrement)
+    const newCredits = currentCredits - leadPrice
+    console.log('[purchaseLead] Will update credits from', currentCredits, 'to', newCredits)
+
     try {
       console.log('[purchaseLead] Starting transaction...')
 
       // Use a transaction to ensure atomicity
       await prisma.$transaction(async (tx) => {
-        console.log('[purchaseLead] Step 1: Deducting credits...')
+        console.log('[purchaseLead] Step 1: Updating credits explicitly...')
         try {
+          // Use explicit value instead of decrement for better reliability
           const updatedArtisan = await tx.artisanCompany.update({
             where: { id: artisanId },
-            data: { credits: { decrement: leadPrice } },
+            data: { credits: newCredits },
           })
-          console.log('[purchaseLead] Credits deducted. New balance:', updatedArtisan.credits)
-        } catch (creditError) {
-          console.error('[purchaseLead] Error deducting credits:', creditError)
+          console.log('[purchaseLead] Credits updated. New balance:', updatedArtisan.credits)
+
+          // Verify the update worked correctly
+          if (updatedArtisan.credits !== newCredits) {
+            console.error('[purchaseLead] Credits mismatch! Expected:', newCredits, 'Got:', updatedArtisan.credits)
+            throw new Error('Credit update verification failed')
+          }
+        } catch (creditError: any) {
+          console.error('[purchaseLead] Error updating credits:', creditError)
+          console.error('[purchaseLead] Credit error details:', {
+            code: creditError?.code,
+            meta: creditError?.meta,
+            message: creditError?.message
+          })
           throw creditError
         }
 
@@ -442,33 +459,48 @@ export async function purchaseLead(artisanId: string, leadId: string) {
             },
           })
           console.log('[purchaseLead] Lead updated:', updatedLead.id)
-        } catch (leadError) {
+        } catch (leadError: any) {
           console.error('[purchaseLead] Error updating lead:', leadError)
+          console.error('[purchaseLead] Lead error details:', {
+            code: leadError?.code,
+            meta: leadError?.meta,
+            message: leadError?.message
+          })
           throw leadError
         }
 
         console.log('[purchaseLead] Step 3: Creating purchase record...')
         try {
           const purchase = await tx.leadPurchase.create({
-            data: { leadId, artisanId, price: leadPrice },
+            data: {
+              leadId,
+              artisanId,
+              price: leadPrice
+            },
           })
           console.log('[purchaseLead] Purchase record created:', purchase.id)
-        } catch (purchaseError) {
+        } catch (purchaseError: any) {
           console.error('[purchaseLead] Error creating purchase record:', purchaseError)
+          console.error('[purchaseLead] Purchase error details:', {
+            code: purchaseError?.code,
+            meta: purchaseError?.meta,
+            message: purchaseError?.message
+          })
           throw purchaseError
         }
 
-        console.log('[purchaseLead] All transaction steps completed')
+        console.log('[purchaseLead] All transaction steps completed successfully')
       })
 
       console.log('[purchaseLead] Transaction committed successfully')
       transactionSuccess = true
     } catch (transactionError: any) {
-      console.error('[purchaseLead] Transaction failed:', transactionError)
+      console.error('[purchaseLead] ❌ Transaction failed:', transactionError)
       console.error('[purchaseLead] Error name:', transactionError?.name)
       console.error('[purchaseLead] Error code:', transactionError?.code)
       console.error('[purchaseLead] Error meta:', transactionError?.meta)
       console.error('[purchaseLead] Error message:', transactionError?.message)
+      console.error('[purchaseLead] Error stack:', transactionError?.stack)
 
       const errorMessage = transactionError instanceof Error ? transactionError.message : 'Erreur inconnue'
 
