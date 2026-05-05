@@ -414,14 +414,7 @@ export async function purchaseLead(artisanId: string, leadId: string) {
 
     console.log('[purchaseLead] ✅ Transaction completed successfully')
 
-    // 6. Revalidate paths (non-critical)
-    try {
-      revalidatePath('/espace-pro')
-      revalidatePath('/espace-pro/leads')
-    } catch (e) {
-      console.warn('[purchaseLead] Revalidation failed (non-critical):', e)
-    }
-
+    // Return success - let client handle refresh
     return { success: true }
 
   } catch (error: any) {

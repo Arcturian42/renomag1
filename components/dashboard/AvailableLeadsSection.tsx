@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { MapPin, Flame, Snowflake, ShoppingCart } from 'lucide-react'
 import { purchaseLead } from '@/app/actions/leads'
 
@@ -23,6 +24,7 @@ interface AvailableLeadsSectionProps {
 }
 
 export default function AvailableLeadsSection({ leads: initialLeads, artisanId }: AvailableLeadsSectionProps) {
+  const router = useRouter()
   const [leads, setLeads] = useState(initialLeads)
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -43,10 +45,10 @@ export default function AvailableLeadsSection({ leads: initialLeads, artisanId }
         setLeads(prev => prev.filter(l => l.id !== leadId))
         setSuccess('✅ Lead acheté avec succès !')
 
-        // Refresh page after 2 seconds
+        // Refresh data after 1 second using router.refresh()
         setTimeout(() => {
-          window.location.reload()
-        }, 2000)
+          router.refresh()
+        }, 1000)
       } else {
         setError(result.error || 'Erreur lors de l\'achat du lead')
       }

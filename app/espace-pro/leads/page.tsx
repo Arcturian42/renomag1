@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Search, Filter, Phone, Mail, MapPin, Euro, Clock, ShoppingCart } from 'lucide-react'
 import { getArtisanLeads, getMatchedLeadsForArtisan, purchaseLead, updateLeadStatus, getCurrentArtisanCompanyId } from '@/app/actions/leads'
 import { createClient } from '@/lib/supabase/client'
@@ -16,6 +17,7 @@ const STATUS_CONFIG: Record<LeadStatus, { label: string; color: string; dot: str
 }
 
 export default function LeadsPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'available' | 'mine'>('available')
   const [availableLeads, setAvailableLeads] = useState<any[]>([])
   const [myLeads, setMyLeads] = useState<any[]>([])
@@ -110,9 +112,11 @@ export default function LeadsPage() {
       console.log('[handlePurchase] Purchase result:', result)
 
       if (result.success) {
-        console.log('[handlePurchase] ✅ Purchase successful! Refreshing page...')
-        // Refresh the page to show updated data
-        window.location.reload()
+        console.log('[handlePurchase] ✅ Purchase successful! Refreshing data...')
+        // Switch to "My leads" tab and refresh
+        setActiveTab('mine')
+        // Use router.refresh() to reload data without full page reload
+        router.refresh()
       } else {
         console.error('[handlePurchase] Purchase failed:', result.error)
         setError(result.error || 'Une erreur est survenue lors de l\'achat.')
