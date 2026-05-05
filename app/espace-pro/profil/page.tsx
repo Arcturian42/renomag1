@@ -41,20 +41,6 @@ export default async function ProfilPage() {
           />
         </div>
       )}
-
-      {/* Certifications upload */}
-      {artisan && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="font-semibold text-slate-900 mb-4">Certifications et documents</h2>
-          <p className="text-sm text-slate-500 mb-4">
-            Téléchargez vos certifications RGE, assurances et autres documents justificatifs
-          </p>
-          <CertificationUpload
-            artisanId={artisan.id}
-            existingFiles={(artisan.certificationDocs as any) || []}
-          />
-        </div>
-      )}
     </div>
   )
 }
