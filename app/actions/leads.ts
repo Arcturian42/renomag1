@@ -248,55 +248,96 @@ export async function getArtisanLeads(artisanId: string) {
 }
 
 export async function purchaseLead(artisanId: string, leadId: string) {
+  console.log('[purchaseLead] Starting purchase:', { artisanId, leadId })
+
   try {
     // Authenticate user
-    const authUser = await requireAuth()
+    let authUser
+    try {
+      authUser = await requireAuth()
+      console.log('[purchaseLead] Auth successful:', authUser.id)
+    } catch (authError) {
+      console.error('[purchaseLead] Auth failed:', authError)
+      return { success: false, error: 'Vous devez être connecté pour acheter un lead.' }
+    }
+
+    // Validate inputs
+    if (!artisanId || typeof artisanId !== 'string') {
+      console.error('[purchaseLead] Invalid artisanId:', artisanId)
+      return { success: false, error: 'ID artisan invalide' }
+    }
+
+    if (!leadId || typeof leadId !== 'string') {
+      console.error('[purchaseLead] Invalid leadId:', leadId)
+      return { success: false, error: 'ID lead invalide' }
+    }
 
     // Find artisan with explicit selection of credits field
-    const artisan = await prisma.artisanCompany.findFirst({
-      where: { id: artisanId, userId: authUser.id },
-      select: {
-        id: true,
-        credits: true,
-        name: true,
-        userId: true
-      }
-    })
+    let artisan
+    try {
+      artisan = await prisma.artisanCompany.findFirst({
+        where: { id: artisanId, userId: authUser.id },
+        select: {
+          id: true,
+          credits: true,
+          name: true,
+          userId: true
+        }
+      })
+      console.log('[purchaseLead] Artisan found:', { id: artisan?.id, credits: artisan?.credits })
+    } catch (dbError) {
+      console.error('[purchaseLead] Database error finding artisan:', dbError)
+      return { success: false, error: 'Erreur de connexion à la base de données.' }
+    }
 
     if (!artisan) {
+      console.error('[purchaseLead] No artisan found for:', { artisanId, userId: authUser.id })
       return { success: false, error: 'Votre profil artisan n\'a pas été trouvé. Veuillez compléter votre profil.' }
     }
 
     // Verify credits field exists (should always be there with default 0)
     const currentCredits = artisan.credits ?? 0
+    console.log('[purchaseLead] Current credits:', currentCredits)
 
     // Find the lead
-    const lead = await prisma.lead.findUnique({
-      where: { id: leadId },
-      select: {
-        id: true,
-        price: true,
-        purchasedById: true,
-        firstName: true,
-        lastName: true,
-        projectType: true
-      }
-    })
+    let lead
+    try {
+      lead = await prisma.lead.findUnique({
+        where: { id: leadId },
+        select: {
+          id: true,
+          price: true,
+          purchasedById: true,
+          firstName: true,
+          lastName: true,
+          projectType: true
+        }
+      })
+      console.log('[purchaseLead] Lead found:', { id: lead?.id, price: lead?.price, purchasedById: lead?.purchasedById })
+    } catch (dbError) {
+      console.error('[purchaseLead] Database error finding lead:', dbError)
+      return { success: false, error: 'Erreur de connexion à la base de données.' }
+    }
 
     if (!lead) {
+      console.error('[purchaseLead] Lead not found:', leadId)
       return { success: false, error: 'Ce lead n\'existe plus ou a été supprimé.' }
     }
 
     // Check if already purchased
     if (lead.purchasedById) {
+      console.log('[purchaseLead] Lead already purchased by:', lead.purchasedById)
       return { success: false, error: 'Ce lead a déjà été acheté par un autre artisan.' }
     }
 
     // Check credits
     const leadPrice = lead.price || 2000 // Default to 20€ if price missing
+    console.log('[purchaseLead] Lead price:', leadPrice)
+
     if (currentCredits < leadPrice) {
       const needed = leadPrice / 100
       const current = currentCredits / 100
+      console.log('[purchaseLead] Insufficient credits:', { current, needed })
       return {
         success: false,
         error: `Crédits insuffisants. Vous avez ${current}€ de crédits, ce lead coûte ${needed}€. Rechargez votre compte pour continuer.`,
@@ -304,31 +345,79 @@ export async function purchaseLead(artisanId: string, leadId: string) {
     }
 
     // Execute purchase transaction
-    await prisma.$transaction([
-      prisma.artisanCompany.update({
-        where: { id: artisanId },
-        data: { credits: { decrement: leadPrice } },
-      }),
-      prisma.lead.update({
-        where: { id: leadId },
-        data: {
-          purchasedById: artisanId,
-          artisanId,
-          status: 'CONTACTED',
-        },
-      }),
-      prisma.leadPurchase.create({
-        data: { leadId, artisanId, price: leadPrice },
-      }),
-    ])
+    try {
+      console.log('[purchaseLead] Starting transaction...')
 
-    revalidatePath('/espace-pro')
-    revalidatePath('/espace-pro/leads')
+      // Use a transaction to ensure atomicity
+      const result = await prisma.$transaction(async (tx) => {
+        console.log('[purchaseLead] Step 1: Deducting credits...')
+        const updatedArtisan = await tx.artisanCompany.update({
+          where: { id: artisanId },
+          data: { credits: { decrement: leadPrice } },
+        })
+        console.log('[purchaseLead] Credits deducted. New balance:', updatedArtisan.credits)
 
+        console.log('[purchaseLead] Step 2: Updating lead...')
+        const updatedLead = await tx.lead.update({
+          where: { id: leadId },
+          data: {
+            purchasedById: artisanId,
+            artisanId,
+            status: 'CONTACTED',
+          },
+        })
+        console.log('[purchaseLead] Lead updated:', updatedLead.id)
+
+        console.log('[purchaseLead] Step 3: Creating purchase record...')
+        const purchase = await tx.leadPurchase.create({
+          data: { leadId, artisanId, price: leadPrice },
+        })
+        console.log('[purchaseLead] Purchase record created:', purchase.id)
+
+        return { success: true }
+      })
+
+      console.log('[purchaseLead] Transaction completed successfully')
+    } catch (transactionError: any) {
+      console.error('[purchaseLead] Transaction failed:', transactionError)
+      console.error('[purchaseLead] Error name:', transactionError?.name)
+      console.error('[purchaseLead] Error code:', transactionError?.code)
+      console.error('[purchaseLead] Error meta:', transactionError?.meta)
+
+      const errorMessage = transactionError instanceof Error ? transactionError.message : 'Erreur inconnue'
+
+      // Check for specific Prisma errors
+      if (transactionError?.code === 'P2025') {
+        return { success: false, error: 'Le lead ou votre profil est introuvable. Veuillez rafraîchir la page.' }
+      }
+      if (transactionError?.code === 'P2003') {
+        return { success: false, error: 'Erreur de référence dans la base de données. Contactez le support.' }
+      }
+
+      return {
+        success: false,
+        error: `Erreur lors de la transaction : ${errorMessage}`
+      }
+    }
+
+    // Revalidate paths
+    try {
+      console.log('[purchaseLead] Revalidating paths...')
+      revalidatePath('/espace-pro')
+      revalidatePath('/espace-pro/leads')
+      console.log('[purchaseLead] Paths revalidated')
+    } catch (revalidateError) {
+      console.error('[purchaseLead] Revalidation error (non-critical):', revalidateError)
+      // Don't fail the purchase if revalidation fails
+    }
+
+    console.log('[purchaseLead] Purchase completed successfully')
     return { success: true }
   } catch (error) {
-    console.error('Error in purchaseLead:', error)
+    console.error('[purchaseLead] Unexpected error:', error)
     const message = error instanceof Error ? error.message : 'Une erreur est survenue'
+    const stack = error instanceof Error ? error.stack : 'No stack trace'
+    console.error('[purchaseLead] Error stack:', stack)
     return {
       success: false,
       error: `Impossible d'acheter ce lead : ${message}. Contactez le support si le problème persiste.`
