@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { ArrowUp, ArrowDown, TrendingUp, Users, Euro, Star, ArrowRight } from 'lucide-react'
 import OnboardingModal from '@/components/artisan/OnboardingModal'
+import AvailableLeadsSection from '@/components/dashboard/AvailableLeadsSection'
+import { getAvailableLeadsForDashboard } from '@/app/actions/leads'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700' },
@@ -23,7 +25,8 @@ export default async function EspaceProDashboard() {
 
   let dbUser = null
   let artisan = null
-  let leads: any[] = []
+  let ownedLeads: any[] = []
+  let availableLeads: any[] = []
   let unreadMessages = 0
 
   try {
@@ -41,13 +44,23 @@ export default async function EspaceProDashboard() {
     // Fetch leads only if artisan profile exists
     if (artisan?.id) {
       try {
-        leads = await prisma.lead.findMany({
-          where: { artisanId: artisan.id },
+        // Fetch owned/purchased leads for stats
+        ownedLeads = await prisma.lead.findMany({
+          where: {
+            OR: [
+              { artisanId: artisan.id },
+              { purchasedById: artisan.id }
+            ]
+          },
           orderBy: { createdAt: 'desc' },
         })
+
+        // Fetch available leads for purchase
+        availableLeads = await getAvailableLeadsForDashboard(artisan.id)
       } catch (error) {
         console.error('Error fetching leads:', error)
-        leads = []
+        ownedLeads = []
+        availableLeads = []
       }
     }
 
@@ -69,14 +82,14 @@ export default async function EspaceProDashboard() {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  const leadsThisMonth = leads.filter((l) => new Date(l.createdAt) >= startOfMonth)
-  const convertedLeads = leads.filter((l) => l.status === 'CONVERTED')
-  const conversionRate = leads.length > 0 ? Math.round((convertedLeads.length / leads.length) * 100) : 0
+  const leadsThisMonth = ownedLeads.filter((l) => new Date(l.createdAt) >= startOfMonth)
+  const convertedLeads = ownedLeads.filter((l) => l.status === 'CONVERTED')
+  const conversionRate = ownedLeads.length > 0 ? Math.round((convertedLeads.length / ownedLeads.length) * 100) : 0
 
   const reviews = artisan?.reviews || []
   const avgRating = reviews.length > 0 ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : '—'
 
-  const newLeadsCount = leads.filter((l) => l.status === 'NEW').length
+  const newLeadsCount = ownedLeads.filter((l) => l.status === 'NEW').length
 
   const displayName = artisan?.name || dbUser?.profile?.firstName || user.email?.split('@')[0] || 'Artisan'
 
@@ -114,8 +127,6 @@ export default async function EspaceProDashboard() {
       color: 'text-purple-600 bg-purple-50',
     },
   ]
-
-  const recentLeads = leads.slice(0, 3)
 
   // Profile score based on completion
   const scoreFields = [
@@ -195,58 +206,27 @@ export default async function EspaceProDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent leads */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-semibold text-slate-900">Derniers leads</h2>
-            <a
-              href="/espace-pro/leads"
-              className="text-xs text-primary-600 hover:text-primary-800 font-medium"
-            >
-              Voir tous →
-            </a>
+        {/* Available leads for purchase */}
+        {artisan?.id && (
+          <AvailableLeadsSection
+            leads={availableLeads}
+            artisanId={artisan.id}
+          />
+        )}
+        {!artisan?.id && (
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-semibold text-slate-900">Leads disponibles</h2>
+              <a
+                href="/espace-pro/leads"
+                className="text-xs text-primary-600 hover:text-primary-800 font-medium"
+              >
+                Voir tous →
+              </a>
+            </div>
+            <p className="text-sm text-slate-500">Complétez votre profil pour voir les leads disponibles.</p>
           </div>
-          <div className="space-y-3">
-            {recentLeads.length === 0 && (
-              <p className="text-sm text-slate-500">Aucun lead pour le moment.</p>
-            )}
-            {recentLeads.map((lead) => {
-              const statusKey = lead.status === 'NEW' ? 'new' : lead.status === 'CONTACTED' ? 'contacted' : lead.status === 'QUALIFIED' ? 'devis_sent' : lead.status === 'CONVERTED' ? 'won' : 'lost'
-              const statusConf = STATUS_CONFIG[statusKey]
-              return (
-                <div
-                  key={lead.id}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  <div className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center text-xs font-bold text-primary-700 flex-shrink-0">
-                    {lead.firstName[0]}{lead.lastName[0]}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-slate-900 truncate">
-                        {lead.firstName} {lead.lastName}
-                      </p>
-                      <span className="text-xs text-slate-400">—</span>
-                      <p className="text-xs text-slate-400 truncate">{lead.department}</p>
-                    </div>
-                    <p className="text-xs text-slate-500 truncate">{lead.projectType}</p>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <p className="text-sm font-semibold text-slate-900">{lead.budget || '—'}</p>
-                    <span
-                      className={`inline-block text-xs rounded-full px-2 py-0.5 font-medium mt-0.5 ${statusConf.color}`}
-                    >
-                      {statusConf.label}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 flex-shrink-0">
-                    {new Date(lead.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                  </p>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        )}
 
         {/* Right column */}
         <div className="space-y-5">

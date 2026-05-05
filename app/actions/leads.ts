@@ -234,6 +234,62 @@ export async function getMatchedLeadsForArtisan(artisanId: string) {
   }
 }
 
+// Get available leads for dashboard (server-side safe)
+export async function getAvailableLeadsForDashboard(artisanId: string) {
+  try {
+    const artisan = await prisma.artisanCompany.findFirst({
+      where: { id: artisanId },
+      include: { specialties: true },
+    })
+
+    if (!artisan) {
+      console.log('[getAvailableLeadsForDashboard] No artisan found')
+      return []
+    }
+
+    const specialtyIds = artisan.specialties.map((s) => s.id)
+
+    // Build where clause for available leads
+    const where: any = {
+      purchasedById: null,
+      artisanId: null,
+    }
+
+    // Filter by department if set
+    if (artisan.department) {
+      where.department = artisan.department
+    }
+
+    // Filter by specialty if set
+    if (specialtyIds.length > 0) {
+      where.specialtyId = { in: specialtyIds }
+    }
+
+    const leads = await prisma.lead.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 3, // Only take 3 for dashboard
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        city: true,
+        zipCode: true,
+        department: true,
+        projectType: true,
+        price: true,
+        temperature: true,
+        createdAt: true,
+      },
+    })
+
+    return leads
+  } catch (error) {
+    console.error('[getAvailableLeadsForDashboard] Error:', error)
+    return []
+  }
+}
+
 // Leads achetés / assignés à un artisan
 export async function getArtisanLeads(artisanId: string) {
   try {
