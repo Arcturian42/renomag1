@@ -9,10 +9,22 @@ import { calculateLeadScore } from '@/src/lib/scoring'
 import { ratelimit, getClientIdentifier } from '@/lib/rate-limit'
 
 async function requireAuth() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error('Unauthorized')
-  return user
+  try {
+    const supabase = await createClient()
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (error) {
+      console.error('[requireAuth] Supabase error:', error)
+      throw new Error('Unauthorized')
+    }
+    if (!user) {
+      console.error('[requireAuth] No user found')
+      throw new Error('Unauthorized')
+    }
+    return user
+  } catch (error) {
+    console.error('[requireAuth] Error:', error)
+    throw new Error('Unauthorized')
+  }
 }
 
 // Get current user's artisan company ID
@@ -345,44 +357,62 @@ export async function purchaseLead(artisanId: string, leadId: string) {
     }
 
     // Execute purchase transaction
+    let transactionSuccess = false
     try {
       console.log('[purchaseLead] Starting transaction...')
 
       // Use a transaction to ensure atomicity
-      const result = await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx) => {
         console.log('[purchaseLead] Step 1: Deducting credits...')
-        const updatedArtisan = await tx.artisanCompany.update({
-          where: { id: artisanId },
-          data: { credits: { decrement: leadPrice } },
-        })
-        console.log('[purchaseLead] Credits deducted. New balance:', updatedArtisan.credits)
+        try {
+          const updatedArtisan = await tx.artisanCompany.update({
+            where: { id: artisanId },
+            data: { credits: { decrement: leadPrice } },
+          })
+          console.log('[purchaseLead] Credits deducted. New balance:', updatedArtisan.credits)
+        } catch (creditError) {
+          console.error('[purchaseLead] Error deducting credits:', creditError)
+          throw creditError
+        }
 
         console.log('[purchaseLead] Step 2: Updating lead...')
-        const updatedLead = await tx.lead.update({
-          where: { id: leadId },
-          data: {
-            purchasedById: artisanId,
-            artisanId,
-            status: 'CONTACTED',
-          },
-        })
-        console.log('[purchaseLead] Lead updated:', updatedLead.id)
+        try {
+          const updatedLead = await tx.lead.update({
+            where: { id: leadId },
+            data: {
+              purchasedById: artisanId,
+              artisanId,
+              status: 'CONTACTED',
+            },
+          })
+          console.log('[purchaseLead] Lead updated:', updatedLead.id)
+        } catch (leadError) {
+          console.error('[purchaseLead] Error updating lead:', leadError)
+          throw leadError
+        }
 
         console.log('[purchaseLead] Step 3: Creating purchase record...')
-        const purchase = await tx.leadPurchase.create({
-          data: { leadId, artisanId, price: leadPrice },
-        })
-        console.log('[purchaseLead] Purchase record created:', purchase.id)
+        try {
+          const purchase = await tx.leadPurchase.create({
+            data: { leadId, artisanId, price: leadPrice },
+          })
+          console.log('[purchaseLead] Purchase record created:', purchase.id)
+        } catch (purchaseError) {
+          console.error('[purchaseLead] Error creating purchase record:', purchaseError)
+          throw purchaseError
+        }
 
-        return { success: true }
+        console.log('[purchaseLead] All transaction steps completed')
       })
 
-      console.log('[purchaseLead] Transaction completed successfully')
+      console.log('[purchaseLead] Transaction committed successfully')
+      transactionSuccess = true
     } catch (transactionError: any) {
       console.error('[purchaseLead] Transaction failed:', transactionError)
       console.error('[purchaseLead] Error name:', transactionError?.name)
       console.error('[purchaseLead] Error code:', transactionError?.code)
       console.error('[purchaseLead] Error meta:', transactionError?.meta)
+      console.error('[purchaseLead] Error message:', transactionError?.message)
 
       const errorMessage = transactionError instanceof Error ? transactionError.message : 'Erreur inconnue'
 
@@ -393,11 +423,20 @@ export async function purchaseLead(artisanId: string, leadId: string) {
       if (transactionError?.code === 'P2003') {
         return { success: false, error: 'Erreur de référence dans la base de données. Contactez le support.' }
       }
+      if (transactionError?.code === 'P2002') {
+        return { success: false, error: 'Ce lead a déjà été acheté. Veuillez rafraîchir la page.' }
+      }
 
       return {
         success: false,
         error: `Erreur lors de la transaction : ${errorMessage}`
       }
+    }
+
+    // Ensure transaction succeeded before continuing
+    if (!transactionSuccess) {
+      console.error('[purchaseLead] Transaction did not succeed, returning error')
+      return { success: false, error: 'La transaction n\'a pas pu être complétée.' }
     }
 
     // Revalidate paths
@@ -426,8 +465,15 @@ export async function purchaseLead(artisanId: string, leadId: string) {
 }
 
 export async function updateLeadStatus(leadId: string, status: string) {
-  return prisma.lead.update({
-    where: { id: leadId },
-    data: { status: status as any },
-  })
+  try {
+    const updated = await prisma.lead.update({
+      where: { id: leadId },
+      data: { status: status as any },
+    })
+    return { success: true, data: updated }
+  } catch (error) {
+    console.error('[updateLeadStatus] Error:', error)
+    const message = error instanceof Error ? error.message : 'Erreur inconnue'
+    throw new Error(`Impossible de mettre à jour le statut: ${message}`)
+  }
 }
