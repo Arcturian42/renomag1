@@ -96,75 +96,31 @@ export default function LeadsPage() {
     setError(null)
 
     try {
-      // Step 1: Get artisan ID
-      console.log('[handlePurchase] Getting artisan ID...')
-      let artisanId
-      try {
-        artisanId = await getCurrentArtisanCompanyId()
-        console.log('[handlePurchase] Artisan ID:', artisanId)
-      } catch (artisanError: any) {
-        console.error('[handlePurchase] Error getting artisan ID:', artisanError)
-        setError('Impossible de récupérer votre profil. Veuillez vous reconnecter.')
-        setPurchaseLoading(null)
-        return
-      }
+      // Get artisan ID
+      const artisanId = await getCurrentArtisanCompanyId()
 
       if (!artisanId) {
-        console.error('[handlePurchase] No artisan ID returned')
-        setError('Votre profil artisan n\'a pas été trouvé. Veuillez compléter votre profil.')
+        setError('Votre profil artisan est introuvable.')
         setPurchaseLoading(null)
         return
       }
 
-      // Step 2: Purchase the lead
       console.log('[handlePurchase] Calling purchaseLead...')
-      let result
-      try {
-        result = await purchaseLead(artisanId, leadId)
-        console.log('[handlePurchase] Purchase result:', result)
-      } catch (purchaseError: any) {
-        console.error('[handlePurchase] Error calling purchaseLead:', purchaseError)
-        setError('Erreur lors de l\'achat du lead. Veuillez réessayer.')
-        setPurchaseLoading(null)
-        return
-      }
-
-      // Step 3: Check result
-      if (!result) {
-        console.error('[handlePurchase] No result returned from purchaseLead')
-        setError('Erreur inattendue : aucune réponse du serveur.')
-        setPurchaseLoading(null)
-        return
-      }
+      const result = await purchaseLead(artisanId, leadId)
+      console.log('[handlePurchase] Purchase result:', result)
 
       if (result.success) {
-        console.log('[handlePurchase] Purchase successful, refreshing leads...')
-        // Refresh leads after successful purchase
-        try {
-          const [matched, owned] = await Promise.all([
-            getMatchedLeadsForArtisan(artisanId),
-            getArtisanLeads(artisanId),
-          ])
-          console.log('[handlePurchase] Leads refreshed:', { matched: matched.length, owned: owned.length })
-          setAvailableLeads(matched)
-          setMyLeads(owned)
-          if (owned.length > 0) setSelectedLead(owned[0])
-          setActiveTab('mine')
-        } catch (refreshError: any) {
-          console.error('[handlePurchase] Error refreshing leads:', refreshError)
-          // Even if refresh fails, the purchase was successful
-          setError('Lead acheté avec succès, mais impossible de rafraîchir la liste. Rechargez la page.')
-        }
+        console.log('[handlePurchase] ✅ Purchase successful! Refreshing page...')
+        // Refresh the page to show updated data
+        window.location.reload()
       } else {
         console.error('[handlePurchase] Purchase failed:', result.error)
-        setError(result.error || 'Une erreur est survenue lors de l\'achat du lead.')
+        setError(result.error || 'Une erreur est survenue lors de l\'achat.')
+        setPurchaseLoading(null)
       }
     } catch (e: any) {
       console.error('[handlePurchase] Unexpected error:', e)
-      console.error('[handlePurchase] Error stack:', e?.stack)
-      setError(e?.message || 'Une erreur inattendue est survenue. Veuillez réessayer.')
-    } finally {
-      console.log('[handlePurchase] Cleaning up, setting loading to null')
+      setError(e?.message || 'Une erreur inattendue est survenue.')
       setPurchaseLoading(null)
     }
   }

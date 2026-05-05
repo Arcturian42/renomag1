@@ -41,10 +41,12 @@ export default function AvailableLeadsSection({ leads: initialLeads, artisanId }
       if (result.success) {
         // Remove purchased lead from list
         setLeads(prev => prev.filter(l => l.id !== leadId))
-        setSuccess('Lead acheté avec succès ! Consultez vos leads dans l\'onglet "Mes leads".')
+        setSuccess('✅ Lead acheté avec succès !')
 
-        // Clear success message after 3 seconds
-        setTimeout(() => setSuccess(null), 3000)
+        // Refresh page after 2 seconds
+        setTimeout(() => {
+          window.location.reload()
+        }, 2000)
       } else {
         setError(result.error || 'Erreur lors de l\'achat du lead')
       }
