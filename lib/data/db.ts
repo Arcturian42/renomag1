@@ -67,12 +67,20 @@ function mapPrismaArticle(a: any): Article {
 export async function getArtisans(): Promise<Artisan[]> {
   try {
     const db = await prisma.artisanCompany.findMany({
+      where: {
+        verified: true,
+        name: {
+          not: {
+            startsWith: 'Entreprise'
+          }
+        }
+      },
       include: { specialties: true, certifications: true, reviews: true },
     })
-    if (db.length === 0) return ARTISANS
+    if (db.length === 0) return ARTISANS.filter(a => a.verified && !a.name.startsWith('Entreprise'))
     return db.map(mapPrismaArtisan)
   } catch {
-    return ARTISANS
+    return ARTISANS.filter(a => a.verified && !a.name.startsWith('Entreprise'))
   }
 }
 
@@ -165,7 +173,16 @@ export async function getArtisansWithFilters(
   const skip = (page - 1) * limit
 
   try {
-    const where: Prisma.ArtisanCompanyWhereInput = {}
+    const where: Prisma.ArtisanCompanyWhereInput = {
+      // Only show verified artisans in public directory
+      verified: true,
+      // Exclude auto-generated company names
+      name: {
+        not: {
+          startsWith: 'Entreprise'
+        }
+      }
+    }
 
     if (filters.q) {
       where.OR = [
@@ -231,6 +248,12 @@ export async function getArtisansWithFilters(
   } catch {
     // Fallback: in-memory filtering on mock data
     let artisans = [...ARTISANS]
+
+    // Only show verified artisans in public directory
+    artisans = artisans.filter((a) => a.verified === true)
+
+    // Exclude auto-generated company names
+    artisans = artisans.filter((a) => !a.name.startsWith('Entreprise'))
 
     if (filters.q) {
       const query = filters.q.toLowerCase()
