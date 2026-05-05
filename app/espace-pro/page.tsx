@@ -115,7 +115,7 @@ export default async function EspaceProDashboard() {
     },
   ]
 
-  const recentLeads = leads.slice(0, 4)
+  const recentLeads = leads.slice(0, 3)
 
   // Profile score based on completion
   const scoreFields = [

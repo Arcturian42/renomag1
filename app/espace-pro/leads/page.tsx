@@ -32,49 +32,59 @@ export default function LeadsPage() {
   useEffect(() => {
     async function fetchLeads() {
       console.log('🔍 [LeadsPage] Starting fetchLeads...')
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      console.log('  User:', user?.email || 'NO USER')
-      if (!user) {
-        console.log('  ❌ No user - stopping')
-        return
-      }
-
-      console.log('  Getting artisan company ID via server action...')
-      const artisanId = await getCurrentArtisanCompanyId()
-
-      console.log('  Artisan company ID:', artisanId || 'NOT FOUND')
-
-      if (!artisanId) {
-        console.log('  ❌ No artisan company found - stopping')
-        setLoading(false)
-        return
-      }
-
-      console.log('  ✅ Artisan company ID:', artisanId)
-      console.log('  Fetching leads...')
+      setError(null)
 
       try {
-        const [matched, owned] = await Promise.all([
-          getMatchedLeadsForArtisan(artisanId),
-          getArtisanLeads(artisanId),
-        ])
-        console.log('  ✅ Matched leads:', matched.length)
-        console.log('  ✅ Owned leads:', owned.length)
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
 
-        setAvailableLeads(matched)
-        setMyLeads(owned)
-        if (activeTab === 'available' && matched.length > 0) {
-          setSelectedLead(matched[0])
-        } else if (activeTab === 'mine' && owned.length > 0) {
-          setSelectedLead(owned[0])
+        console.log('  User:', user?.email || 'NO USER')
+        if (!user) {
+          console.log('  ❌ No user - stopping')
+          setLoading(false)
+          return
+        }
+
+        console.log('  Getting artisan company ID via server action...')
+        const artisanId = await getCurrentArtisanCompanyId()
+
+        console.log('  Artisan company ID:', artisanId || 'NOT FOUND')
+
+        if (!artisanId) {
+          console.log('  ❌ No artisan company found - stopping')
+          setError('Profil artisan introuvable. Veuillez compléter votre profil d\'entreprise.')
+          setLoading(false)
+          return
+        }
+
+        console.log('  ✅ Artisan company ID:', artisanId)
+        console.log('  Fetching leads...')
+
+        try {
+          const [matched, owned] = await Promise.all([
+            getMatchedLeadsForArtisan(artisanId),
+            getArtisanLeads(artisanId),
+          ])
+          console.log('  ✅ Matched leads:', matched.length)
+          console.log('  ✅ Owned leads:', owned.length)
+
+          setAvailableLeads(matched)
+          setMyLeads(owned)
+          if (activeTab === 'available' && matched.length > 0) {
+            setSelectedLead(matched[0])
+          } else if (activeTab === 'mine' && owned.length > 0) {
+            setSelectedLead(owned[0])
+          }
+        } catch (e: any) {
+          console.log('  ❌ Error fetching leads:', e.message)
+          setError('Impossible de charger les leads. Veuillez réessayer.')
         }
       } catch (e: any) {
-        console.log('  ❌ Error fetching leads:', e.message)
-        setError(e.message)
+        console.error('  ❌ Fatal error in fetchLeads:', e)
+        setError('Une erreur est survenue. Veuillez rafraîchir la page.')
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     fetchLeads()
@@ -86,29 +96,37 @@ export default function LeadsPage() {
     try {
       const artisanId = await getCurrentArtisanCompanyId()
       if (!artisanId) {
-        setError('Artisan company not found')
+        setError('Votre profil artisan n\'a pas été trouvé. Veuillez compléter votre profil.')
         setPurchaseLoading(null)
         return
       }
 
       const result = await purchaseLead(artisanId, leadId)
       if (result.success) {
-        // Refresh
-        const [matched, owned] = await Promise.all([
-          getMatchedLeadsForArtisan(artisanId),
-          getArtisanLeads(artisanId),
-        ])
-        setAvailableLeads(matched)
-        setMyLeads(owned)
-        if (owned.length > 0) setSelectedLead(owned[0])
-        setActiveTab('mine')
+        // Refresh leads after successful purchase
+        try {
+          const [matched, owned] = await Promise.all([
+            getMatchedLeadsForArtisan(artisanId),
+            getArtisanLeads(artisanId),
+          ])
+          setAvailableLeads(matched)
+          setMyLeads(owned)
+          if (owned.length > 0) setSelectedLead(owned[0])
+          setActiveTab('mine')
+        } catch (refreshError: any) {
+          console.error('Error refreshing leads:', refreshError)
+          // Even if refresh fails, the purchase was successful
+          setError('Lead acheté avec succès, mais impossible de rafraîchir la liste. Rechargez la page.')
+        }
       } else {
-        setError(result.error || 'Erreur lors de l\'achat')
+        setError(result.error || 'Une erreur est survenue lors de l\'achat du lead.')
       }
     } catch (e: any) {
-      setError(e.message)
+      console.error('Error purchasing lead:', e)
+      setError(e?.message || 'Une erreur inattendue est survenue. Veuillez réessayer.')
+    } finally {
+      setPurchaseLoading(null)
     }
-    setPurchaseLoading(null)
   }
 
   const currentList = activeTab === 'available' ? availableLeads : myLeads

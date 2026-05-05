@@ -160,108 +160,154 @@ export async function submitLead(formData: unknown) {
 
 // Leads disponibles (matchés mais non encore achetés)
 export async function getMatchedLeadsForArtisan(artisanId: string) {
-  const authUser = await requireAuth()
-  const artisan = await prisma.artisanCompany.findFirst({
-    where: { id: artisanId, userId: authUser.id },
-    include: { specialties: true },
-  })
+  try {
+    const authUser = await requireAuth()
+    const artisan = await prisma.artisanCompany.findFirst({
+      where: { id: artisanId, userId: authUser.id },
+      include: { specialties: true },
+    })
 
-  console.log('🔍 [getMatchedLeadsForArtisan] DEBUG:')
-  console.log('  artisanId:', artisanId)
-  console.log('  artisan found:', !!artisan)
+    console.log('🔍 [getMatchedLeadsForArtisan] DEBUG:')
+    console.log('  artisanId:', artisanId)
+    console.log('  artisan found:', !!artisan)
 
-  if (!artisan) {
-    console.log('  ❌ No artisan found - returning empty array')
+    if (!artisan) {
+      console.log('  ❌ No artisan found - returning empty array')
+      return []
+    }
+
+    console.log('  artisan.name:', artisan.name)
+    console.log('  artisan.department:', artisan.department || 'NOT SET')
+    console.log('  artisan.specialties:', artisan.specialties.map(s => s.name).join(', ') || 'NONE')
+
+    const specialtyIds = artisan.specialties.map((s) => s.id)
+
+    // Build where clause: only filter by department/specialty if explicitly set
+    const where: any = {
+      purchasedById: null,
+      artisanId: null,
+    }
+
+    // Only filter by department if artisan has one set
+    if (artisan.department) {
+      where.department = artisan.department
+      console.log('  ✓ Filtering by department:', artisan.department)
+    } else {
+      console.log('  ℹ️  No department filter - showing ALL departments')
+    }
+
+    // Only filter by specialty if artisan has at least one
+    if (specialtyIds.length > 0) {
+      where.specialtyId = { in: specialtyIds }
+      console.log('  ✓ Filtering by specialties:', specialtyIds)
+    } else {
+      console.log('  ℹ️  No specialty filter - showing ALL specialties')
+    }
+
+    console.log('  where clause:', JSON.stringify(where, null, 2))
+
+    const leads = await prisma.lead.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: { specialty: true },
+    })
+
+    console.log('  ✅ Found', leads.length, 'matching leads')
+    console.log('  Lead IDs:', leads.map(l => l.id).slice(0, 5))
+
+    return leads
+  } catch (error) {
+    console.error('Error in getMatchedLeadsForArtisan:', error)
     return []
   }
-
-  console.log('  artisan.name:', artisan.name)
-  console.log('  artisan.department:', artisan.department || 'NOT SET')
-  console.log('  artisan.specialties:', artisan.specialties.map(s => s.name).join(', ') || 'NONE')
-
-  const specialtyIds = artisan.specialties.map((s) => s.id)
-
-  // Build where clause: only filter by department/specialty if explicitly set
-  const where: any = {
-    purchasedById: null,
-    artisanId: null,
-  }
-
-  // Only filter by department if artisan has one set
-  if (artisan.department) {
-    where.department = artisan.department
-    console.log('  ✓ Filtering by department:', artisan.department)
-  } else {
-    console.log('  ℹ️  No department filter - showing ALL departments')
-  }
-
-  // Only filter by specialty if artisan has at least one
-  if (specialtyIds.length > 0) {
-    where.specialtyId = { in: specialtyIds }
-    console.log('  ✓ Filtering by specialties:', specialtyIds)
-  } else {
-    console.log('  ℹ️  No specialty filter - showing ALL specialties')
-  }
-
-  console.log('  where clause:', JSON.stringify(where, null, 2))
-
-  const leads = await prisma.lead.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    include: { specialty: true },
-  })
-
-  console.log('  ✅ Found', leads.length, 'matching leads')
-  console.log('  Lead IDs:', leads.map(l => l.id).slice(0, 5))
-
-  return leads
 }
 
 // Leads achetés / assignés à un artisan
 export async function getArtisanLeads(artisanId: string) {
-  const authUser = await requireAuth()
-  const artisan = await prisma.artisanCompany.findFirst({
-    where: { id: artisanId, userId: authUser.id },
-  })
-  if (!artisan) throw new Error('Forbidden')
-
-  return prisma.lead.findMany({
-    where: {
-      OR: [{ artisanId }, { purchasedById: artisanId }],
-    },
-    orderBy: { createdAt: 'desc' },
-    include: { specialty: true, purchases: true },
-  })
-}
-
-export async function purchaseLead(artisanId: string, leadId: string) {
   try {
     const authUser = await requireAuth()
     const artisan = await prisma.artisanCompany.findFirst({
       where: { id: artisanId, userId: authUser.id },
     })
-    if (!artisan) return { success: false, error: 'Artisan non trouvé' }
-
-    const lead = await prisma.lead.findUnique({
-      where: { id: leadId },
-    })
-    if (!lead) return { success: false, error: 'Lead non trouvé' }
-
-    if (lead.purchasedById) {
-      return { success: false, error: 'Ce lead a déjà été acheté' }
+    if (!artisan) {
+      console.log('getArtisanLeads: No artisan found')
+      return []
     }
 
-    if (artisan.credits < lead.price) {
+    return prisma.lead.findMany({
+      where: {
+        OR: [{ artisanId }, { purchasedById: artisanId }],
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { specialty: true, purchases: true },
+    })
+  } catch (error) {
+    console.error('Error in getArtisanLeads:', error)
+    return []
+  }
+}
+
+export async function purchaseLead(artisanId: string, leadId: string) {
+  try {
+    // Authenticate user
+    const authUser = await requireAuth()
+
+    // Find artisan with explicit selection of credits field
+    const artisan = await prisma.artisanCompany.findFirst({
+      where: { id: artisanId, userId: authUser.id },
+      select: {
+        id: true,
+        credits: true,
+        name: true,
+        userId: true
+      }
+    })
+
+    if (!artisan) {
+      return { success: false, error: 'Votre profil artisan n\'a pas été trouvé. Veuillez compléter votre profil.' }
+    }
+
+    // Verify credits field exists (should always be there with default 0)
+    const currentCredits = artisan.credits ?? 0
+
+    // Find the lead
+    const lead = await prisma.lead.findUnique({
+      where: { id: leadId },
+      select: {
+        id: true,
+        price: true,
+        purchasedById: true,
+        firstName: true,
+        lastName: true,
+        projectType: true
+      }
+    })
+
+    if (!lead) {
+      return { success: false, error: 'Ce lead n\'existe plus ou a été supprimé.' }
+    }
+
+    // Check if already purchased
+    if (lead.purchasedById) {
+      return { success: false, error: 'Ce lead a déjà été acheté par un autre artisan.' }
+    }
+
+    // Check credits
+    const leadPrice = lead.price || 2000 // Default to 20€ if price missing
+    if (currentCredits < leadPrice) {
+      const needed = leadPrice / 100
+      const current = currentCredits / 100
       return {
         success: false,
-        error: `Crédits insuffisants. Prix : ${lead.price / 100}€`,
+        error: `Crédits insuffisants. Vous avez ${current}€ de crédits, ce lead coûte ${needed}€. Rechargez votre compte pour continuer.`,
       }
     }
 
+    // Execute purchase transaction
     await prisma.$transaction([
       prisma.artisanCompany.update({
         where: { id: artisanId },
-        data: { credits: { decrement: lead.price } },
+        data: { credits: { decrement: leadPrice } },
       }),
       prisma.lead.update({
         where: { id: leadId },
@@ -272,7 +318,7 @@ export async function purchaseLead(artisanId: string, leadId: string) {
         },
       }),
       prisma.leadPurchase.create({
-        data: { leadId, artisanId, price: lead.price },
+        data: { leadId, artisanId, price: leadPrice },
       }),
     ])
 
@@ -281,8 +327,12 @@ export async function purchaseLead(artisanId: string, leadId: string) {
 
     return { success: true }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erreur inconnue'
-    return { success: false, error: message }
+    console.error('Error in purchaseLead:', error)
+    const message = error instanceof Error ? error.message : 'Une erreur est survenue'
+    return {
+      success: false,
+      error: `Impossible d'acheter ce lead : ${message}. Contactez le support si le problème persiste.`
+    }
   }
 }
 
