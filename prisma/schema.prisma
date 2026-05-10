@@ -72,6 +72,8 @@ model ArtisanCompany {
   credits           Int             @default(0)
   certificationDocs Json?
   googleBusinessUrl String?
+  billingAddress    String?
+  tvaNumber         String?
   articles          Article[]
   user              User            @relation(fields: [userId], references: [id])
   receivedLeads     Lead[]          @relation("LeadArtisan")

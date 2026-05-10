@@ -322,7 +322,11 @@ export default async function ArtisanProfilePage({ params }: Props) {
               <Link href="/devis" className="btn-accent w-full text-center mb-3">
                 Demander un devis gratuit
               </Link>
-              <ArtisanMessageButton redirectUrl={`/annuaire/${params.slug}`} />
+              <ArtisanMessageButton
+                artisanId={artisan.id}
+                artisanName={artisan.company}
+                redirectUrl={`/annuaire/${params.slug}`}
+              />
 
               <div className="mt-4 flex items-center gap-2 text-xs text-slate-400 justify-center">
                 <Clock className="w-3 h-3" />

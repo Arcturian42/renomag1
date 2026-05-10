@@ -1,13 +1,51 @@
 export const dynamic = 'force-dynamic'
-import { Settings, Bell, Shield, CreditCard, Trash2 } from 'lucide-react'
 
-export default function EspaceProParametresPage() {
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+import { prisma } from '@/lib/prisma'
+import { Role } from '@prisma/client'
+import { Settings, Bell, Shield, CreditCard, Trash2 } from 'lucide-react'
+import BillingForm from '@/components/settings/BillingForm'
+
+export default async function EspaceProParametresPage({
+  searchParams,
+}: {
+  searchParams: { success?: string; error?: string }
+}) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) redirect('/connexion')
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { artisan: true },
+  })
+
+  if (!dbUser || dbUser.role !== Role.ARTISAN) {
+    redirect('/espace-proprietaire')
+  }
+
+  const artisan = dbUser.artisan
+
   return (
     <div className="p-6 lg:p-8 max-w-3xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-900">Paramètres</h1>
         <p className="text-slate-500 mt-1">Gérez votre compte et vos préférences.</p>
       </div>
+
+      {/* Success/Error messages */}
+      {searchParams.success === 'billing' && (
+        <div className="mb-6 bg-eco-50 border border-eco-200 text-eco-800 px-4 py-3 rounded-lg">
+          ✅ Informations de facturation enregistrées avec succès !
+        </div>
+      )}
+      {searchParams.error === 'billing' && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          ❌ Erreur lors de l'enregistrement. Veuillez réessayer.
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* Notifications */}
@@ -51,7 +89,7 @@ export default function EspaceProParametresPage() {
               <select id="rayon-dintervention-km" className="input-field">
                 <option>25 km</option>
                 <option>50 km</option>
-                <option selected>75 km</option>
+                <option defaultValue="75">75 km</option>
                 <option>100 km</option>
               </select>
             </div>
@@ -104,34 +142,13 @@ export default function EspaceProParametresPage() {
           </div>
         </div>
 
-        {/* Billing */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <CreditCard className="w-5 h-5 text-primary-600" />
-            <h2 className="font-semibold text-slate-900">Facturation</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="label" htmlFor="raison-sociale">Raison sociale</label>
-              <input id="raison-sociale" type="text" className="input-field" defaultValue="ThermoConfort Paris" />
-            </div>
-            <div>
-              <label className="label" htmlFor="siret">SIRET</label>
-              <input id="siret" type="text" className="input-field" defaultValue="123 456 789 00012" />
-            </div>
-            <div>
-              <label className="label" htmlFor="adresse-de-facturation">Adresse de facturation</label>
-              <input id="adresse-de-facturation" type="text" className="input-field" defaultValue="12 rue de la République, 75011 Paris" />
-            </div>
-            <div>
-              <label className="label" htmlFor="numro-de-tva-intra">Numéro de TVA intra.</label>
-              <input id="numro-de-tva-intra" type="text" className="input-field" defaultValue="FR12 123456789" />
-            </div>
-          </div>
-          <div className="mt-5 flex justify-end">
-            <button className="btn-primary px-5 py-2.5">Enregistrer</button>
-          </div>
-        </div>
+        {/* Billing - Now using actual user data */}
+        <BillingForm
+          companyName={artisan?.name || ''}
+          siret={artisan?.siret || ''}
+          billingAddress={artisan?.billingAddress || ''}
+          tvaNumber={artisan?.tvaNumber || ''}
+        />
 
         {/* Danger zone */}
         <div className="bg-red-50 rounded-xl border border-red-200 p-6">

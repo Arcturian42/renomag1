@@ -110,3 +110,47 @@ export async function updateOwnerProfile(formData: FormData) {
   revalidatePath('/espace-proprietaire/compte')
   redirect('/espace-proprietaire/compte?success=1')
 }
+
+export async function updateArtisanBillingInfo(formData: FormData) {
+  'use server'
+
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      redirect('/connexion')
+    }
+
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      include: { artisan: true },
+    })
+
+    if (!dbUser?.artisan) {
+      redirect('/espace-pro')
+    }
+
+    const siret = formData.get('siret') as string
+    const billingAddress = formData.get('billingAddress') as string
+    const tvaNumber = formData.get('tvaNumber') as string
+
+    await prisma.artisanCompany.update({
+      where: { id: dbUser.artisan.id },
+      data: {
+        ...(siret ? { siret } : {}),
+        ...(billingAddress ? { billingAddress } : {}),
+        ...(tvaNumber ? { tvaNumber } : {}),
+      },
+    })
+
+    revalidatePath('/espace-pro/parametres')
+    redirect('/espace-pro/parametres?success=billing')
+  } catch (error) {
+    console.error('[updateArtisanBillingInfo] Error:', error)
+    // If it's a redirect, re-throw it
+    if (error && typeof error === 'object' && 'digest' in error) {
+      throw error
+    }
+    redirect('/espace-pro/parametres?error=billing')
+  }
+}
