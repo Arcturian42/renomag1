@@ -45,6 +45,10 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
       await updateArtisanProfile(formData)
       // Success will be handled by the redirect and useEffect
     } catch (e: any) {
+      // Re-throw Next.js redirect/revalidate errors so they can work properly
+      if (e && typeof e === 'object' && ('digest' in e || e.message?.includes('NEXT_REDIRECT'))) {
+        throw e
+      }
       console.error('Profile update error:', e)
       setError('Erreur lors de l\'enregistrement. Veuillez réessayer.')
       setLoading(false)
