@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Camera, Save } from 'lucide-react'
 import Image from 'next/image'
 import { updateArtisanProfile } from '@/app/actions/artisan'
+import { calculateProfileScore } from '@/lib/profile-score'
 
 interface ProfileFormProps {
   artisan: any
@@ -19,6 +20,9 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
   const [success, setSuccess] = useState<string | null>(null)
 
   const initials = artisan?.name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'AR'
+
+  // Calculate profile completion score (using shared function)
+  const profileScore = calculateProfileScore(artisan, 0) // reviewCount not available in this context, defaults to 0
 
   // Check for success/error parameters on mount
   useEffect(() => {
@@ -90,12 +94,12 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
         {/* Profile score */}
         <div className="bg-primary-50 border border-primary-200 rounded-xl p-4 mb-6 flex items-center gap-3">
           <div className="w-12 h-12 rounded-full bg-primary-800 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold">{artisan?.description ? 90 : 60}</span>
+            <span className="text-white font-bold">{profileScore}</span>
           </div>
           <div>
-            <p className="text-sm font-semibold text-primary-900">Score de profil : {artisan?.description ? 90 : 60}/100</p>
+            <p className="text-sm font-semibold text-primary-900">Score de profil : {profileScore}/100</p>
             <p className="text-xs text-primary-700 mt-0.5">
-              Complétez votre description pour améliorer votre visibilité.
+              Complétez votre profil pour améliorer votre visibilité.
             </p>
           </div>
         </div>

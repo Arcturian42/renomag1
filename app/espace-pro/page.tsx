@@ -6,6 +6,7 @@ import { ArrowUp, ArrowDown, TrendingUp, Users, Euro, Star, ArrowRight } from 'l
 import OnboardingModal from '@/components/artisan/OnboardingModal'
 import AvailableLeadsSection from '@/components/dashboard/AvailableLeadsSection'
 import { getAvailableLeadsForDashboard } from '@/app/actions/leads'
+import { calculateProfileScore, getProfileScoreLabel } from '@/lib/profile-score'
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   new: { label: 'Nouveau', color: 'bg-primary-100 text-primary-700' },
@@ -128,15 +129,8 @@ export default async function EspaceProDashboard() {
     },
   ]
 
-  // Profile score based on completion
-  const scoreFields = [
-    !!artisan?.name,
-    !!artisan?.description && artisan.description.length > 50,
-    !!artisan?.phone,
-    !!artisan?.website,
-    reviews.length > 0,
-  ]
-  const profileScore = Math.round((scoreFields.filter(Boolean).length / scoreFields.length) * 100)
+  // Profile score based on completion (using shared function)
+  const profileScore = calculateProfileScore(artisan, reviews.length)
 
   const quotaUsed = leadsThisMonth.length
   const quotaMax = artisan?.subscription?.plan?.toLowerCase().includes('premium') ? 999 : 20
@@ -262,7 +256,7 @@ export default async function EspaceProDashboard() {
               <div className="text-3xl font-bold text-primary-700">{profileScore}</div>
               <div className="text-xs text-slate-500">
                 <p>Sur 100</p>
-                <p className="text-eco-600 font-medium">{profileScore >= 80 ? 'Excellent' : profileScore >= 50 ? 'Bon profil' : 'À compléter'}</p>
+                <p className="text-eco-600 font-medium">{getProfileScoreLabel(profileScore)}</p>
               </div>
             </div>
             <div className="space-y-2 text-xs">

@@ -1,4 +1,12 @@
-import { Star, Quote } from 'lucide-react'
+// Testimonials section temporarily hidden until real testimonials are collected
+// TODO: Re-enable this section once we have authentic customer testimonials
+
+export default function Testimonials() {
+  // Hidden until real testimonials are available
+  return null
+}
+
+/* import { Star, Quote } from 'lucide-react'
 
 const TESTIMONIALS = [
   {
@@ -92,7 +100,6 @@ export default function Testimonials() {
           ))}
         </div>
 
-        {/* Aggregate rating */}
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6">
           <div className="flex items-center gap-3">
             <div className="flex">
@@ -122,3 +129,4 @@ export default function Testimonials() {
     </section>
   )
 }
+*/

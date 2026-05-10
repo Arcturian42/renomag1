@@ -161,6 +161,7 @@ export interface ArtisansFilters {
 export interface ArticlesFilters {
   q?: string
   category?: string
+  tag?: string
   page?: string
   limit?: string
 }
@@ -321,6 +322,7 @@ export async function getArticlesWithFilters(filters: ArticlesFilters = {}): Pro
       (a) =>
         a.title.toLowerCase().includes(query) ||
         a.excerpt.toLowerCase().includes(query) ||
+        a.content.toLowerCase().includes(query) ||
         a.category.toLowerCase().includes(query)
     )
   }
@@ -329,6 +331,13 @@ export async function getArticlesWithFilters(filters: ArticlesFilters = {}): Pro
   if (filters.category) {
     articles = articles.filter(
       (a) => a.category.toLowerCase() === filters.category!.toLowerCase()
+    )
+  }
+
+  // Tag filter
+  if (filters.tag) {
+    articles = articles.filter(
+      (a) => a.tags.some((tag) => tag.toLowerCase() === filters.tag!.toLowerCase())
     )
   }
 

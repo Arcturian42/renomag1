@@ -17,6 +17,7 @@ interface BlogPageProps {
   searchParams: {
     q?: string
     category?: string
+    tag?: string
     page?: string
   }
 }

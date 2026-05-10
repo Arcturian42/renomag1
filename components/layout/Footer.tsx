@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Zap, Mail, Phone, MapPin, Twitter, Linkedin, Facebook } from 'lucide-react'
+import { Zap, Mail, Phone, MapPin } from 'lucide-react'
 
 const FOOTER_LINKS = {
   Particuliers: [
@@ -62,29 +62,7 @@ export default function Footer() {
                 <span>Paris, France</span>
               </div>
             </div>
-            <div className="mt-6 flex items-center gap-4">
-              <a
-                href="https://twitter.com/renomag"
-                className="text-slate-400 hover:text-white transition-colors"
-                aria-label="Twitter"
-              >
-                <Twitter className="w-4 h-4" />
-              </a>
-              <a
-                href="https://linkedin.com/company/renomag"
-                className="text-slate-400 hover:text-white transition-colors"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="w-4 h-4" />
-              </a>
-              <a
-                href="https://facebook.com/renomag"
-                className="text-slate-400 hover:text-white transition-colors"
-                aria-label="Facebook"
-              >
-                <Facebook className="w-4 h-4" />
-              </a>
-            </div>
+            {/* Social media links removed until official accounts are created */}
           </div>
 
           {/* Links */}
