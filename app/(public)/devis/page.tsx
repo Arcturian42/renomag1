@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { CheckCircle } from 'lucide-react'
+import { prisma } from '@/lib/prisma'
 import DevisForm from './components/DevisForm'
 
 export const metadata: Metadata = {
@@ -8,15 +9,37 @@ export const metadata: Metadata = {
     'Remplissez notre formulaire en 2 minutes et recevez jusqu\'à 3 devis d\'artisans RGE certifiés dans votre région.',
 }
 
-const STEPS = [
-  { id: 'travaux', label: 'Travaux' },
-  { id: 'logement', label: 'Logement' },
-  { id: 'revenus', label: 'Revenus' },
-  { id: 'contact', label: 'Contact' },
-  { id: 'confirmation', label: 'Confirmation' },
-]
+interface DevisPageProps {
+  searchParams: {
+    artisan?: string
+  }
+}
 
-export default function DevisPage() {
+export default async function DevisPage({ searchParams }: DevisPageProps) {
+  // Fetch artisan data if artisan ID is provided
+  let artisan = null
+  if (searchParams.artisan) {
+    try {
+      artisan = await prisma.artisanCompany.findUnique({
+        where: { id: searchParams.artisan },
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+          city: true,
+          specialties: {
+            select: {
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      })
+    } catch (error) {
+      console.error('Error fetching artisan:', error)
+    }
+  }
+
   return (
     <div className="bg-slate-50 min-h-screen">
       {/* Header */}
@@ -34,7 +57,7 @@ export default function DevisPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-8">
-        <DevisForm />
+        <DevisForm artisan={artisan} />
       </div>
     </div>
   )

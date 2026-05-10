@@ -319,7 +319,7 @@ export default async function ArtisanProfilePage({ params }: Props) {
                 )}
               </div>
 
-              <Link href="/devis" className="btn-accent w-full text-center mb-3">
+              <Link href={`/devis?artisan=${artisan.id}`} className="btn-accent w-full text-center mb-3">
                 Demander un devis gratuit
               </Link>
               <ArtisanMessageButton
