@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Zap, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
 import { signup } from '@/app/actions/auth'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
-import { validatePassword, validateSiret, MAX_LENGTHS, type PasswordValidation, type SiretValidation } from '@/lib/validation'
+import { validatePassword, validateSiret, validateFrenchPhone, MAX_LENGTHS, type PasswordValidation, type SiretValidation, type PhoneValidation } from '@/lib/validation'
 
 type UserType = 'particulier' | 'pro' | null
 
@@ -17,6 +17,7 @@ export default function InscriptionForm() {
   const [error, setError] = useState<string | null>(null)
   const [passwordValidation, setPasswordValidation] = useState<PasswordValidation | null>(null)
   const [siretValidation, setSiretValidation] = useState<SiretValidation | null>(null)
+  const [phoneValidation, setPhoneValidation] = useState<PhoneValidation | null>(null)
   const router = useRouter()
 
   return (
@@ -171,6 +172,17 @@ export default function InscriptionForm() {
                     return
                   }
 
+                  // Phone validation (optional field)
+                  const phone = formData.get('phone') as string
+                  if (phone && phone.trim()) {
+                    const phoneCheck = validateFrenchPhone(phone)
+                    if (!phoneCheck.valid) {
+                      setError(phoneCheck.error || 'Format de téléphone invalide')
+                      setIsLoading(false)
+                      return
+                    }
+                  }
+
                   // SIRET validation for pro accounts
                   if (userType === 'pro') {
                     const siret = formData.get('siret') as string
@@ -241,6 +253,38 @@ export default function InscriptionForm() {
                     required
                     disabled={isLoading}
                   />
+                </div>
+                <div>
+                  <label className="label" htmlFor="phone">Téléphone (optionnel)</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    placeholder="06 12 34 56 78"
+                    className="input-field"
+                    maxLength={MAX_LENGTHS.phone}
+                    disabled={isLoading}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const validation = validateFrenchPhone(e.target.value)
+                        setPhoneValidation(validation)
+                      } else {
+                        setPhoneValidation(null)
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value) {
+                        const validation = validateFrenchPhone(e.target.value)
+                        setPhoneValidation(validation)
+                      }
+                    }}
+                  />
+                  {phoneValidation && !phoneValidation.valid && (
+                    <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {phoneValidation.error}
+                    </p>
+                  )}
                 </div>
                 {userType === 'pro' && (
                   <>

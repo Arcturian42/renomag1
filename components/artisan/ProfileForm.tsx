@@ -137,10 +137,13 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
                 <div>
                   <label className="label" htmlFor="email">Email professionnel</label>
                   <input
-                    id="email" name="email" type="email"
+                    id="email"
+                    name="email"
+                    type="email"
                     defaultValue={artisan?.email || userEmail || ''}
                     className="input-field"
                     maxLength={MAX_LENGTHS.email}
+                    style={{ overflowWrap: 'break-word', wordBreak: 'break-all' }}
                   />
                 </div>
               </div>

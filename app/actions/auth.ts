@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { validateEmail } from '@/lib/email-validation'
 import { slugify } from '@/lib/utils'
-import { validatePassword, validateSiret, validateLength, MAX_LENGTHS } from '@/lib/validation'
+import { validatePassword, validateSiret, validateFrenchPhone, validateLength, MAX_LENGTHS } from '@/lib/validation'
 
 export async function getUserRoleByEmail(email: string): Promise<Role | null> {
   try {
@@ -143,6 +143,7 @@ export async function signup(formData: FormData) {
     const role = requestedRole === 'ARTISAN' ? 'ARTISAN' : 'USER'
     const firstName = formData.get('firstName') as string
     const lastName = formData.get('lastName') as string
+    const phone = formData.get('phone') as string
     const companyName = formData.get('companyName') as string
     const siret = formData.get('siret') as string
 
@@ -176,6 +177,14 @@ export async function signup(formData: FormData) {
       const companyCheck = validateLength(companyName, 'name')
       if (!companyCheck.valid) {
         redirect('/inscription?error=' + encodeURIComponent('Nom d\'entreprise trop long (max 100 caractères)'))
+      }
+    }
+
+    // Validate phone number if provided
+    if (phone && phone.trim()) {
+      const phoneValidation = validateFrenchPhone(phone)
+      if (!phoneValidation.valid) {
+        redirect('/inscription?error=' + encodeURIComponent(phoneValidation.error || 'Format de téléphone invalide'))
       }
     }
 
@@ -245,10 +254,11 @@ export async function signup(formData: FormData) {
           id: authData.user.id,
           email: authData.user.email!,
           role: role === 'ARTISAN' ? 'ARTISAN' : 'USER',
-          profile: firstName || lastName ? {
+          profile: firstName || lastName || phone ? {
             create: {
               firstName: firstName || null,
               lastName: lastName || null,
+              phone: phone || null,
             },
           } : undefined,
         },
@@ -304,14 +314,8 @@ export async function signup(formData: FormData) {
 
     revalidatePath('/', 'layout')
 
-    // Redirect to appropriate dashboard based on role
-    if (dbUser.role === 'ADMIN') {
-      redirect('/admin')
-    } else if (dbUser.role === 'ARTISAN') {
-      redirect('/espace-pro')
-    } else {
-      redirect('/espace-proprietaire')
-    }
+    // Redirect to welcome screen after successful registration
+    redirect('/bienvenue')
   } catch (error) {
     // Re-throw NEXT_REDIRECT errors (successful redirects are not errors)
     if (error && typeof error === 'object' && 'digest' in error && typeof error.digest === 'string' && error.digest.startsWith('NEXT_REDIRECT')) {

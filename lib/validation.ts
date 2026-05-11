@@ -156,3 +156,27 @@ export function validateLength(
   }
   return { valid: true }
 }
+
+/**
+ * French phone number validation
+ * Format: 0X XX XX XX XX (10 digits starting with 0)
+ */
+export interface PhoneValidation {
+  valid: boolean
+  error?: string
+}
+
+export function validateFrenchPhone(phone: string): PhoneValidation {
+  // Remove spaces and non-digit characters
+  const cleaned = phone.replace(/\s/g, '')
+
+  // Check if it's exactly 10 digits starting with 0
+  if (!/^0[1-9]\d{8}$/.test(cleaned)) {
+    return {
+      valid: false,
+      error: 'Format invalide. Le numéro doit commencer par 0 et contenir 10 chiffres (ex: 06 12 34 56 78)',
+    }
+  }
+
+  return { valid: true }
+}
