@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Zap, ArrowRight, CheckCircle } from 'lucide-react'
+import { Zap, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
 import { signup } from '@/app/actions/auth'
 import GoogleSignInButton from '@/components/auth/GoogleSignInButton'
+import { validatePassword, validateSiret, MAX_LENGTHS, type PasswordValidation, type SiretValidation } from '@/lib/validation'
 
 type UserType = 'particulier' | 'pro' | null
 
@@ -14,6 +15,8 @@ export default function InscriptionForm() {
   const [step, setStep] = useState<'type' | 'form'>('type')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidation | null>(null)
+  const [siretValidation, setSiretValidation] = useState<SiretValidation | null>(null)
   const router = useRouter()
 
   return (
@@ -158,6 +161,29 @@ export default function InscriptionForm() {
 
                 try {
                   const formData = new FormData(e.currentTarget)
+
+                  // Client-side validation
+                  const password = formData.get('password') as string
+                  const passwordCheck = validatePassword(password)
+                  if (!passwordCheck.valid) {
+                    setError('Le mot de passe ne respecte pas les critères de sécurité requis')
+                    setIsLoading(false)
+                    return
+                  }
+
+                  // SIRET validation for pro accounts
+                  if (userType === 'pro') {
+                    const siret = formData.get('siret') as string
+                    if (siret) {
+                      const siretCheck = validateSiret(siret)
+                      if (!siretCheck.valid) {
+                        setError(siretCheck.error || 'SIRET invalide')
+                        setIsLoading(false)
+                        return
+                      }
+                    }
+                  }
+
                   await signup(formData)
                   // If signup succeeds, it will redirect via the server action
                   // This code only runs if redirect fails
@@ -180,32 +206,144 @@ export default function InscriptionForm() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label" htmlFor="firstName">Prénom</label>
-                    <input type="text" id="firstName" name="firstName" placeholder="Jean" className="input-field" disabled={isLoading} />
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      placeholder="Jean"
+                      className="input-field"
+                      maxLength={MAX_LENGTHS.name}
+                      disabled={isLoading}
+                    />
                   </div>
                   <div>
                     <label className="label" htmlFor="lastName">Nom</label>
-                    <input type="text" id="lastName" name="lastName" placeholder="Dupont" className="input-field" disabled={isLoading} />
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      placeholder="Dupont"
+                      className="input-field"
+                      maxLength={MAX_LENGTHS.name}
+                      disabled={isLoading}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className="label" htmlFor="email">Email</label>
-                  <input type="email" id="email" name="email" placeholder="jean.dupont@email.fr" className="input-field" required disabled={isLoading} />
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="jean.dupont@email.fr"
+                    className="input-field"
+                    maxLength={MAX_LENGTHS.email}
+                    required
+                    disabled={isLoading}
+                  />
                 </div>
                 {userType === 'pro' && (
                   <>
                     <div>
                       <label className="label" htmlFor="companyName">Nom de l'entreprise</label>
-                      <input type="text" id="companyName" name="companyName" placeholder="Mon Entreprise SARL" className="input-field" disabled={isLoading} />
+                      <input
+                        type="text"
+                        id="companyName"
+                        name="companyName"
+                        placeholder="Mon Entreprise SARL"
+                        className="input-field"
+                        maxLength={MAX_LENGTHS.name}
+                        disabled={isLoading}
+                      />
                     </div>
                     <div>
                       <label className="label" htmlFor="siret">SIRET</label>
-                      <input type="text" id="siret" name="siret" placeholder="123 456 789 00012" className="input-field" disabled={isLoading} />
+                      <input
+                        type="text"
+                        id="siret"
+                        name="siret"
+                        placeholder="123 456 789 00012"
+                        className="input-field"
+                        maxLength={MAX_LENGTHS.siret}
+                        disabled={isLoading}
+                        onChange={(e) => {
+                          const validation = validateSiret(e.target.value)
+                          setSiretValidation(validation)
+                        }}
+                        onBlur={(e) => {
+                          if (e.target.value) {
+                            const validation = validateSiret(e.target.value)
+                            setSiretValidation(validation)
+                          }
+                        }}
+                      />
+                      {siretValidation && !siretValidation.valid && (
+                        <p className="mt-1 text-xs text-red-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {siretValidation.error}
+                        </p>
+                      )}
                     </div>
                   </>
                 )}
                 <div>
                   <label className="label" htmlFor="password">Mot de passe</label>
-                  <input type="password" id="password" name="password" placeholder="8 caractères minimum" className="input-field" required minLength={6} disabled={isLoading} />
+                  <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="8 caractères minimum"
+                    className="input-field"
+                    required
+                    minLength={8}
+                    disabled={isLoading}
+                    onChange={(e) => {
+                      const validation = validatePassword(e.target.value)
+                      setPasswordValidation(validation)
+                    }}
+                  />
+
+                  {/* Password strength indicator */}
+                  {passwordValidation && (
+                    <div className="mt-2 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              passwordValidation.strength === 'weak'
+                                ? 'w-1/3 bg-red-500'
+                                : passwordValidation.strength === 'medium'
+                                  ? 'w-2/3 bg-yellow-500'
+                                  : 'w-full bg-green-500'
+                            }`}
+                          />
+                        </div>
+                        <span className={`text-xs font-medium ${
+                          passwordValidation.strength === 'weak'
+                            ? 'text-red-600'
+                            : passwordValidation.strength === 'medium'
+                              ? 'text-yellow-600'
+                              : 'text-green-600'
+                        }`}>
+                          {passwordValidation.strength === 'weak' && 'Faible'}
+                          {passwordValidation.strength === 'medium' && 'Moyen'}
+                          {passwordValidation.strength === 'strong' && 'Fort'}
+                        </span>
+                      </div>
+
+                      {/* Requirements checklist */}
+                      {passwordValidation.errors.length > 0 && (
+                        <div className="space-y-1">
+                          {passwordValidation.errors.map((error, i) => (
+                            <p key={i} className="text-xs text-slate-500 flex items-center gap-1">
+                              <span className="w-1 h-1 rounded-full bg-slate-400" />
+                              {error}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-start gap-2">

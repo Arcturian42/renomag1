@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Send } from 'lucide-react'
 import { sendMessage } from '@/app/actions/messages'
+import { MAX_LENGTHS } from '@/lib/validation'
 
 export default function SendMessageForm({ receiverId }: { receiverId: string }) {
   const [content, setContent] = useState('')
@@ -31,6 +32,7 @@ export default function SendMessageForm({ receiverId }: { receiverId: string }) 
         onChange={(e) => setContent(e.target.value)}
         placeholder="Écrivez votre message..."
         className="flex-1 text-sm rounded-xl border border-slate-200 px-4 py-3 text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        maxLength={MAX_LENGTHS.message}
       />
       <button
         type="submit"

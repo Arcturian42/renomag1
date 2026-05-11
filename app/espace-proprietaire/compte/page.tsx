@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { Role } from '@prisma/client'
 import { updateOwnerProfile } from '@/app/actions/artisan'
 import { Save, User, Bell, Shield } from 'lucide-react'
+import { MAX_LENGTHS } from '@/lib/validation'
 
 export default async function ComptePage() {
   const supabase = await createClient()
@@ -51,6 +52,7 @@ export default async function ComptePage() {
                 id="firstName" name="firstName" type="text"
                 defaultValue={profile?.firstName || ''}
                 className="input-field"
+                maxLength={MAX_LENGTHS.name}
               />
             </div>
             <div>
@@ -59,6 +61,7 @@ export default async function ComptePage() {
                 id="lastName" name="lastName" type="text"
                 defaultValue={profile?.lastName || ''}
                 className="input-field"
+                maxLength={MAX_LENGTHS.name}
               />
             </div>
             <div>
@@ -68,6 +71,7 @@ export default async function ComptePage() {
                 defaultValue={dbUser.email}
                 disabled
                 className="input-field bg-slate-50"
+                maxLength={MAX_LENGTHS.email}
               />
             </div>
             <div>
@@ -76,6 +80,7 @@ export default async function ComptePage() {
                 id="phone" name="phone" type="tel"
                 defaultValue={profile?.phone || ''}
                 className="input-field"
+                maxLength={MAX_LENGTHS.phone}
               />
             </div>
           </div>
@@ -94,6 +99,7 @@ export default async function ComptePage() {
                 id="address" name="address" type="text"
                 defaultValue={profile?.address || ''}
                 className="input-field"
+                maxLength={MAX_LENGTHS.address}
               />
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
@@ -103,6 +109,7 @@ export default async function ComptePage() {
                   id="city" name="city" type="text"
                   defaultValue={profile?.city || ''}
                   className="input-field"
+                  maxLength={MAX_LENGTHS.city}
                 />
               </div>
               <div>
@@ -111,6 +118,7 @@ export default async function ComptePage() {
                   id="zipCode" name="zipCode" type="text"
                   defaultValue={profile?.zipCode || ''}
                   className="input-field"
+                  maxLength={MAX_LENGTHS.zipCode}
                 />
               </div>
             </div>

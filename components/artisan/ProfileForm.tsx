@@ -6,6 +6,7 @@ import { Camera, Save } from 'lucide-react'
 import Image from 'next/image'
 import { updateArtisanProfile } from '@/app/actions/artisan'
 import { calculateProfileScore } from '@/lib/profile-score'
+import { MAX_LENGTHS } from '@/lib/validation'
 
 interface ProfileFormProps {
   artisan: any
@@ -130,6 +131,7 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
                     id="name" name="name" type="text"
                     defaultValue={artisan?.name || ''}
                     className="input-field"
+                    maxLength={MAX_LENGTHS.name}
                   />
                 </div>
                 <div>
@@ -138,6 +140,7 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
                     id="email" name="email" type="email"
                     defaultValue={artisan?.email || userEmail || ''}
                     className="input-field"
+                    maxLength={MAX_LENGTHS.email}
                   />
                 </div>
               </div>
@@ -152,11 +155,25 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="label" htmlFor="phone">Téléphone</label>
-                <input id="phone" name="phone" type="tel" defaultValue={artisan?.phone || ''} className="input-field" />
+                <input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  defaultValue={artisan?.phone || ''}
+                  className="input-field"
+                  maxLength={MAX_LENGTHS.phone}
+                />
               </div>
               <div>
                 <label className="label" htmlFor="website">Site web</label>
-                <input id="website" name="website" type="url" defaultValue={artisan?.website || ''} className="input-field" />
+                <input
+                  id="website"
+                  name="website"
+                  type="url"
+                  defaultValue={artisan?.website || ''}
+                  className="input-field"
+                  maxLength={MAX_LENGTHS.address}
+                />
               </div>
             </div>
             <div>
@@ -168,6 +185,7 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
                 defaultValue={artisan?.googleBusinessUrl || ''}
                 className="input-field"
                 placeholder="https://g.page/votre-entreprise"
+                maxLength={MAX_LENGTHS.address}
               />
               <p className="text-xs text-slate-400 mt-1.5">
                 Ajoutez le lien vers votre fiche Google My Business pour améliorer votre visibilité.
@@ -175,16 +193,37 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
             </div>
             <div>
               <label className="label" htmlFor="address">Adresse</label>
-              <input id="address" name="address" type="text" defaultValue={artisan?.address || ''} className="input-field" />
+              <input
+                id="address"
+                name="address"
+                type="text"
+                defaultValue={artisan?.address || ''}
+                className="input-field"
+                maxLength={MAX_LENGTHS.address}
+              />
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <label className="label" htmlFor="city">Ville</label>
-                <input id="city" name="city" type="text" defaultValue={artisan?.city || ''} className="input-field" />
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  defaultValue={artisan?.city || ''}
+                  className="input-field"
+                  maxLength={MAX_LENGTHS.city}
+                />
               </div>
               <div>
                 <label className="label" htmlFor="zipCode">Code postal</label>
-                <input id="zipCode" name="zipCode" type="text" defaultValue={artisan?.zipCode || ''} className="input-field" />
+                <input
+                  id="zipCode"
+                  name="zipCode"
+                  type="text"
+                  defaultValue={artisan?.zipCode || ''}
+                  className="input-field"
+                  maxLength={MAX_LENGTHS.zipCode}
+                />
               </div>
             </div>
           </div>
@@ -196,9 +235,12 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
           <div>
             <label className="label" htmlFor="description">Présentation de votre entreprise</label>
             <textarea
-              id="description" name="description" rows={5}
+              id="description"
+              name="description"
+              rows={5}
               defaultValue={artisan?.description || ''}
               className="input-field resize-none"
+              maxLength={MAX_LENGTHS.description}
             />
             <p className="text-xs text-slate-400 mt-1.5">
               Une bonne description améliore votre positionnement dans l&apos;annuaire.
@@ -213,10 +255,13 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
             <div>
               <label className="label" htmlFor="departments">Départements couverts</label>
               <input
-                id="departments" name="departments" type="text"
+                id="departments"
+                name="departments"
+                type="text"
                 defaultValue={artisan?.department || ''}
                 placeholder="Ex: 75, 92, 93..."
                 className="input-field"
+                maxLength={MAX_LENGTHS.name}
               />
             </div>
           </div>

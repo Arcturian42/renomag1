@@ -3,6 +3,7 @@
 import { useFormContext } from 'react-hook-form'
 import Link from 'next/link'
 import type { DevisFormData } from '../../schema'
+import { MAX_LENGTHS } from '@/lib/validation'
 
 export default function ContactStep() {
   const {
@@ -27,6 +28,7 @@ export default function ContactStep() {
               className="input-field"
               required
               aria-required="true"
+              maxLength={MAX_LENGTHS.name}
               {...register('firstName')}
             />
             {errors.firstName && (
@@ -42,6 +44,7 @@ export default function ContactStep() {
               className="input-field"
               required
               aria-required="true"
+              maxLength={MAX_LENGTHS.name}
               {...register('lastName')}
             />
             {errors.lastName && (
@@ -59,6 +62,7 @@ export default function ContactStep() {
             className="input-field"
             required
             aria-required="true"
+            maxLength={MAX_LENGTHS.email}
             {...register('email')}
           />
           {errors.email && (
@@ -75,6 +79,7 @@ export default function ContactStep() {
             className="input-field"
             required
             aria-required="true"
+            maxLength={MAX_LENGTHS.phone}
             {...register('phone')}
           />
           {errors.phone && (
@@ -91,6 +96,7 @@ export default function ContactStep() {
             rows={3}
             placeholder="Précisez votre projet, vos contraintes..."
             className="input-field resize-none"
+            maxLength={MAX_LENGTHS.message}
             {...register('message')}
           />
           {errors.message && (

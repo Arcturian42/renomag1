@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+import { validateLength } from '@/lib/validation'
 
 export async function updateArtisanProfile(formData: FormData) {
   'use server'
@@ -38,6 +39,29 @@ export async function updateArtisanProfile(formData: FormData) {
     const googleBusinessUrl = formData.get('googleBusinessUrl') as string
     const description = formData.get('description') as string
     const departments = formData.get('departments') as string
+
+    // Server-side validation
+    if (name && !validateLength(name, 'name').valid) {
+      redirect('/espace-pro/profil?error=1')
+    }
+    if (phone && !validateLength(phone, 'phone').valid) {
+      redirect('/espace-pro/profil?error=1')
+    }
+    if (email && !validateLength(email, 'email').valid) {
+      redirect('/espace-pro/profil?error=1')
+    }
+    if (address && !validateLength(address, 'address').valid) {
+      redirect('/espace-pro/profil?error=1')
+    }
+    if (city && !validateLength(city, 'city').valid) {
+      redirect('/espace-pro/profil?error=1')
+    }
+    if (zipCode && !validateLength(zipCode, 'zipCode').valid) {
+      redirect('/espace-pro/profil?error=1')
+    }
+    if (description && !validateLength(description, 'description').valid) {
+      redirect('/espace-pro/profil?error=1')
+    }
 
     console.log('[updateArtisanProfile] Updating artisan:', dbUser.artisan.id)
 
@@ -85,6 +109,26 @@ export async function updateOwnerProfile(formData: FormData) {
   const address = formData.get('address') as string
   const city = formData.get('city') as string
   const zipCode = formData.get('zipCode') as string
+
+  // Server-side validation
+  if (firstName && !validateLength(firstName, 'name').valid) {
+    redirect('/espace-proprietaire/compte?error=1')
+  }
+  if (lastName && !validateLength(lastName, 'name').valid) {
+    redirect('/espace-proprietaire/compte?error=1')
+  }
+  if (phone && !validateLength(phone, 'phone').valid) {
+    redirect('/espace-proprietaire/compte?error=1')
+  }
+  if (address && !validateLength(address, 'address').valid) {
+    redirect('/espace-proprietaire/compte?error=1')
+  }
+  if (city && !validateLength(city, 'city').valid) {
+    redirect('/espace-proprietaire/compte?error=1')
+  }
+  if (zipCode && !validateLength(zipCode, 'zipCode').valid) {
+    redirect('/espace-proprietaire/compte?error=1')
+  }
 
   await prisma.profile.upsert({
     where: { userId: user.id },

@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { validateEmail } from '@/lib/email-validation'
 import { slugify } from '@/lib/utils'
+import { validatePassword, validateSiret, validateLength, MAX_LENGTHS } from '@/lib/validation'
 
 export async function getUserRoleByEmail(email: string): Promise<Role | null> {
   try {
@@ -148,6 +149,42 @@ export async function signup(formData: FormData) {
     // Validate inputs
     if (!email || !password) {
       redirect('/inscription?error=' + encodeURIComponent('Email et mot de passe requis'))
+    }
+
+    // Validate password strength (server-side)
+    const passwordValidation = validatePassword(password)
+    if (!passwordValidation.valid) {
+      redirect('/inscription?error=' + encodeURIComponent('Le mot de passe doit contenir au moins 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre et 1 caractère spécial'))
+    }
+
+    // Validate field lengths
+    if (firstName) {
+      const firstNameCheck = validateLength(firstName, 'name')
+      if (!firstNameCheck.valid) {
+        redirect('/inscription?error=' + encodeURIComponent('Prénom trop long (max 100 caractères)'))
+      }
+    }
+
+    if (lastName) {
+      const lastNameCheck = validateLength(lastName, 'name')
+      if (!lastNameCheck.valid) {
+        redirect('/inscription?error=' + encodeURIComponent('Nom trop long (max 100 caractères)'))
+      }
+    }
+
+    if (companyName) {
+      const companyCheck = validateLength(companyName, 'name')
+      if (!companyCheck.valid) {
+        redirect('/inscription?error=' + encodeURIComponent('Nom d\'entreprise trop long (max 100 caractères)'))
+      }
+    }
+
+    // Validate SIRET for artisan accounts
+    if (role === 'ARTISAN' && siret) {
+      const siretValidation = validateSiret(siret)
+      if (!siretValidation.valid) {
+        redirect('/inscription?error=' + encodeURIComponent(siretValidation.error || 'SIRET invalide'))
+      }
     }
 
     // Validate email MX record

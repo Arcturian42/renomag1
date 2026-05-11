@@ -3,6 +3,7 @@
 import { useFormContext } from 'react-hook-form'
 import { MapPin } from 'lucide-react'
 import type { DevisFormData } from '../../schema'
+import { MAX_LENGTHS } from '@/lib/validation'
 
 const PROPERTY_TYPES = [
   { value: 'maison', label: 'Maison', icon: '🏠' },
@@ -39,6 +40,7 @@ export default function LogementStep() {
                 className="input-field pl-10"
                 required
                 aria-required="true"
+                maxLength={MAX_LENGTHS.zipCode}
                 {...register('zipCode')}
               />
             </div>
@@ -53,6 +55,7 @@ export default function LogementStep() {
               type="text"
               placeholder="Paris"
               className="input-field"
+              maxLength={MAX_LENGTHS.city}
               {...register('city')}
             />
             {errors.city && (

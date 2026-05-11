@@ -1,21 +1,22 @@
 import { z } from 'zod'
+import { MAX_LENGTHS } from '@/lib/validation'
 
 export const devisSchema = z.object({
   workTypes: z.array(z.string()).min(1, 'Sélectionnez au moins un type de travaux'),
   budget: z.string().min(1, 'Le budget est requis'),
-  zipCode: z.string().regex(/^\d{5}$/, 'Code postal invalide (5 chiffres requis)'),
-  city: z.string().optional(),
+  zipCode: z.string().regex(/^\d{5}$/, 'Code postal invalide (5 chiffres requis)').max(MAX_LENGTHS.zipCode),
+  city: z.string().max(MAX_LENGTHS.city).optional(),
   propertyType: z.string().optional(),
   propertyYear: z.string().optional(),
   surface: z.string().optional(),
   income: z.enum(['modeste', 'intermediaire', 'superieur'], {
     required_error: 'Sélectionnez votre tranche de revenus',
   }),
-  firstName: z.string().min(1, 'Le prénom est requis').max(100),
-  lastName: z.string().min(1, 'Le nom est requis').max(100),
-  email: z.string().email('Email invalide').max(255),
-  phone: z.string().min(1, 'Le téléphone est requis').max(50),
-  message: z.string().max(2000).optional(),
+  firstName: z.string().min(1, 'Le prénom est requis').max(MAX_LENGTHS.name),
+  lastName: z.string().min(1, 'Le nom est requis').max(MAX_LENGTHS.name),
+  email: z.string().email('Email invalide').max(MAX_LENGTHS.email),
+  phone: z.string().min(1, 'Le téléphone est requis').max(MAX_LENGTHS.phone),
+  message: z.string().max(MAX_LENGTHS.message).optional(),
 })
 
 export type DevisFormData = z.infer<typeof devisSchema>
