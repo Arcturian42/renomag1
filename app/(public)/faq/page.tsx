@@ -96,24 +96,34 @@ export default function FaqPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">
-        {FAQS.map((section) => (
-          <div key={section.category} className="mb-12">
-            <h2 className="text-xl font-bold text-slate-900 mb-5 pb-3 border-b border-slate-200">
-              {section.category}
-            </h2>
-            <div className="space-y-4">
-              {section.questions.map((faq) => (
-                <details key={faq.q} className="group bg-slate-50 rounded-xl border border-slate-200 p-5">
-                  <summary className="flex items-center justify-between cursor-pointer font-medium text-slate-900 list-none">
-                    {faq.q}
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform flex-shrink-0 ml-3" />
-                  </summary>
-                  <p className="mt-3 text-sm text-slate-600 leading-relaxed">{faq.a}</p>
-                </details>
-              ))}
+        {FAQS.map((section) => {
+          // Filter out questions with empty or missing answers
+          const questionsWithAnswers = section.questions.filter(
+            (faq) => faq.a && faq.a.trim() !== ''
+          )
+
+          // Only render the section if it has questions with answers
+          if (questionsWithAnswers.length === 0) return null
+
+          return (
+            <div key={section.category} className="mb-12">
+              <h2 className="text-xl font-bold text-slate-900 mb-5 pb-3 border-b border-slate-200">
+                {section.category}
+              </h2>
+              <div className="space-y-4">
+                {questionsWithAnswers.map((faq) => (
+                  <details key={faq.q} className="group bg-slate-50 rounded-xl border border-slate-200 p-5">
+                    <summary className="flex items-center justify-between cursor-pointer font-medium text-slate-900 list-none">
+                      {faq.q}
+                      <ArrowRight className="w-4 h-4 text-slate-400 group-open:rotate-90 transition-transform flex-shrink-0 ml-3" />
+                    </summary>
+                    <p className="mt-3 text-sm text-slate-600 leading-relaxed">{faq.a}</p>
+                  </details>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
 
         <div className="bg-primary-800 rounded-2xl p-8 text-white text-center">
           <h2 className="text-xl font-bold mb-2">Vous n'avez pas trouvé votre réponse ?</h2>

@@ -5,7 +5,7 @@ import { formatPrice } from '@/lib/utils'
 import { CheckCircle, ArrowRight, Calculator, Info } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: "Aides à la rénovation énergétique 2024 — MaPrimeRénov', CEE, Éco-PTZ",
+  title: "Aides à la rénovation énergétique 2025 — MaPrimeRénov', CEE, Éco-PTZ",
   description:
     "Découvrez toutes les aides disponibles pour financer vos travaux de rénovation énergétique : MaPrimeRénov', CEE, Éco-PTZ, TVA réduite. Simulez votre financement.",
 }
@@ -17,8 +17,10 @@ const INCOME_BRACKETS = [
     textColor: 'text-blue-700',
     bgLight: 'bg-blue-50',
     borderColor: 'border-blue-200',
-    solo: '20 489€',
-    couple: '29 148€',
+    solo: '≤ 17 009 €',
+    soloIdf: '≤ 23 541 €',
+    couple: '≤ 24 875 €',
+    coupleIdf: '≤ 34 551 €',
     rate: 'Jusqu\'à 70%',
   },
   {
@@ -27,8 +29,10 @@ const INCOME_BRACKETS = [
     textColor: 'text-yellow-700',
     bgLight: 'bg-yellow-50',
     borderColor: 'border-yellow-200',
-    solo: '25 069€',
-    couple: '36 816€',
+    solo: '≤ 21 805 €',
+    soloIdf: '≤ 28 657 €',
+    couple: '≤ 31 985 €',
+    coupleIdf: '≤ 42 058 €',
     rate: 'Jusqu\'à 50%',
   },
   {
@@ -37,8 +41,10 @@ const INCOME_BRACKETS = [
     textColor: 'text-purple-700',
     bgLight: 'bg-purple-50',
     borderColor: 'border-purple-200',
-    solo: '38 353€',
-    couple: '56 130€',
+    solo: '≤ 30 549 €',
+    soloIdf: '≤ 40 018 €',
+    couple: '≤ 44 908 €',
+    coupleIdf: '≤ 58 827 €',
     rate: 'Jusqu\'à 40%',
   },
   {
@@ -47,8 +53,10 @@ const INCOME_BRACKETS = [
     textColor: 'text-rose-700',
     bgLight: 'bg-rose-50',
     borderColor: 'border-rose-200',
-    solo: 'Supérieur',
-    couple: 'Supérieur',
+    solo: '> 30 549 €',
+    soloIdf: '> 40 018 €',
+    couple: '> 44 908 €',
+    coupleIdf: '> 58 827 €',
     rate: 'Jusqu\'à 30%',
   },
 ]
@@ -60,7 +68,7 @@ export default function AidesPage() {
       <div className="bg-gradient-to-br from-eco-800 to-primary-900 text-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <div className="badge-rge mb-4 w-fit">Aides 2024</div>
+            <div className="badge-rge mb-4 w-fit">Aides 2025</div>
             <h1 className="text-4xl font-bold">
               Financez jusqu'à{' '}
               <span className="text-accent-400">70% de vos travaux</span>
@@ -142,26 +150,35 @@ export default function AidesPage() {
               </p>
             </div>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             {INCOME_BRACKETS.map((bracket) => (
               <div
                 key={bracket.profile}
                 className={`rounded-xl border ${bracket.borderColor} ${bracket.bgLight} p-4`}
               >
                 <div className={`w-3 h-3 rounded-full ${bracket.color} mb-3`} />
-                <h3 className={`font-semibold text-sm ${bracket.textColor} mb-2`}>
+                <h3 className={`font-semibold text-sm ${bracket.textColor} mb-3`}>
                   {bracket.profile}
                 </h3>
-                <p className="text-xs text-slate-600 mb-1">
-                  Seul : &lt; {bracket.solo}
-                </p>
-                <p className="text-xs text-slate-600 mb-3">
-                  Couple : &lt; {bracket.couple}
-                </p>
-                <p className={`text-lg font-bold ${bracket.textColor}`}>{bracket.rate}</p>
+                <div className="space-y-2 mb-3">
+                  <div>
+                    <p className="text-[10px] font-medium text-slate-500 uppercase mb-0.5">Province</p>
+                    <p className="text-xs text-slate-700">1 pers. : {bracket.solo}</p>
+                    <p className="text-xs text-slate-700">2 pers. : {bracket.couple}</p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200">
+                    <p className="text-[10px] font-medium text-slate-500 uppercase mb-0.5">Île-de-France</p>
+                    <p className="text-xs text-slate-700">1 pers. : {bracket.soloIdf}</p>
+                    <p className="text-xs text-slate-700">2 pers. : {bracket.coupleIdf}</p>
+                  </div>
+                </div>
+                <p className={`text-base font-bold ${bracket.textColor}`}>{bracket.rate}</p>
               </div>
             ))}
           </div>
+          <p className="text-xs text-slate-500 text-center">
+            Plafonds de ressources 2025 — Source: ANAH
+          </p>
         </div>
 
         {/* Work types with aids */}
