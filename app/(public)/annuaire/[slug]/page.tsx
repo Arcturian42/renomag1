@@ -279,13 +279,15 @@ export default async function ArtisanProfilePage({ params }: Props) {
             <div className="bg-white rounded-xl border border-slate-200 p-5 sticky top-24">
               <h2 className="font-semibold text-slate-900 mb-5">Contacter {artisan.company}</h2>
               <div className="space-y-3 mb-5">
-                <a
-                  href={`tel:${artisan.phone}`}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
-                >
-                  <Phone className="w-4 h-4 text-primary-600" />
-                  <span className="text-sm font-medium text-slate-900">{artisan.phone}</span>
-                </a>
+                {artisan.phone && artisan.phone !== '01 23 45 67 89' && (
+                  <a
+                    href={`tel:${artisan.phone}`}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                  >
+                    <Phone className="w-4 h-4 text-primary-600" />
+                    <span className="text-sm font-medium text-slate-900">{artisan.phone}</span>
+                  </a>
+                )}
                 <a
                   href={`mailto:${artisan.email}`}
                   className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"

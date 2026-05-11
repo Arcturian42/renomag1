@@ -163,7 +163,7 @@ La PAC géothermique capte la chaleur du sol ou des nappes phréatiques. C'est l
     authorRole: 'Conseiller en rénovation',
     publishedAt: '2024-03-15',
     readTime: 5,
-    image: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=800',
+    image: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200',
     tags: ['RGE', 'Artisan', 'Conseils'],
     featured: false,
   },

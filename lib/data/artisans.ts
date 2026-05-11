@@ -72,7 +72,7 @@ export const ARTISANS: Artisan[] = [
     since: 2009,
     gallery: [
       'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600',
-      'https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=600',
+      'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=600',
       'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600',
     ],
     reviews: [
