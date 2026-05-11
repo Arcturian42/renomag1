@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizeAndValidate } from '@/lib/sanitize'
 
 async function requireAuth() {
   const supabase = await createClient()
@@ -42,13 +43,23 @@ export async function createArticle(formData: FormData) {
       return { success: false, error: `Quota d'articles atteint (${quota}/mois)` }
     }
 
-    const title = formData.get('title') as string
-    const content = formData.get('content') as string
-    const excerpt = formData.get('excerpt') as string
+    let title = formData.get('title') as string
+    let content = formData.get('content') as string
+    let excerpt = formData.get('excerpt') as string
     const categoryId = formData.get('categoryId') as string
 
     if (!title || !content) {
       return { success: false, error: 'Titre et contenu requis' }
+    }
+
+    // XSS Protection: Sanitize all text inputs
+    try {
+      title = sanitizeAndValidate(title, 'title')
+      content = sanitizeAndValidate(content, 'content')
+      if (excerpt) excerpt = sanitizeAndValidate(excerpt, 'excerpt')
+    } catch (error) {
+      console.error('[createArticle] XSS protection triggered:', error)
+      return { success: false, error: 'Contenu invalide — les balises HTML ne sont pas autorisées' }
     }
 
     const slug = title

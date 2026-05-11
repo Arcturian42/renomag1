@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSpecialtyFromWorkType } from '@/lib/data/specialties'
 import { calculateLeadScore } from '@/src/lib/scoring'
 import { ratelimit, getClientIdentifier } from '@/lib/rate-limit'
+import { sanitizeAndValidate } from '@/lib/sanitize'
 
 async function requireAuth() {
   try {
@@ -81,6 +82,23 @@ export async function submitLead(formData: unknown) {
     }
 
     const data = parsed.data
+
+    // XSS Protection: Sanitize all text inputs
+    try {
+      data.firstName = sanitizeAndValidate(data.firstName, 'firstName')
+      data.lastName = sanitizeAndValidate(data.lastName, 'lastName')
+      data.email = sanitizeAndValidate(data.email, 'email')
+      data.phone = sanitizeAndValidate(data.phone, 'phone')
+      data.zipCode = sanitizeAndValidate(data.zipCode, 'zipCode')
+      if (data.city) data.city = sanitizeAndValidate(data.city, 'city')
+      if (data.message) data.message = sanitizeAndValidate(data.message, 'message')
+    } catch (error) {
+      console.error('[submitLead] XSS protection triggered:', error)
+      return {
+        success: false,
+        error: 'Contenu invalide — les balises HTML ne sont pas autorisées',
+      }
+    }
 
     // 1. Calculer le score
     const score = calculateLeadScore({

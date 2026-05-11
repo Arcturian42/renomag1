@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { validateLength } from '@/lib/validation'
+import { sanitizeAndValidate } from '@/lib/sanitize'
 
 export async function updateArtisanProfile(formData: FormData) {
   'use server'
@@ -29,16 +30,33 @@ export async function updateArtisanProfile(formData: FormData) {
       redirect('/espace-pro')
     }
 
-    const name = formData.get('name') as string
-    const phone = formData.get('phone') as string
-    const email = formData.get('email') as string
-    const address = formData.get('address') as string
-    const city = formData.get('city') as string
-    const zipCode = formData.get('zipCode') as string
-    const website = formData.get('website') as string
-    const googleBusinessUrl = formData.get('googleBusinessUrl') as string
-    const description = formData.get('description') as string
-    const departments = formData.get('departments') as string
+    let name = formData.get('name') as string
+    let phone = formData.get('phone') as string
+    let email = formData.get('email') as string
+    let address = formData.get('address') as string
+    let city = formData.get('city') as string
+    let zipCode = formData.get('zipCode') as string
+    let website = formData.get('website') as string
+    let googleBusinessUrl = formData.get('googleBusinessUrl') as string
+    let description = formData.get('description') as string
+    let departments = formData.get('departments') as string
+
+    // XSS Protection: Sanitize all text inputs
+    try {
+      if (name) name = sanitizeAndValidate(name, 'name')
+      if (phone) phone = sanitizeAndValidate(phone, 'phone')
+      if (email) email = sanitizeAndValidate(email, 'email')
+      if (address) address = sanitizeAndValidate(address, 'address')
+      if (city) city = sanitizeAndValidate(city, 'city')
+      if (zipCode) zipCode = sanitizeAndValidate(zipCode, 'zipCode')
+      if (website) website = sanitizeAndValidate(website, 'website')
+      if (googleBusinessUrl) googleBusinessUrl = sanitizeAndValidate(googleBusinessUrl, 'googleBusinessUrl')
+      if (description) description = sanitizeAndValidate(description, 'description')
+      if (departments) departments = sanitizeAndValidate(departments, 'departments')
+    } catch (error) {
+      console.error('[updateArtisanProfile] XSS protection triggered:', error)
+      redirect('/espace-pro/profil?error=1')
+    }
 
     // Server-side validation
     if (name && !validateLength(name, 'name').valid) {
@@ -103,12 +121,25 @@ export async function updateOwnerProfile(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/connexion')
 
-  const firstName = formData.get('firstName') as string
-  const lastName = formData.get('lastName') as string
-  const phone = formData.get('phone') as string
-  const address = formData.get('address') as string
-  const city = formData.get('city') as string
-  const zipCode = formData.get('zipCode') as string
+  let firstName = formData.get('firstName') as string
+  let lastName = formData.get('lastName') as string
+  let phone = formData.get('phone') as string
+  let address = formData.get('address') as string
+  let city = formData.get('city') as string
+  let zipCode = formData.get('zipCode') as string
+
+  // XSS Protection: Sanitize all text inputs
+  try {
+    if (firstName) firstName = sanitizeAndValidate(firstName, 'firstName')
+    if (lastName) lastName = sanitizeAndValidate(lastName, 'lastName')
+    if (phone) phone = sanitizeAndValidate(phone, 'phone')
+    if (address) address = sanitizeAndValidate(address, 'address')
+    if (city) city = sanitizeAndValidate(city, 'city')
+    if (zipCode) zipCode = sanitizeAndValidate(zipCode, 'zipCode')
+  } catch (error) {
+    console.error('[updateOwnerProfile] XSS protection triggered:', error)
+    redirect('/espace-proprietaire/compte?error=1')
+  }
 
   // Server-side validation
   if (firstName && !validateLength(firstName, 'name').valid) {

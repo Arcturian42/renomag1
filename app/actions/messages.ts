@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
+import { sanitizeAndValidate } from '@/lib/sanitize'
 
 async function requireAuth() {
   const supabase = await createClient()
@@ -16,11 +17,20 @@ export async function sendMessage(receiverId: string, content: string) {
     const authUser = await requireAuth()
     if (!content.trim()) return { success: false, error: 'Message vide' }
 
+    // XSS Protection: Sanitize message content
+    let sanitizedContent: string
+    try {
+      sanitizedContent = sanitizeAndValidate(content, 'message')
+    } catch (error) {
+      console.error('[sendMessage] XSS protection triggered:', error)
+      return { success: false, error: 'Contenu invalide — les balises HTML ne sont pas autorisées' }
+    }
+
     const message = await prisma.message.create({
       data: {
         senderId: authUser.id,
         receiverId,
-        content: content.trim(),
+        content: sanitizedContent,
       },
     })
 
@@ -75,12 +85,20 @@ export async function sendContactMessage(formData: FormData) {
   'use server'
 
   try {
-    const message = formData.get('message') as string
+    let message = formData.get('message') as string
     const artisanId = formData.get('artisanId') as string
 
     // Validate inputs
     if (!message?.trim() || !artisanId?.trim()) {
       return { success: false, error: 'Tous les champs sont requis' }
+    }
+
+    // XSS Protection: Sanitize message content
+    try {
+      message = sanitizeAndValidate(message, 'message')
+    } catch (error) {
+      console.error('[sendContactMessage] XSS protection triggered:', error)
+      return { success: false, error: 'Contenu invalide — les balises HTML ne sont pas autorisées' }
     }
 
     // Require authentication

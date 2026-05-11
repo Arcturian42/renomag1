@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/server'
 import { validateEmail } from '@/lib/email-validation'
 import { slugify } from '@/lib/utils'
 import { validatePassword, validateSiret, validateFrenchPhone, validateLength, MAX_LENGTHS } from '@/lib/validation'
+import { sanitizeAndValidate } from '@/lib/sanitize'
 
 export async function getUserRoleByEmail(email: string): Promise<Role | null> {
   try {
@@ -141,11 +142,24 @@ export async function signup(formData: FormData) {
     // SECURITY: Only allow USER and ARTISAN roles from self-registration (no ADMIN)
     const requestedRole = (formData.get('role') as string) || 'USER'
     const role = requestedRole === 'ARTISAN' ? 'ARTISAN' : 'USER'
-    const firstName = formData.get('firstName') as string
-    const lastName = formData.get('lastName') as string
-    const phone = formData.get('phone') as string
-    const companyName = formData.get('companyName') as string
-    const siret = formData.get('siret') as string
+
+    // XSS Protection: Sanitize all text inputs
+    let firstName = formData.get('firstName') as string
+    let lastName = formData.get('lastName') as string
+    let phone = formData.get('phone') as string
+    let companyName = formData.get('companyName') as string
+    let siret = formData.get('siret') as string
+
+    try {
+      if (firstName) firstName = sanitizeAndValidate(firstName, 'firstName')
+      if (lastName) lastName = sanitizeAndValidate(lastName, 'lastName')
+      if (phone) phone = sanitizeAndValidate(phone, 'phone')
+      if (companyName) companyName = sanitizeAndValidate(companyName, 'companyName')
+      if (siret) siret = sanitizeAndValidate(siret, 'siret')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Contenu invalide'
+      redirect('/inscription?error=' + encodeURIComponent(message))
+    }
 
     // Validate inputs
     if (!email || !password) {
