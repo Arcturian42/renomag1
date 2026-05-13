@@ -104,19 +104,85 @@ export default async function AnnuairePage({ searchParams }: AnnuairePageProps) 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-8 flex items-center justify-center gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                {/* Previous Button */}
+                <a
+                  href={currentPage > 1 ? `?${new URLSearchParams({ ...params, page: String(currentPage - 1) }).toString()}` : '#'}
+                  className={`px-3 h-9 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
+                    currentPage > 1
+                      ? 'text-slate-600 hover:bg-slate-100'
+                      : 'text-slate-300 cursor-not-allowed'
+                  }`}
+                  aria-disabled={currentPage <= 1}
+                >
+                  Précédent
+                </a>
+
+                {/* First Page */}
+                {currentPage > 3 && (
                   <a
-                    key={page}
-                    href={`?${new URLSearchParams({ ...params, page: String(page) }).toString()}`}
-                    className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
-                      page === currentPage
-                        ? 'bg-primary-800 text-white'
-                        : 'text-slate-600 hover:bg-slate-100'
-                    }`}
+                    href={`?${new URLSearchParams({ ...params, page: '1' }).toString()}`}
+                    className="w-9 h-9 rounded-lg text-sm font-medium transition-colors flex items-center justify-center text-slate-600 hover:bg-slate-100"
                   >
-                    {page}
+                    1
                   </a>
-                ))}
+                )}
+
+                {/* Left Ellipsis */}
+                {currentPage > 4 && (
+                  <span className="w-9 h-9 flex items-center justify-center text-slate-400">
+                    ...
+                  </span>
+                )}
+
+                {/* Current Page -1, Current Page, Current Page +1 */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((page) => {
+                    // Show pages around current page
+                    return page >= currentPage - 1 && page <= currentPage + 1
+                  })
+                  .map((page) => (
+                    <a
+                      key={page}
+                      href={`?${new URLSearchParams({ ...params, page: String(page) }).toString()}`}
+                      className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
+                        page === currentPage
+                          ? 'bg-primary-800 text-white'
+                          : 'text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {page}
+                    </a>
+                  ))}
+
+                {/* Right Ellipsis */}
+                {currentPage < totalPages - 3 && (
+                  <span className="w-9 h-9 flex items-center justify-center text-slate-400">
+                    ...
+                  </span>
+                )}
+
+                {/* Last Page */}
+                {currentPage < totalPages - 2 && (
+                  <a
+                    href={`?${new URLSearchParams({ ...params, page: String(totalPages) }).toString()}`}
+                    className="w-9 h-9 rounded-lg text-sm font-medium transition-colors flex items-center justify-center text-slate-600 hover:bg-slate-100"
+                  >
+                    {totalPages}
+                  </a>
+                )}
+
+                {/* Next Button */}
+                <a
+                  href={currentPage < totalPages ? `?${new URLSearchParams({ ...params, page: String(currentPage + 1) }).toString()}` : '#'}
+                  className={`px-3 h-9 rounded-lg text-sm font-medium transition-colors flex items-center justify-center ${
+                    currentPage < totalPages
+                      ? 'text-slate-600 hover:bg-slate-100'
+                      : 'text-slate-300 cursor-not-allowed'
+                  }`}
+                  aria-disabled={currentPage >= totalPages}
+                >
+                  Suivant
+                </a>
               </div>
             )}
           </div>
