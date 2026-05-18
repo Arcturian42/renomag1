@@ -87,8 +87,16 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                       priority
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
-                    <div className="absolute top-4 left-4">
+                    <div className="absolute top-4 left-4 flex items-center gap-2">
                       <span className="badge-accent text-sm px-3 py-1">À la une</span>
+                      {featured.isAI && (
+                        <span
+                          title="Article rédigé par un agent IA"
+                          className="text-xs font-semibold px-2 py-1 rounded-md bg-violet-600 text-white shadow"
+                        >
+                          IA
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="bg-white p-8 flex flex-col justify-between">
@@ -135,8 +143,16 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
                       sizes="(max-width: 768px) 100vw, 33vw"
                     />
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="badge-primary text-xs">{article.category}</span>
+                      {article.isAI && (
+                        <span
+                          title="Article rédigé par un agent IA"
+                          className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-600 text-white shadow"
+                        >
+                          IA
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex flex-col flex-1 p-5">

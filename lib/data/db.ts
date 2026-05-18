@@ -2,6 +2,10 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from '@prisma/client'
 import { ARTISANS, type Artisan, type Review } from './artisans'
 import { ARTICLES, type Article } from './blog'
+import {
+  getSupabaseArticles,
+  getSupabaseArticleBySlug,
+} from '@/lib/supabase-blog'
 
 function mapPrismaArtisan(a: any): Artisan {
   return {
@@ -97,7 +101,7 @@ export async function getArtisanBySlug(slug: string): Promise<Artisan | undefine
   }
 }
 
-export async function getArticles(): Promise<Article[]> {
+async function getBaseArticles(): Promise<Article[]> {
   try {
     const db = await prisma.article.findMany({
       where: { published: true },
@@ -111,17 +115,47 @@ export async function getArticles(): Promise<Article[]> {
   }
 }
 
+function mergeArticlesByDate(...lists: Article[][]): Article[] {
+  const seenSlugs = new Set<string>()
+  const out: Article[] = []
+  for (const list of lists) {
+    for (const a of list) {
+      if (seenSlugs.has(a.slug)) continue
+      seenSlugs.add(a.slug)
+      out.push(a)
+    }
+  }
+  return out.sort((a, b) => {
+    const ta = new Date(a.publishedAt).getTime() || 0
+    const tb = new Date(b.publishedAt).getTime() || 0
+    return tb - ta
+  })
+}
+
+export async function getArticles(): Promise<Article[]> {
+  const [base, supabase] = await Promise.all([
+    getBaseArticles(),
+    getSupabaseArticles().catch(() => []),
+  ])
+  return mergeArticlesByDate(base, supabase)
+}
+
 export async function getArticleBySlug(slug: string): Promise<Article | undefined> {
   try {
     const db = await prisma.article.findUnique({
       where: { slug },
       include: { category: true },
     })
-    if (!db) return ARTICLES.find((a) => a.slug === slug)
-    return mapPrismaArticle(db)
+    if (db) return mapPrismaArticle(db)
   } catch {
-    return ARTICLES.find((a) => a.slug === slug)
+    // fall through to MDX + Supabase lookups
   }
+
+  const mdx = ARTICLES.find((a) => a.slug === slug)
+  if (mdx) return mdx
+
+  const sb = await getSupabaseArticleBySlug(slug).catch(() => null)
+  return sb ?? undefined
 }
 
 export async function getFeaturedArtisans(): Promise<Artisan[]> {

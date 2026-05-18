@@ -12,6 +12,7 @@ export type Article = {
   image: string
   tags: string[]
   featured: boolean
+  isAI?: boolean
 }
 
 export const CATEGORIES = [

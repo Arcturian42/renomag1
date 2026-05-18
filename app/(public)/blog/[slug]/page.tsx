@@ -2,10 +2,13 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
 import { getArticles, getArticleBySlug } from '@/lib/data/db'
 import { formatDate } from '@/lib/utils'
 import ArticleJsonLd from '@/components/seo/ArticleJsonLd'
 import { Clock, Calendar, ArrowLeft, Tag, Share2 } from 'lucide-react'
+
+export const dynamicParams = true
 
 type Props = { params: { slug: string } }
 
@@ -46,8 +49,16 @@ export default async function ArticlePage({ params }: Props) {
           sizes="100vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 pb-8 mx-auto max-w-4xl">
+        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 pb-8 mx-auto max-w-4xl flex items-center gap-2">
           <span className="badge-primary">{article.category}</span>
+          {article.isAI && (
+            <span
+              title="Article rédigé par un agent IA"
+              className="text-xs font-semibold px-2 py-1 rounded bg-violet-600 text-white shadow"
+            >
+              IA
+            </span>
+          )}
         </div>
       </div>
 
@@ -103,37 +114,41 @@ export default async function ArticlePage({ params }: Props) {
                 prose-ul:text-slate-600 prose-li:leading-relaxed
                 prose-a:text-primary-700 prose-a:no-underline hover:prose-a:underline"
             >
-              {article.content.split('\n\n').map((paragraph, i) => {
-                if (paragraph.startsWith('## ')) {
-                  return <h2 key={i}>{paragraph.replace('## ', '')}</h2>
-                }
-                if (paragraph.startsWith('### ')) {
-                  return <h3 key={i}>{paragraph.replace('### ', '')}</h3>
-                }
-                if (paragraph.startsWith('- ') || paragraph.includes('\n- ')) {
-                  const items = paragraph
-                    .split('\n')
-                    .filter((l) => l.startsWith('- '))
-                    .map((l) => l.replace('- ', ''))
-                  return (
-                    <ul key={i}>
-                      {items.map((item, j) => <li key={j}>{item}</li>)}
-                    </ul>
-                  )
-                }
-                if (paragraph.startsWith('1. ') || paragraph.includes('\n1. ')) {
-                  const items = paragraph
-                    .split('\n')
-                    .filter((l) => /^\d+\. /.test(l))
-                    .map((l) => l.replace(/^\d+\. /, ''))
-                  return (
-                    <ol key={i}>
-                      {items.map((item, j) => <li key={j}>{item}</li>)}
-                    </ol>
-                  )
-                }
-                return <p key={i}>{paragraph}</p>
-              })}
+              {article.isAI ? (
+                <ReactMarkdown>{article.content}</ReactMarkdown>
+              ) : (
+                article.content.split('\n\n').map((paragraph, i) => {
+                  if (paragraph.startsWith('## ')) {
+                    return <h2 key={i}>{paragraph.replace('## ', '')}</h2>
+                  }
+                  if (paragraph.startsWith('### ')) {
+                    return <h3 key={i}>{paragraph.replace('### ', '')}</h3>
+                  }
+                  if (paragraph.startsWith('- ') || paragraph.includes('\n- ')) {
+                    const items = paragraph
+                      .split('\n')
+                      .filter((l) => l.startsWith('- '))
+                      .map((l) => l.replace('- ', ''))
+                    return (
+                      <ul key={i}>
+                        {items.map((item, j) => <li key={j}>{item}</li>)}
+                      </ul>
+                    )
+                  }
+                  if (paragraph.startsWith('1. ') || paragraph.includes('\n1. ')) {
+                    const items = paragraph
+                      .split('\n')
+                      .filter((l) => /^\d+\. /.test(l))
+                      .map((l) => l.replace(/^\d+\. /, ''))
+                    return (
+                      <ol key={i}>
+                        {items.map((item, j) => <li key={j}>{item}</li>)}
+                      </ol>
+                    )
+                  }
+                  return <p key={i}>{paragraph}</p>
+                })
+              )}
             </div>
 
             {/* Tags */}
