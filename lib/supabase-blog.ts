@@ -1,6 +1,11 @@
 import 'server-only'
 import { createClient } from '@supabase/supabase-js'
 import type { Article } from '@/lib/data/blog'
+import {
+  DEFAULT_ARTICLE_IMAGE,
+  articleImageOrDefault,
+  stripMarkdown,
+} from '@/lib/utils'
 
 type SupabaseBlogClient = ReturnType<typeof createBlogClient>
 
@@ -14,12 +19,10 @@ export interface SupabaseArticleRow {
   category: string | null
   tags: string[] | null
   seo_score: number | null
+  featured_image_url: string | null
   published_at: string | null
   created_at: string | null
 }
-
-const DEFAULT_IMAGE =
-  'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800'
 
 function createBlogClient(url: string, key: string) {
   return createClient(url, key, {
@@ -51,26 +54,6 @@ function estimateReadTime(content: string | null): number {
   return Math.max(1, Math.ceil(words / 200))
 }
 
-function stripMarkdown(text: string | null | undefined): string {
-  if (!text) return ''
-  return text
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
-    .replace(/^\s*>\s?/gm, '')
-    .replace(/^\s*[-*+]\s+/gm, '')
-    .replace(/^\s*\d+\.\s+/gm, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/__([^_]+)__/g, '$1')
-    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2')
-    .replace(/(^|[^_])_([^_\n]+)_/g, '$1$2')
-    .replace(/~~([^~]+)~~/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
 export function mapSupabaseArticle(row: SupabaseArticleRow): Article & { isAI: true } {
   const publishedAt =
     row.published_at ?? row.created_at ?? new Date().toISOString()
@@ -85,7 +68,7 @@ export function mapSupabaseArticle(row: SupabaseArticleRow): Article & { isAI: t
     authorRole: 'Rédacteur IA',
     publishedAt,
     readTime: estimateReadTime(row.content),
-    image: DEFAULT_IMAGE,
+    image: articleImageOrDefault(row.featured_image_url),
     tags: row.tags ?? [],
     featured: false,
     isAI: true,
@@ -100,7 +83,7 @@ export async function getSupabaseArticles(): Promise<(Article & { isAI: true })[
     const { data, error } = await client
       .from('articles')
       .select(
-        'id, title, slug, content, excerpt, status, category, tags, seo_score, published_at, created_at'
+        'id, title, slug, content, excerpt, status, category, tags, seo_score, featured_image_url, published_at, created_at'
       )
       .eq('status', 'published')
       .order('published_at', { ascending: false, nullsFirst: false })
@@ -118,7 +101,7 @@ export async function getSupabaseArticles(): Promise<(Article & { isAI: true })[
 }
 
 const ARTICLE_COLUMNS =
-  'id, title, slug, content, excerpt, status, category, tags, seo_score, published_at, created_at'
+  'id, title, slug, content, excerpt, status, category, tags, seo_score, featured_image_url, published_at, created_at'
 
 function buildSlugCandidates(slug: string): string[] {
   const variants = new Set<string>()

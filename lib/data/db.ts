@@ -6,6 +6,7 @@ import {
   getSupabaseArticles,
   getSupabaseArticleBySlug,
 } from '@/lib/supabase-blog'
+import { articleImageOrDefault, stripMarkdown } from '@/lib/utils'
 
 function mapPrismaArtisan(a: any): Artisan {
   return {
@@ -55,14 +56,14 @@ function mapPrismaArticle(a: any): Article {
     id: a.id,
     slug: a.slug,
     title: a.title,
-    excerpt: a.excerpt ?? '',
+    excerpt: stripMarkdown(a.excerpt),
     content: a.content ?? '',
     category: a.category?.name ?? 'Non classé',
     author: a.author ?? 'RENOMAG',
     authorRole: a.authorRole ?? '',
     publishedAt: a.createdAt?.toISOString() ?? '',
     readTime: a.readTime,
-    image: a.image ?? '',
+    image: articleImageOrDefault(a.image),
     tags: (a.tags as string[]) ?? [],
     featured: a.featured,
   }

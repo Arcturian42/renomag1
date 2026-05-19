@@ -3,7 +3,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { CATEGORIES } from '@/lib/data/blog'
 import { getArticlesWithFilters } from '@/lib/data/db'
-import { formatDateShort } from '@/lib/utils'
+import {
+  articleImageOrDefault,
+  formatDateShort,
+  stripMarkdown,
+} from '@/lib/utils'
 import BlogFilters from '@/components/blog/BlogFilters'
 import { Clock, Search } from 'lucide-react'
 
@@ -80,7 +84,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                 >
                   <div className="relative h-64 md:h-auto bg-slate-100">
                     <Image
-                      src={featured.image}
+                      src={articleImageOrDefault(featured.image)}
                       alt={featured.title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -105,7 +109,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                       <h2 className="text-2xl font-bold text-slate-900 group-hover:text-primary-700 transition-colors leading-snug mt-2">
                         {featured.title}
                       </h2>
-                      <p className="mt-3 text-slate-500 leading-relaxed">{featured.excerpt}</p>
+                      <p className="mt-3 text-slate-500 leading-relaxed">{stripMarkdown(featured.excerpt)}</p>
                     </div>
                     <div className="flex items-center justify-between mt-6 pt-5 border-t border-slate-100">
                       <div className="flex items-center gap-3">
@@ -137,7 +141,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                 >
                   <div className="relative h-44 bg-slate-100">
                     <Image
-                      src={article.image}
+                      src={articleImageOrDefault(article.image)}
                       alt={article.title}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -160,7 +164,7 @@ export default async function BlogPage({ searchParams }: BlogPageProps) {
                       {article.title}
                     </h3>
                     <p className="mt-2 text-xs text-slate-500 line-clamp-2 leading-relaxed flex-1">
-                      {article.excerpt}
+                      {stripMarkdown(article.excerpt)}
                     </p>
                     <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100 text-xs text-slate-400">
                       <span>{formatDateShort(article.publishedAt)}</span>

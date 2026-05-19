@@ -45,6 +45,34 @@ export function truncate(text: string, maxLength: number): string {
   return text.slice(0, maxLength) + '...'
 }
 
+export const DEFAULT_ARTICLE_IMAGE =
+  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800'
+
+export function stripMarkdown(text: string | null | undefined): string {
+  if (!text) return ''
+  return text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2')
+    .replace(/(^|[^_])_([^_\n]+)_/g, '$1$2')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function articleImageOrDefault(image: string | null | undefined): string {
+  const trimmed = image?.trim()
+  return trimmed && trimmed.length > 0 ? trimmed : DEFAULT_ARTICLE_IMAGE
+}
+
 export function getInitials(name: string): string {
   return name
     .split(' ')
