@@ -27,14 +27,14 @@ export default function ProfileForm({ artisan, userEmail }: ProfileFormProps) {
 
   // Check for success/error parameters on mount
   useEffect(() => {
-    if (searchParams.get('success') === '1') {
+    if (searchParams?.get('success') === '1') {
       setSuccess('✅ Profil enregistré avec succès !')
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000)
       // Remove success param from URL
       router.replace('/espace-pro/profil', { scroll: false })
     }
-    if (searchParams.get('error') === '1') {
+    if (searchParams?.get('error') === '1') {
       setError('❌ Erreur lors de l\'enregistrement. Veuillez réessayer.')
       // Remove error param from URL
       router.replace('/espace-pro/profil', { scroll: false })
