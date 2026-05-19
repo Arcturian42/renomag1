@@ -51,6 +51,26 @@ function estimateReadTime(content: string | null): number {
   return Math.max(1, Math.ceil(words / 200))
 }
 
+function stripMarkdown(text: string | null | undefined): string {
+  if (!text) return ''
+  return text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/^\s*\d+\.\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1$2')
+    .replace(/(^|[^_])_([^_\n]+)_/g, '$1$2')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function mapSupabaseArticle(row: SupabaseArticleRow): Article & { isAI: true } {
   const publishedAt =
     row.published_at ?? row.created_at ?? new Date().toISOString()
@@ -58,7 +78,7 @@ export function mapSupabaseArticle(row: SupabaseArticleRow): Article & { isAI: t
     id: `sb-${row.id}`,
     slug: row.slug,
     title: row.title,
-    excerpt: row.excerpt ?? '',
+    excerpt: stripMarkdown(row.excerpt),
     content: row.content ?? '',
     category: row.category ?? 'Non classé',
     author: 'Agent IA RENOMAG',
@@ -97,29 +117,80 @@ export async function getSupabaseArticles(): Promise<(Article & { isAI: true })[
   }
 }
 
+const ARTICLE_COLUMNS =
+  'id, title, slug, content, excerpt, status, category, tags, seo_score, published_at, created_at'
+
+function buildSlugCandidates(slug: string): string[] {
+  const variants = new Set<string>()
+  const push = (s: string | undefined | null) => {
+    if (s && s.trim().length > 0) variants.add(s)
+  }
+  push(slug)
+  try { push(decodeURIComponent(slug)) } catch {}
+  try { push(slug.normalize('NFC')) } catch {}
+  try { push(slug.normalize('NFD')) } catch {}
+  try { push(decodeURIComponent(slug).normalize('NFC')) } catch {}
+  try { push(decodeURIComponent(slug).normalize('NFD')) } catch {}
+  return Array.from(variants)
+}
+
+function escapeIlikePattern(s: string): string {
+  return s.replace(/[\\%_]/g, '\\$&')
+}
+
 export async function getSupabaseArticleBySlug(
   slug: string
 ): Promise<(Article & { isAI: true }) | null> {
   const client = getClient()
   if (!client) return null
 
+  const candidates = buildSlugCandidates(slug)
+
   try {
-    const { data, error } = await client
-      .from('articles')
-      .select(
-        'id, title, slug, content, excerpt, status, category, tags, seo_score, published_at, created_at'
-      )
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .maybeSingle()
+    for (const candidate of candidates) {
+      const { data, error } = await client
+        .from('articles')
+        .select(ARTICLE_COLUMNS)
+        .eq('slug', candidate)
+        .eq('status', 'published')
+        .maybeSingle()
 
-    if (error) {
-      console.error('[supabase-blog] getSupabaseArticleBySlug error:', error.message)
-      return null
+      if (error) {
+        console.error(
+          `[supabase-blog] getSupabaseArticleBySlug eq error for "${candidate}":`,
+          error.message
+        )
+        continue
+      }
+      if (data) {
+        return mapSupabaseArticle(data as SupabaseArticleRow)
+      }
     }
-    if (!data) return null
 
-    return mapSupabaseArticle(data as SupabaseArticleRow)
+    for (const candidate of candidates) {
+      const { data, error } = await client
+        .from('articles')
+        .select(ARTICLE_COLUMNS)
+        .ilike('slug', escapeIlikePattern(candidate))
+        .eq('status', 'published')
+        .limit(1)
+
+      if (error) {
+        console.error(
+          `[supabase-blog] getSupabaseArticleBySlug ilike error for "${candidate}":`,
+          error.message
+        )
+        continue
+      }
+      if (data && data.length > 0) {
+        return mapSupabaseArticle(data[0] as SupabaseArticleRow)
+      }
+    }
+
+    console.warn(
+      `[supabase-blog] getSupabaseArticleBySlug: no match for "${slug}" (tried ${candidates.length} variants)`
+    )
+    return null
   } catch (err) {
     console.error('[supabase-blog] getSupabaseArticleBySlug exception:', err)
     return null
