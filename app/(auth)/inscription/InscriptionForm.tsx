@@ -10,6 +10,54 @@ import { validatePassword, validateSiret, validateFrenchPhone, MAX_LENGTHS, type
 
 type UserType = 'particulier' | 'pro' | null
 
+const STRENGTH_LABEL: Record<PasswordValidation['strength'], string> = {
+  weak: 'Faible',
+  medium: 'Moyen',
+  strong: 'Fort',
+}
+
+const STRENGTH_BAR_CLASS: Record<PasswordValidation['strength'], string> = {
+  weak: 'w-1/3 bg-red-500',
+  medium: 'w-2/3 bg-yellow-500',
+  strong: 'w-full bg-green-500',
+}
+
+const STRENGTH_TEXT_CLASS: Record<PasswordValidation['strength'], string> = {
+  weak: 'text-red-600',
+  medium: 'text-yellow-600',
+  strong: 'text-green-600',
+}
+
+function PasswordStrengthIndicator({ validation }: { validation: PasswordValidation | null }) {
+  if (!validation) return null
+
+  const { strength, errors } = validation
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+          <div className={`h-full transition-all duration-300 ${STRENGTH_BAR_CLASS[strength]}`} />
+        </div>
+        <span className={`text-xs font-medium ${STRENGTH_TEXT_CLASS[strength]}`}>
+          {STRENGTH_LABEL[strength]}
+        </span>
+      </div>
+
+      {errors.length > 0 && (
+        <div className="space-y-1">
+          {errors.map((error) => (
+            <p key={error} className="text-xs text-slate-500 flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-slate-400" />
+              {error}
+            </p>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function InscriptionForm() {
   const [userType, setUserType] = useState<UserType>(null)
   const [step, setStep] = useState<'type' | 'form'>('type')
@@ -347,47 +395,7 @@ export default function InscriptionForm() {
                     }}
                   />
 
-                  {/* Password strength indicator */}
-                  {passwordValidation && (
-                    <div className="mt-2 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full transition-all duration-300 ${
-                              passwordValidation.strength === 'weak'
-                                ? 'w-1/3 bg-red-500'
-                                : passwordValidation.strength === 'medium'
-                                  ? 'w-2/3 bg-yellow-500'
-                                  : 'w-full bg-green-500'
-                            }`}
-                          />
-                        </div>
-                        <span className={`text-xs font-medium ${
-                          passwordValidation.strength === 'weak'
-                            ? 'text-red-600'
-                            : passwordValidation.strength === 'medium'
-                              ? 'text-yellow-600'
-                              : 'text-green-600'
-                        }`}>
-                          {passwordValidation.strength === 'weak' && 'Faible'}
-                          {passwordValidation.strength === 'medium' && 'Moyen'}
-                          {passwordValidation.strength === 'strong' && 'Fort'}
-                        </span>
-                      </div>
-
-                      {/* Requirements checklist */}
-                      {passwordValidation.errors.length > 0 && (
-                        <div className="space-y-1">
-                          {passwordValidation.errors.map((error, i) => (
-                            <p key={i} className="text-xs text-slate-500 flex items-center gap-1">
-                              <span className="w-1 h-1 rounded-full bg-slate-400" />
-                              {error}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  <PasswordStrengthIndicator validation={passwordValidation} />
                 </div>
 
                 <div className="flex items-start gap-2">
